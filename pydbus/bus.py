@@ -7,7 +7,7 @@ class Bus(OwnMixin, WatchMixin):
 	Type = Gio.BusType
 
 	def __init__(self, type:Type, timeout=10):
-		self.con = Gio.bus_get_sync(type)
+		self.con = Gio.bus_get_sync(type, None)
 		self.timeout = timeout
 
 	def get(self, bus_name, object_path=None):
