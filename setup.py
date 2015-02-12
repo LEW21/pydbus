@@ -7,14 +7,14 @@ with open('README.rst') as f:
 
 setup(
 	name = "pydbus",
-	version = "0.1",
+	version = "0.1.1",
 	description = "Pythonic DBus library",
 	long_description = readme,
 	author = "Janusz Lewandowski",
 	author_email = "lew21@xtreeme.org",
 	url = "https://github.com/LEW21/pydbus",
 	keywords = "dbus",
-	license = "GPLv3",
+	license = "LGPLv2+",
 
 	packages = find_packages(),
 	package_data = {
@@ -25,10 +25,12 @@ setup(
 		'Development Status :: 5 - Production/Stable',
 		'Intended Audience :: Developers',
 		'Natural Language :: English',
-		'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+		'License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)',
 		'Programming Language :: Python',
 		'Programming Language :: Python :: 3',
 		'Programming Language :: Python :: 3.3',
-		'Programming Language :: Python :: 3.4'
+		'Programming Language :: Python :: 3.4',
+		'Programming Language :: Python :: 2',
+		'Programming Language :: Python :: 2.7'
 	)
 )

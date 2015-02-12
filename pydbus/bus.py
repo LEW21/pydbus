@@ -6,7 +6,7 @@ from .bus_names import OwnMixin, WatchMixin
 class Bus(OwnMixin, WatchMixin):
 	Type = Gio.BusType
 
-	def __init__(self, type:Type, timeout=10):
+	def __init__(self, type, timeout=10):
 		self.con = Gio.bus_get_sync(type, None)
 		self.timeout = timeout
 
@@ -58,13 +58,13 @@ def SystemBus():
 def SessionBus():
 	return Bus(Bus.Type.SESSION)
 
-class ProxyObject:
+class ProxyObject(object):
 	def __init__(self, bus, bus_name, path):
 		self._bus = bus
 		self._bus_name = bus_name
 		self._path = path
 
-def Interface(iface:ET):
+def Interface(iface):
 
 	class interface(ProxyObject):
 		@staticmethod
@@ -98,7 +98,7 @@ def Interface(iface:ET):
 
 	return interface
 
-def CompositeInterface(introspection:ET):
+def CompositeInterface(introspection):
 	class CompositeObject(ProxyObject):
 		def __getitem__(self, iface):
 			if iface == "" or iface[0] == ".":

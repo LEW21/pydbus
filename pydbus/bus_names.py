@@ -1,10 +1,10 @@
 from gi.repository import Gio
 
-class OwnMixin:
+class OwnMixin(object):
 	__slots__ = ()
 	NameOwnerFlags = Gio.BusNameOwnerFlags
 
-	def own_name(self, name, flags:NameOwnerFlags=0, name_aquired=None, name_lost=None):
+	def own_name(self, name, flags=0, name_aquired=None, name_lost=None):
 		"""Asynchronously aquires a bus name.
 
 		Starts acquiring name on the bus specified by bus_type and calls
@@ -47,11 +47,11 @@ class OwnMixin:
 		"""
 		return Gio.bus_unown_name(id)
 
-class WatchMixin:
+class WatchMixin(object):
 	__slots__ = ()
 	NameWatcherFlags = Gio.BusNameWatcherFlags
 
-	def watch_name(self, name, flags:NameWatcherFlags=0, name_appeared=None, name_vanished=None):
+	def watch_name(self, name, flags=0, name_appeared=None, name_vanished=None):
 		"""Asynchronously watches a bus name.
 		
 		Starts watching name on the bus specified by bus_type and calls
@@ -100,7 +100,10 @@ if __name__ == "__main__":
 	from . import SessionBus
 	from gi.repository import GObject
 
+	def echo(x):
+		print(x)
+
 	bus = SessionBus()
-	bus.watch_name("com.example", 0, print)
+	bus.watch_name("com.example", 0, echo)
 	bus.own_name("com.example")
 	GObject.MainLoop().run()
