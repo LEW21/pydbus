@@ -1,8 +1,44 @@
 from gi.repository import Gio
 
+class NameOwner(object):
+	Flags = Gio.BusNameOwnerFlags
+	__slots__ = ("id")
+
+	def __init__(self, con, name, flags, name_aquired_handler, name_lost_handler):
+		self.id = Gio.bus_own_name_on_connection(con, name, flags, name_aquired_handler, name_lost_handler)
+
+	def unown(self):
+		Gio.bus_unown_name(self.id)
+		self.id = None
+
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_value, traceback):
+		if not self.id is None:
+			self.unown()
+
+class NameWatcher(object):
+	Flags = Gio.BusNameWatcherFlags
+	__slots__ = ("id")
+
+	def __init__(self, con, name, flags, name_appeared_handler, name_vanished_handler):
+		self.id = Gio.bus_watch_name_on_connection(con, name, flags, name_appeared_handler, name_vanished_handler)
+
+	def unwatch(self):
+		Gio.bus_unwatch_name(self.id)
+		self.id = None
+
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_value, traceback):
+		if not self.id is None:
+			self.unwatch()
+
 class OwnMixin(object):
 	__slots__ = ()
-	NameOwnerFlags = Gio.BusNameOwnerFlags
+	NameOwnerFlags = NameOwner.Flags
 
 	def own_name(self, name, flags=0, name_aquired=None, name_lost=None):
 		"""Asynchronously aquires a bus name.
@@ -25,31 +61,33 @@ class OwnMixin(object):
 
 		Returns
 		-------
-		int
-			Identifier that may be used to unown the name in the future.
+		NameOwner
+			An object you can use as a context manager to unown the name later.
 
 		See Also
 		--------
-		See https://developer.gnome.org/gio/2.40/gio-Owning-Bus-Names.html#g-bus-own-name
+		See https://developer.gnome.org/gio/2.44/gio-Owning-Bus-Names.html#g-bus-own-name
 		for more information.
 		"""
 		name_aquired_handler = (lambda con, name: name_aquired()) if name_aquired is not None else None
 		name_lost_handler    = (lambda con, name: name_lost())    if name_lost    is not None else None
-		return Gio.bus_own_name_on_connection(self.con, name, flags, name_aquired_handler, name_lost_handler)
+		return NameOwner(self.con, name, flags, name_aquired_handler, name_lost_handler)
 
-	def unown_name(self, id):
+	def unown_name(self, name_owner):
 		"""Stops owning a name.
+		
+		Deprecated. Use name_owner.unown() or use name_owner in a with statement.
 		
 		Parameters
 		----------
-		id : int
-			Identifier returned by own_name().
+		name_owner : NameOwner
+			Object returned by own_name().
 		"""
-		return Gio.bus_unown_name(id)
+		name_owner.unown()
 
 class WatchMixin(object):
 	__slots__ = ()
-	NameWatcherFlags = Gio.BusNameWatcherFlags
+	NameWatcherFlags = NameWatcher.Flags
 
 	def watch_name(self, name, flags=0, name_appeared=None, name_vanished=None):
 		"""Asynchronously watches a bus name.
@@ -74,27 +112,29 @@ class WatchMixin(object):
 
 		Returns
 		-------
-		int
-			Identifier that may be used to unwatch the name in the future.
+		NameWatcher
+			An object you can use as a context manager to unwatch the name later.
 
 		See Also
 		--------
-		See https://developer.gnome.org/gio/2.40/gio-Watching-Bus-Names.html#g-bus-watch-name
+		See https://developer.gnome.org/gio/2.44/gio-Watching-Bus-Names.html#g-bus-watch-name
 		for more information.
 		"""
 		name_appeared_handler = (lambda con, name, name_owner: name_appeared(name_owner)) if name_appeared is not None else None
 		name_vanished_handler = (lambda con, name:             name_vanished())           if name_vanished is not None else None
-		return Gio.bus_watch_name_on_connection(self.con, name, flags, name_appeared_handler, name_vanished_handler)
+		return NameWatcher(self.con, name, flags, name_appeared_handler, name_vanished_handler)
 
-	def unwatch_name(self, id):
+	def unwatch_name(self, name_watcher):
 		"""Stops watching a name.
+		
+		Deprecated. Use name_watcher.unwatch() or use name_watcher in a with statement.
 		
 		Parameters
 		----------
-		id : int
-			Identifier returned by watch_name().
+		name_watcher : NameWatcher
+			Object returned by watch_name().
 		"""
-		return Gio.bus_unwatch_name(id)
+		name_watcher.unwatch()
 
 if __name__ == "__main__":
 	from . import SessionBus

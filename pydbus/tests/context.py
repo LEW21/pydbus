@@ -11,3 +11,11 @@ with SessionBus() as bus:
 	assert(notifications.Notify)
 
 assert(bus.con is None)
+
+with SessionBus() as bus:
+
+	with bus.own_name("net.lew21.Test"):
+		pass
+
+	with bus.watch_name("net.lew21.Test"):
+		pass
