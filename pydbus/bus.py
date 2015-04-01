@@ -49,8 +49,20 @@ class Bus(OwnMixin, WatchMixin):
 
 		return CompositeInterface(introspection)(self, bus_name, object_path)
 
-	def close():
-		self.con.close_sync(0)
+	def __enter__(self):
+		return self
+
+	def __exit__(self, exc_type, exc_value, traceback):
+		if self.con:
+			self.close()
+
+	def __del__(self):
+		if self.con:
+			self.close()
+
+	def close(self):
+		self.con.close_sync(None)
+		self.con = None
 
 def SystemBus():
 	return Bus(Bus.Type.SYSTEM)
