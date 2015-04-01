@@ -19,3 +19,6 @@ with SessionBus() as bus:
 
 	with bus.watch_name("net.lew21.Test"):
 		pass
+
+	with bus.subscribe(sender="net.lew21.Test"):
+		pass

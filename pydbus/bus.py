@@ -2,8 +2,9 @@ from gi.repository import Gio, GLib
 from xml.etree import ElementTree as ET
 
 from .bus_names import OwnMixin, WatchMixin
+from .subscription import SubscriptionMixin
 
-class Bus(OwnMixin, WatchMixin):
+class Bus(OwnMixin, WatchMixin, SubscriptionMixin):
 	Type = Gio.BusType
 
 	def __init__(self, type, timeout=10):
