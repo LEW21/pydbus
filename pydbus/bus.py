@@ -53,15 +53,6 @@ class Bus(OwnMixin, WatchMixin):
 		return self
 
 	def __exit__(self, exc_type, exc_value, traceback):
-		if self.con:
-			self.close()
-
-	def __del__(self):
-		if self.con:
-			self.close()
-
-	def close(self):
-		self.con.close_sync(None)
 		self.con = None
 
 def SystemBus():
