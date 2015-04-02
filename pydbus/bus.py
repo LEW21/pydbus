@@ -68,6 +68,49 @@ class ProxyObject(object):
 		self._bus_name = bus_name
 		self._path = path
 
+class Signal(object):
+	def __init__(self, iface, signal, args):
+		self.iface = iface
+		self.signal = signal
+		self.args = args
+		self.__name__ = signal
+		self.__qualname__ = iface + "." + signal
+		self.__doc__ = "Signal. Callback: (" + ", ".join(args) + ")"
+
+	def connect(self, object, callback):
+		"""Subscribe to the signal."""
+		def signal_fired(sender, object, iface, signal, params):
+			callback(*params)
+		return object._bus.subscribe(sender=object._bus_name, object=object._path, iface=self.iface, signal=self.signal, signal_fired=signal_fired)
+
+	def __get__(self, instance, owner):
+		if instance is None:
+			return self
+
+		class BoundSignal(object):
+			__slots__ = ("object", "signal")
+			__qualname__ = __name__ = self.iface + "." + self.signal
+			__module__ = "DBUS"
+
+			def __init__(self, object, signal):
+				self.object = object
+				self.signal = signal
+
+			def connect(self, callback):
+				return self.signal.connect(self.object, callback)
+			connect.__doc__ = "Subscribe to the signal. Callback: (" + ", ".join(self.args) + ")"
+
+			def __repr__(self):
+				return "<bound signal " + self.signal.__qualname__ + " of " + repr(self.object) + ">"
+
+		return BoundSignal(instance, self)
+
+	def __set__(self, instance, value):
+		raise AttributeError("can't set attribute")
+
+	def __repr__(self):
+		return "<signal " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
+
 def Interface(iface):
 
 	class interface(ProxyObject):
@@ -102,6 +145,8 @@ def Interface(iface):
 	for member in iface:
 		if member.tag == "method":
 			setattr(interface, member.attrib["name"], Functor(member))
+		elif member.tag == "signal":
+			setattr(interface, member.attrib["name"], Signal(iface.attrib["name"], member.attrib["name"], [arg.attrib["type"] for arg in member if arg.tag == "arg"]))
 
 	return interface
 
