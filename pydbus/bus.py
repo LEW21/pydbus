@@ -78,7 +78,8 @@ def Interface(iface):
 				print("\t" + member.tag + " " + member.attrib["name"])
 			print()
 
-	interface.__name__ = iface.attrib["name"]
+	interface.__qualname__ = interface.__name__ = iface.attrib["name"]
+	interface.__module__ = "DBUS"
 
 	def Functor(method):
 		iface_name = iface.attrib["name"]
@@ -93,6 +94,8 @@ def Interface(iface):
 				iface_name, method_name, GLib.Variant(sinargs, args), GLib.VariantType.new(soutargs),
 				0, self._bus.timeout, None).unpack()
 		functor.__name__ = method_name
+		functor.__qualname__ = iface_name + "." + functor.__name__
+		functor.__module__ = "DBUS"
 		functor.__doc__ = "(" + ", ".join(inargs) + ")" + " -> " + "(" + ", ".join(outargs) + ")"
 		return functor
 
@@ -124,7 +127,11 @@ def CompositeInterface(introspection):
 				except:
 					pass
 
-	CompositeObject.__bases__ = tuple(Interface(iface) for iface in introspection)
+	ifaces = sorted([x for x in introspection], key=lambda x: int(x.attrib["name"].startswith("org.freedesktop.DBus.")))
+	CompositeObject.__bases__ = tuple(Interface(iface) for iface in ifaces)
+	CompositeObject.__name__ = "<CompositeObject>"
+	CompositeObject.__qualname__ = "<CompositeObject>(" + "+".join(x.__name__ for x in CompositeObject.__bases__) + ")"
+	CompositeObject.__module__ = "DBUS"
 	return CompositeObject
 
 if __name__ == "__main__":
