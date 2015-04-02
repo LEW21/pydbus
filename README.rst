@@ -7,6 +7,11 @@ It's based on PyGI_, the Python GObject Introspection bindings, which is the rec
 
 It's pythonic!
 
+Examples
+--------
+
+Send a desktop notification
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. code-block:: python
 
 	from pydbus import SessionBus
@@ -16,6 +21,8 @@ It's pythonic!
 
 	notifications.Notify('test', 0, 'dialog-information', "Hello World!", "pydbus works :)", [], {}, 5000)
 
+List systemd units
+~~~~~~~~~~~~~~~~~~
 .. code-block:: python
 
 	from pydbus import SystemBus
@@ -25,6 +32,19 @@ It's pythonic!
 
 	for unit in systemd.ListUnits()[0]:
 	    print(unit)
+
+Watch for new systemd jobs
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: python
+
+	from pydbus import SystemBus
+	from gi.repository import GObject
+
+	bus = SystemBus()
+	systemd = bus.get(".systemd1")
+
+	systemd.JobNew.connect(print)
+	GObject.MainLoop().run()
 
 .. _PyGI: https://wiki.gnome.org/PyGObject
 
