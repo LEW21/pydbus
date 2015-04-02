@@ -28,7 +28,7 @@ class SubscriptionMixin(object):
 	__slots__ = ()
 	SubscriptionFlags = Subscription.Flags
 
-	def subscribe(self, sender=None, iface=None, member=None, object=None, arg0=None, flags=0, signal_fired=None):
+	def subscribe(self, sender=None, iface=None, signal=None, object=None, arg0=None, flags=0, signal_fired=None):
 		"""Subscribes to matching signals.
 
 		Subscribes to signals on connection and invokes signal_fired callback
@@ -43,7 +43,7 @@ class SubscriptionMixin(object):
 			Sender name to match on (unique or well-known name) or None to listen from all senders.
 		iface : string, optional
 			Interface name to match on or None to match on all interfaces.
-		member : string, optional
+		signal : string, optional
 			Signal name to match on or None to match on all signals.
 		object : string, optional
 			Object path to match on or None to match on all object paths.
@@ -51,7 +51,8 @@ class SubscriptionMixin(object):
 			Contents of first string argument to match on or None to match on all kinds of arguments.
 		flags : SubscriptionFlags, optional
 		signal_fired : callable, optional
-			Invoked when there is a signal matching the requested data
+			Invoked when there is a signal matching the requested data.
+			Parameters: sender, object, iface, signal, params
 
 		Returns
 		-------
@@ -63,4 +64,5 @@ class SubscriptionMixin(object):
 		See https://developer.gnome.org/gio/2.44/GDBusConnection.html#g-dbus-connection-signal-subscribe
 		for more information.
 		"""
-		return Subscription(self.con, sender, iface, member, object, arg0, flags, signal_fired if signal_fired is not None else lambda *args: None)
+		callback = (lambda con, sender, object, iface, signal, params: signal_fired(sender, object, iface, signal, params.unpack())) if signal_fired is not None else lambda *args: None
+		return Subscription(self.con, sender, iface, signal, object, arg0, flags, callback)
