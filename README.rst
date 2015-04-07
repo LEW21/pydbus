@@ -46,6 +46,11 @@ Watch for new systemd jobs
 	systemd.JobNew.connect(print)
 	GObject.MainLoop().run()
 
+	# or
+
+	systemd.onJobNew = print
+	GObject.MainLoop().run()
+
 .. _PyGI: https://wiki.gnome.org/PyGObject
 
 Copyright Information

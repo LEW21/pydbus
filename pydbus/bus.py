@@ -111,6 +111,44 @@ class Signal(object):
 	def __repr__(self):
 		return "<signal " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
 
+class OnSignal(object):
+	def __init__(self, signal):
+		self.signal = signal
+		self.__name__ = "on" + signal.signal
+		self.__qualname__ = "on" + signal.iface + "." + signal.signal
+		self.__doc__ = "Assign a callback to subscribe to the signal. Assing None to unsubscribe. Callback: (" + ", ".join(signal.args) + ")"
+
+	def __get__(self, instance, owner):
+		if instance is None:
+			return self
+
+		try:
+			return getattr(instance, "_on" + self.signal.signal)
+		except AttributeError:
+			return None
+
+	def __set__(self, instance, value):
+		if instance is None:
+			raise AttributeError("can't set attribute")
+
+		try:
+			old = getattr(instance, "_sub" + self.signal.signal)
+			old.unsubscribe()
+		except AttributeError:
+			pass
+
+		if value is None:
+			delattr(instance, "_on" + self.signal.signal)
+			delattr(instance, "_sub" + self.signal.signal)
+			return
+
+		sub = self.signal.connect(instance, value)
+		setattr(instance, "_on" + self.signal.signal, value)
+		setattr(instance, "_sub" + self.signal.signal, sub)
+
+	def __repr__(self):
+		return "<descriptor " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
+
 def Interface(iface):
 
 	class interface(ProxyObject):
@@ -146,7 +184,9 @@ def Interface(iface):
 		if member.tag == "method":
 			setattr(interface, member.attrib["name"], Functor(member))
 		elif member.tag == "signal":
-			setattr(interface, member.attrib["name"], Signal(iface.attrib["name"], member.attrib["name"], [arg.attrib["type"] for arg in member if arg.tag == "arg"]))
+			signal = Signal(iface.attrib["name"], member.attrib["name"], [arg.attrib["type"] for arg in member if arg.tag == "arg"])
+			setattr(interface, member.attrib["name"], signal)
+			setattr(interface, "on" + member.attrib["name"], OnSignal(signal))
 
 	return interface
 
