@@ -74,7 +74,7 @@ class Signal(object):
 		self.signal = signal
 		self.args = args
 		self.__name__ = signal
-		self.__qualname__ = iface + "." + signal
+		self.__qualname__ = iface + "." + self.__name__
 		self.__doc__ = "Signal. Callback: (" + ", ".join(args) + ")"
 
 	def connect(self, object, callback):
@@ -115,7 +115,7 @@ class OnSignal(object):
 	def __init__(self, signal):
 		self.signal = signal
 		self.__name__ = "on" + signal.signal
-		self.__qualname__ = "on" + signal.iface + "." + signal.signal
+		self.__qualname__ = signal.iface + "." + self.__name__
 		self.__doc__ = "Assign a callback to subscribe to the signal. Assing None to unsubscribe. Callback: (" + ", ".join(signal.args) + ")"
 
 	def __get__(self, instance, owner):
