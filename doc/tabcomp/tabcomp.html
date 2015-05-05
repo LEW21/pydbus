@@ -1,0 +1,317 @@
+<html>
+<head>
+<title>pydbus tab completion demo</title>
+<style>
+div {
+	position: relative;
+	display: inline-block;
+	width: 780px;
+	height: 460px;
+}
+
+img {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+span {
+	position: absolute;
+	left: 10px;
+	bottom: 10px;
+	border: 3px solid black;
+	border-radius: 3px;
+	display: block;
+	background-color: white;
+	text-align: center;
+	line-height: 40px;
+	font-family: "Open Sans";
+	font-size: 30px;
+	padding: 0 10px;
+}
+
+strong {
+	position: absolute;
+	border: 1px solid red;
+	left: 105px;
+	top: 18px;
+	height: 250px;
+	width: 180px;
+}
+
+/*
+TABTAB 4-14
+N TAB 24-34
+TABTAB 44-54
+y TAB 64-74
+*/
+
+@keyframes tab {
+  0%  { opacity: 0; }
+  /* TABTAB */
+  3.9% { opacity: 0; }
+  4.0% { opacity: 1; }
+  8.0% { opacity: 0; }
+  9.9% { opacity: 0; }
+  10.0% { opacity: 1; }
+  14.0% { opacity: 0; }
+
+  /* TAB */
+  29.9% { opacity: 0; }
+  30.0% { opacity: 1; }
+  34.0% { opacity: 0; }
+
+  /* TABTAB */
+  43.9% { opacity: 0; }
+  44.0% { opacity: 1; }
+  48.0% { opacity: 0; }
+  49.9% { opacity: 0; }
+  50.0% { opacity: 1; }
+  54.0% { opacity: 0; }
+
+  /* TAB */
+  69.9% { opacity: 0; }
+  70.0% { opacity: 1; }
+  74.0% { opacity: 0; }
+
+  100% { opacity: 0; }
+}
+@keyframes N {
+  0%  { opacity: 0; }
+  23.9% { opacity: 0; }
+  24.0% { opacity: 1; }
+  28.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes y {
+  0%  { opacity: 0; }
+  63.9% { opacity: 0; }
+  64.0% { opacity: 1; }
+  68.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes s1 {
+  0%  { opacity: 1; }
+  9.9% { opacity: 1; }
+  10.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes strong {
+  0%  { opacity: 0; }
+  9.9% {opacity: 0; }
+  10.0% { opacity: 1; }
+  20.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes s2 {
+  0%  { opacity: 0; }
+  9.9% { opacity: 0; }
+  10.0% { opacity: 1; }
+  23.9% { opacity: 1; }
+  24.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes s3 {
+  0%  { opacity: 0; }
+  23.9% { opacity: 0; }
+  24.0% { opacity: 1; }
+  29.9% { opacity: 1; }
+  30.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes s4 {
+  0%  { opacity: 0; }
+  29.9% { opacity: 0; }
+  30.0% { opacity: 1; }
+  49.9% { opacity: 1; }
+  50.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes s5 {
+  0%  { opacity: 0; }
+  49.9% { opacity: 0; }
+  50.0% { opacity: 1; }
+  63.9% { opacity: 1; }
+  64.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes s6 {
+  0%  { opacity: 0; }
+  63.9% { opacity: 0; }
+  64.0% { opacity: 1; }
+  69.9% { opacity: 1; }
+  70.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes s7 {
+  0%  { opacity: 0; }
+  69.9% { opacity: 0; }
+  70.0% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+
+@-webkit-keyframes tab {
+  0%  { opacity: 0; }
+  /* TABTAB */
+  3.9% { opacity: 0; }
+  4.0% { opacity: 1; }
+  8.0% { opacity: 0; }
+  9.9% { opacity: 0; }
+  10.0% { opacity: 1; }
+  14.0% { opacity: 0; }
+
+  /* TAB */
+  29.9% { opacity: 0; }
+  30.0% { opacity: 1; }
+  34.0% { opacity: 0; }
+
+  /* TABTAB */
+  43.9% { opacity: 0; }
+  44.0% { opacity: 1; }
+  48.0% { opacity: 0; }
+  49.9% { opacity: 0; }
+  50.0% { opacity: 1; }
+  54.0% { opacity: 0; }
+
+  /* TAB */
+  69.9% { opacity: 0; }
+  70.0% { opacity: 1; }
+  74.0% { opacity: 0; }
+
+  100% { opacity: 0; }
+}
+@-webkit-keyframes N {
+  0%  { opacity: 0; }
+  23.9% { opacity: 0; }
+  24.0% { opacity: 1; }
+  28.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes y {
+  0%  { opacity: 0; }
+  63.9% { opacity: 0; }
+  64.0% { opacity: 1; }
+  68.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes s1 {
+  0%  { opacity: 1; }
+  9.9% { opacity: 1; }
+  10.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes strong {
+  0%  { opacity: 0; }
+  9.9% {opacity: 0; }
+  10.0% { opacity: 1; }
+  20.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes s2 {
+  0%  { opacity: 0; }
+  9.9% { opacity: 0; }
+  10.0% { opacity: 1; }
+  23.9% { opacity: 1; }
+  24.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes s3 {
+  0%  { opacity: 0; }
+  23.9% { opacity: 0; }
+  24.0% { opacity: 1; }
+  29.9% { opacity: 1; }
+  30.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes s4 {
+  0%  { opacity: 0; }
+  29.9% { opacity: 0; }
+  30.0% { opacity: 1; }
+  49.9% { opacity: 1; }
+  50.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes s5 {
+  0%  { opacity: 0; }
+  49.9% { opacity: 0; }
+  50.0% { opacity: 1; }
+  63.9% { opacity: 1; }
+  64.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes s6 {
+  0%  { opacity: 0; }
+  63.9% { opacity: 0; }
+  64.0% { opacity: 1; }
+  69.9% { opacity: 1; }
+  70.0% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@-webkit-keyframes s7 {
+  0%  { opacity: 0; }
+  69.9% { opacity: 0; }
+  70.0% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+
+
+span, img, strong {
+	-webkit-animation-duration: 15s;
+	-webkit-animation-iteration-count: infinite;
+	animation-duration: 15s;
+	animation-iteration-count: infinite;
+	opacity: 0;
+}
+
+span.tab { -webkit-animation-name: tab;    animation-name: tab; }
+span.N   { -webkit-animation-name: N;      animation-name: N; }
+span.y   { -webkit-animation-name: y;      animation-name: y; }
+img.s1   { -webkit-animation-name: s1;     animation-name: s1; }
+img.s2   { -webkit-animation-name: s2;     animation-name: s2; }
+img.s3   { -webkit-animation-name: s3;     animation-name: s3; }
+img.s4   { -webkit-animation-name: s4;     animation-name: s4; }
+img.s5   { -webkit-animation-name: s5;     animation-name: s5; }
+img.s6   { -webkit-animation-name: s6;     animation-name: s6; }
+img.s7   { -webkit-animation-name: s7;     animation-name: s7; }
+strong   { -webkit-animation-name: strong; animation-name: strong; }
+
+</style>
+</head>
+<body>
+
+<div>
+<img class="s1" src="s1.png">
+<img class="s2" src="s2.png">
+<img class="s3" src="s3.png">
+<img class="s4" src="s4.png">
+<img class="s5" src="s5.png">
+<img class="s6" src="s6.png">
+<img class="s7" src="s7.png">
+<span class="tab">TAB</span>
+<span class="N">N</span>
+<span class="y">y</span>
+<strong></strong>
+</div>
+
+</body>
+</html>
