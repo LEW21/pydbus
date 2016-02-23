@@ -7,7 +7,7 @@ with open('README.rst') as f:
 
 setup(
 	name = "pydbus",
-	version = "0.2",
+	version = "0.3",
 	description = "Pythonic DBus library",
 	long_description = readme,
 	author = "Janusz Lewandowski",
@@ -30,6 +30,7 @@ setup(
 		'Programming Language :: Python :: 3',
 		'Programming Language :: Python :: 3.3',
 		'Programming Language :: Python :: 3.4',
+		'Programming Language :: Python :: 3.5',
 		'Programming Language :: Python :: 2',
 		'Programming Language :: Python :: 2.7'
 	]
