@@ -53,6 +53,23 @@ Watch for new systemd jobs
 
 .. _PyGI: https://wiki.gnome.org/PyGObject
 
+View object's API
+~~~~~~~~~~~~~~~~~
+.. code-block:: python
+
+	from pydbus import SessionBus
+
+	bus = SessionBus()
+	notifications = bus.get('.Notifications')
+
+	help(notifications)
+
+Use tab-completion
+~~~~~~~~~~~~~~~~~~
+
+Console tab-completion is also supported! Type `notifications.` and press Tab two times to see all DBUS methods; type `notifications.N` and press Tab to get it autocomplete
+
+
 Copyright Information
 ---------------------
 
