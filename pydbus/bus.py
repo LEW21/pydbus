@@ -3,17 +3,39 @@ from xml.etree import ElementTree as ET
 
 from .bus_names import OwnMixin, WatchMixin
 from .subscription import SubscriptionMixin
+from .registration import RegistrationMixin
 
-class Bus(OwnMixin, WatchMixin, SubscriptionMixin):
+from .context import CompositeContextManagerClass
+
+class Bus(OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin):
 	Type = Gio.BusType
 
 	def __init__(self, type, timeout=10):
 		self.con = Gio.bus_get_sync(type, None)
 		self.timeout = timeout
 
+	@staticmethod
+	def _auto_bus_name(bus_name):
+		if bus_name[0] == ".":
+			#Default namespace
+			bus_name = "org.freedesktop" + bus_name
+
+		return bus_name
+
+	@staticmethod
+	def _auto_object_path(bus_name, object_path=None):
+		if object_path is None:
+			# They always name it like that.
+			object_path = "/" + bus_name.replace(".", "/")
+
+		if object_path[0] != "/":
+			object_path = "/" + bus_name.replace(".", "/") + "/" + object_path
+
+		return object_path
+
 	def get(self, bus_name, object_path=None):
 		"""Get a remote object.
-		
+
 		Parameters
 		----------
 		bus_name : string
@@ -33,13 +55,8 @@ class Bus(OwnMixin, WatchMixin, SubscriptionMixin):
 		>>> bus.get(".systemd1")[".Manager"]
 		which will give you access to the one specific interface.
 		"""
-		if bus_name[0] == ".":
-			#Default namespace
-			bus_name = "org.freedesktop" + bus_name
-
-		if object_path is None:
-			# They always name it like that.
-			object_path = "/" + bus_name.replace(".", "/")
+		bus_name = self._auto_bus_name(bus_name)
+		object_path = self._auto_object_path(bus_name, object_path)
 
 		xml = self.con.call_sync(
 			bus_name, object_path,
@@ -49,6 +66,30 @@ class Bus(OwnMixin, WatchMixin, SubscriptionMixin):
 		introspection = ET.fromstring(xml)
 
 		return CompositeInterface(introspection)(self, bus_name, object_path)
+
+	def expose(self, bus_name, *objects):
+		"""Expose objects on the bus. WIP"""
+		bus_name = self._auto_bus_name(bus_name)
+
+		context_managers = [self.own_name(bus_name)]
+
+		for object_info in objects:
+			path, object, node_info = (None, None, None)
+
+			if type(object_info) == tuple:
+				if len(object_info) == 3:
+					path, object, node_info = object_info
+				if len(object_info) == 2:
+					path, object = object_info
+				if len(object_info) == 1:
+					object = object_info[0]
+			else:
+				object = object_info
+
+			path = self._auto_object_path(bus_name, path)
+			context_managers.append(self.register_object(path, object, node_info))
+
+		return CompositeContextManagerClass("unexpose")(*context_managers)
 
 	def __enter__(self):
 		return self
