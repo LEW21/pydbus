@@ -1,11 +1,36 @@
-from gi.repository import Gio
+from gi.repository import GLib, Gio
 
-def MethodCallFunc(object):
-	def method_call_callback(connection, sender, object_path, interface_name, method_name, parameters, invocation):
-		# TODO
-		...
+class MethodCallFunc:
+	__slots__ = ["object", "outargs"]
 
-	return method_call_callback
+	def __init__(self, object, node_info):
+		self.object = object
+
+		self.outargs = {}
+		for iface in node_info.interfaces:
+			for method in iface.methods:
+				self.outargs[iface.name + "." + method.name] = [arg.signature for arg in method.out_args]
+
+	def __call__(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
+		try:
+			outargs = self.outargs[interface_name + "." + method_name]
+			soutargs = "(" + "".join(outargs) + ")"
+
+			method = getattr(self.object, method_name)
+
+			result = method(*parameters)
+
+			#if len(outargs) == 1:
+			#	result = (result,)
+
+			invocation.return_value(GLib.Variant(soutargs, result))
+
+		except Exception as e:
+			#TODO Think of a better way to translate Python exception types to DBus error types.
+			e_type = type(e).__name__
+			if not "." in e_type:
+				e_type = "unknown." + e_type
+			invocation.return_dbus_error(e_type, str(e))
 
 class ObjectRegistration(object):
 	__slots__ = ("con", "id")
@@ -43,4 +68,4 @@ class RegistrationMixin:
 
 		interface = node_info.interfaces[0]
 
-		return ObjectRegistration(self.con, path, interface, MethodCallFunc(object), None, None)
+		return ObjectRegistration(self.con, path, interface, MethodCallFunc(object, node_info), None, None)

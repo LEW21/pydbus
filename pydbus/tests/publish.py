@@ -1,5 +1,10 @@
 from pydbus import SessionBus
-from gi.repository import GObject
+from gi.repository import GObject, GLib
+from threading import Thread
+import sys
+
+done = 0
+loop = GObject.MainLoop()
 
 class TestObject(object):
 	'''
@@ -17,7 +22,11 @@ class TestObject(object):
 		self.id = id
 
 	def HelloWorld(self, a, b):
-		res = self.id + ": " + a + str(b)
+		res = (self.id + ": " + a + str(b),)
+		global done
+		done += 1
+		if done == 2:
+			loop.quit()
 		print(res)
 		return res
 
@@ -26,6 +35,28 @@ with SessionBus() as bus:
 		remoteMain = bus.get("net.lew21.pydbus.Test")
 		remoteLol = bus.get("net.lew21.pydbus.Test", "Lol")
 
-		# TODO run remoteMain.HelloWorld() and remoteLol.HelloWorld() in another thread.
+		def t1_func():
+			print(remoteMain.HelloWorld("t", 1))
 
-		GObject.MainLoop().run()
+		def t2_func():
+			print(remoteLol.HelloWorld("t", 2))
+
+		t1 = Thread(None, t1_func)
+		t2 = Thread(None, t2_func)
+		t1.daemon = True
+		t2.daemon = True
+
+		def handle_timeout():
+			print("ERROR: Timeout.")
+			sys.exit(1)
+
+		GLib.timeout_add_seconds(2, handle_timeout)
+
+		t1.start()
+		t2.start()
+
+		loop.run()
+
+		t1.join()
+		t2.join()
+
