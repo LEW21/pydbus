@@ -6,7 +6,7 @@ import sys
 done = 0
 loop = GObject.MainLoop()
 
-class TestObject:
+class TestObject(object):
 	'''
 <node>
 	<interface name='net.lvht.Foo1'>
