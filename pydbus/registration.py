@@ -36,22 +36,23 @@ class MethodCallFunc:
 			invocation.return_dbus_error(e_type, str(e))
 
 class ObjectRegistration(object):
-	__slots__ = ("con", "id")
+	__slots__ = ("con", "ids")
 
-	def __init__(self, con, path, interface, method_call_callback, get_property_callback, set_property_callback):
+	def __init__(self, con, path, node_info, method_call_callback, get_property_callback, set_property_callback):
 		self.con = con
-		self.id = con.register_object(path, interface, method_call_callback, get_property_callback, set_property_callback)
+		self.ids = [con.register_object(path, interface, method_call_callback, get_property_callback, set_property_callback) for interface in node_info.interfaces]
 
 	def unregister(self):
-		self.con.unregister_object(self.id)
+		for id in self.ids:
+			self.con.unregister_object(id)
 		self.con = None
-		self.id = None
+		self.ids = None
 
 	def __enter__(self):
 		return self
 
 	def __exit__(self, exc_type, exc_value, traceback):
-		if not self.id is None:
+		if not self.ids is None:
 			self.unregister()
 
 class RegistrationMixin:
@@ -66,9 +67,4 @@ class RegistrationMixin:
 
 		node_info = Gio.DBusNodeInfo.new_for_xml(node_info)
 
-		if len(node_info.interfaces) > 1:
-			raise NotImplementedError("Support for multiple interfaces is not implemented.")
-
-		interface = node_info.interfaces[0]
-
-		return ObjectRegistration(self.con, path, interface, MethodCallFunc(object, node_info), None, None)
+		return ObjectRegistration(self.con, path, node_info, MethodCallFunc(object, node_info), None, None)
