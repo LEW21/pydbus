@@ -3,11 +3,11 @@ from gi.repository import GLib, Gio
 class MethodCallFunc:
 	__slots__ = ["object", "outargs"]
 
-	def __init__(self, object, node_info):
+	def __init__(self, object, interfaces):
 		self.object = object
 
 		self.outargs = {}
-		for iface in node_info.interfaces:
+		for iface in interfaces:
 			for method in iface.methods:
 				self.outargs[iface.name + "." + method.name] = [arg.signature for arg in method.out_args]
 
@@ -38,9 +38,9 @@ class MethodCallFunc:
 class ObjectRegistration(object):
 	__slots__ = ("con", "ids")
 
-	def __init__(self, con, path, node_info, method_call_callback, get_property_callback, set_property_callback):
+	def __init__(self, con, path, interfaces, method_call_callback, get_property_callback, set_property_callback):
 		self.con = con
-		self.ids = [con.register_object(path, interface, method_call_callback, get_property_callback, set_property_callback) for interface in node_info.interfaces]
+		self.ids = [con.register_object(path, interface, method_call_callback, get_property_callback, set_property_callback) for interface in interfaces]
 
 	def unregister(self):
 		for id in self.ids:
@@ -65,6 +65,10 @@ class RegistrationMixin:
 			except AttributeError:
 				node_info = type(object).__doc__
 
-		node_info = Gio.DBusNodeInfo.new_for_xml(node_info)
+		if type(node_info) != list and type(node_info) != tuple:
+			node_info = [node_info]
 
-		return ObjectRegistration(self.con, path, node_info, MethodCallFunc(object, node_info), None, None)
+		node_info = [Gio.DBusNodeInfo.new_for_xml(ni) for ni in node_info]
+		interfaces = sum((ni.interfaces for ni in node_info), [])
+
+		return ObjectRegistration(self.con, path, interfaces, MethodCallFunc(object, interfaces), None, None)
