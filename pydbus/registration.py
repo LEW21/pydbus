@@ -23,7 +23,10 @@ class MethodCallFunc:
 			#if len(outargs) == 1:
 			#	result = (result,)
 
-			invocation.return_value(GLib.Variant(soutargs, result))
+			if len(outargs) == 0:
+				invocation.return_value(None)
+			else:
+				invocation.return_value(GLib.Variant(soutargs, result))
 
 		except Exception as e:
 			#TODO Think of a better way to translate Python exception types to DBus error types.
