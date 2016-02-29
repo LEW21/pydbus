@@ -71,4 +71,11 @@ class RegistrationMixin:
 		node_info = [Gio.DBusNodeInfo.new_for_xml(ni) for ni in node_info]
 		interfaces = sum((ni.interfaces for ni in node_info), [])
 
+		for iface in interfaces:
+			for signal in iface.signals:
+				s_name = signal.name
+				def EmitSignal(iface, signal):
+					return lambda *args: self.con.emit_signal(None, path, iface.name, signal.name, GLib.Variant("(" + "".join(s.signature for s in signal.args) + ")", args))
+				getattr(object, signal.name).connect(EmitSignal(iface, signal))
+
 		return ObjectRegistration(self.con, path, interfaces, MethodCallFunc(object, interfaces), None, None)
