@@ -35,6 +35,27 @@ class MethodCallFunc:
 				e_type = "unknown." + e_type
 			invocation.return_dbus_error(e_type, str(e))
 
+class GetPropertyFunc:
+	def __init__(self, object, interfaces):
+		self.object = object
+
+		self.types = {}
+		for iface in interfaces:
+			for prop in iface.properties:
+				self.types[iface.name + "." + prop.name] = prop.signature
+
+	def __call__(self, connection, sender, object_path, interface_name, property_name):
+		type = self.types[interface_name + "." + property_name]
+		result = getattr(self.object, property_name)
+		return GLib.Variant(type, result)
+
+class SetPropertyFunc:
+	def __init__(self, object, interfaces):
+		self.object = object
+
+	def __call__(self, connection, sender, object_path, interface_name, property_name):
+		setattr(self.object, property_name, value.unpack())
+
 class ObjectRegistration(object):
 	__slots__ = ("con", "ids")
 
@@ -78,4 +99,4 @@ class RegistrationMixin:
 					return lambda *args: self.con.emit_signal(None, path, iface.name, signal.name, GLib.Variant("(" + "".join(s.signature for s in signal.args) + ")", args))
 				getattr(object, signal.name).connect(EmitSignal(iface, signal))
 
-		return ObjectRegistration(self.con, path, interfaces, MethodCallFunc(object, interfaces), None, None)
+		return ObjectRegistration(self.con, path, interfaces, MethodCallFunc(object, interfaces), GetPropertyFunc(object, interfaces), SetPropertyFunc(object, interfaces))
