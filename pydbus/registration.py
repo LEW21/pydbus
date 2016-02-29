@@ -1,7 +1,9 @@
 from gi.repository import GLib, Gio
 
-class MethodCallFunc:
-	__slots__ = ["object", "outargs"]
+from . import generic
+
+class ObjectWrapper:
+	__slots__ = ["object", "outargs", "property_types"]
 
 	def __init__(self, object, interfaces):
 		self.object = object
@@ -11,7 +13,31 @@ class MethodCallFunc:
 			for method in iface.methods:
 				self.outargs[iface.name + "." + method.name] = [arg.signature for arg in method.out_args]
 
-	def __call__(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
+		self.property_types = {}
+		for iface in interfaces:
+			for prop in iface.properties:
+				self.property_types[iface.name + "." + prop.name] = prop.signature
+
+		for iface in interfaces:
+			for signal in iface.signals:
+				s_name = signal.name
+				def EmitSignal(iface, signal):
+					return lambda *args: self.SignalEmitted(iface.name, signal.name, GLib.Variant("(" + "".join(s.signature for s in signal.args) + ")", args))
+				getattr(object, signal.name).connect(EmitSignal(iface, signal))
+
+		if "org.freedesktop.DBus.Properties" not in (iface.name for iface in interfaces):
+			try:
+				def onPropertiesChanged(iface, changed, invalidated):
+					changed = {key: GLib.Variant(self.property_types[iface + "." + key], val) for key, val in changed.items()}
+					args = GLib.Variant("(sa{sv}as)", (iface, changed, invalidated))
+					self.SignalEmitted("org.freedesktop.DBus.Properties", "PropertiesChanged", args)
+				object.PropertiesChanged.connect(onPropertiesChanged)
+			except AttributeError:
+				pass
+
+	SignalEmitted = generic.signal()
+
+	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
 		try:
 			outargs = self.outargs[interface_name + "." + method_name]
 			soutargs = "(" + "".join(outargs) + ")"
@@ -35,33 +61,26 @@ class MethodCallFunc:
 				e_type = "unknown." + e_type
 			invocation.return_dbus_error(e_type, str(e))
 
-class GetPropertyFunc:
-	def __init__(self, object, interfaces):
-		self.object = object
-
-		self.types = {}
-		for iface in interfaces:
-			for prop in iface.properties:
-				self.types[iface.name + "." + prop.name] = prop.signature
-
-	def __call__(self, connection, sender, object_path, interface_name, property_name):
-		type = self.types[interface_name + "." + property_name]
+	def get_property(self, connection, sender, object_path, interface_name, property_name):
+		type = self.property_types[interface_name + "." + property_name]
 		result = getattr(self.object, property_name)
 		return GLib.Variant(type, result)
 
-class SetPropertyFunc:
-	def __init__(self, object, interfaces):
-		self.object = object
-
-	def __call__(self, connection, sender, object_path, interface_name, property_name):
+	def set_property(self, connection, sender, object_path, interface_name, property_name, value):
+		type = self.property_types[interface_name + "." + property_name]
+		assert(value.is_signature(type))
 		setattr(self.object, property_name, value.unpack())
 
 class ObjectRegistration(object):
 	__slots__ = ("con", "ids")
 
-	def __init__(self, con, path, interfaces, method_call_callback, get_property_callback, set_property_callback):
+	def __init__(self, con, path, interfaces, wrapper):
+		def func(interface_name, signal_name, parameters):
+			con.emit_signal(None, path, interface_name, signal_name, parameters)
+		wrapper.SignalEmitted.connect(func)
+
 		self.con = con
-		self.ids = [con.register_object(path, interface, method_call_callback, get_property_callback, set_property_callback) for interface in interfaces]
+		self.ids = [con.register_object(path, interface, wrapper.call_method, wrapper.get_property, wrapper.set_property) for interface in interfaces]
 
 	def unregister(self):
 		for id in self.ids:
@@ -92,25 +111,5 @@ class RegistrationMixin:
 		node_info = [Gio.DBusNodeInfo.new_for_xml(ni) for ni in node_info]
 		interfaces = sum((ni.interfaces for ni in node_info), [])
 
-		for iface in interfaces:
-			for signal in iface.signals:
-				s_name = signal.name
-				def EmitSignal(iface, signal):
-					return lambda *args: self.con.emit_signal(None, path, iface.name, signal.name, GLib.Variant("(" + "".join(s.signature for s in signal.args) + ")", args))
-				getattr(object, signal.name).connect(EmitSignal(iface, signal))
-
-		if "org.freedesktop.DBus.Properties" not in (iface.name for iface in interfaces):
-			if hasattr(object, "PropertiesChanged"):
-				types = {}
-				for iface in interfaces:
-					for prop in iface.properties:
-						types[iface.name + "." + prop.name] = prop.signature
-
-				def onPropertiesChanged(iface, changed, invalidated):
-					changed = {key: GLib.Variant(types[iface + "." + key], val) for key, val in changed.items()}
-					args = GLib.Variant("(sa{sv}as)", (iface, changed, invalidated))
-					self.con.emit_signal(None, path, "org.freedesktop.DBus.Properties", "PropertiesChanged", args)
-
-				object.PropertiesChanged.connect(onPropertiesChanged)
-
-		return ObjectRegistration(self.con, path, interfaces, MethodCallFunc(object, interfaces), GetPropertyFunc(object, interfaces), SetPropertyFunc(object, interfaces))
+		wrapper = ObjectWrapper(object, interfaces)
+		return ObjectRegistration(self.con, path, interfaces, wrapper)
