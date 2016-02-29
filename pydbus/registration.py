@@ -47,9 +47,6 @@ class GetPropertyFunc:
 	def __call__(self, connection, sender, object_path, interface_name, property_name):
 		type = self.types[interface_name + "." + property_name]
 		result = getattr(self.object, property_name)
-		if "v" in type:
-			# TODO
-			return None
 		return GLib.Variant(type, result)
 
 class SetPropertyFunc:
@@ -104,12 +101,14 @@ class RegistrationMixin:
 
 		if "org.freedesktop.DBus.Properties" not in (iface.name for iface in interfaces):
 			if hasattr(object, "PropertiesChanged"):
-				def onPropertiesChanged(iface, changed, invalidated):
-					#args = GLib.Variant("(sa{sv}as)", (iface, changed, invalidated))
-					# Crashes with TypeError: argument value: Expected GLib.Variant, but got int
+				types = {}
+				for iface in interfaces:
+					for prop in iface.properties:
+						types[iface.name + "." + prop.name] = prop.signature
 
-					modified = list(changed.keys()) + invalidated
-					args = GLib.Variant("(sa{sv}as)", (iface, {}, modified))
+				def onPropertiesChanged(iface, changed, invalidated):
+					changed = {key: GLib.Variant(types[iface + "." + key], val) for key, val in changed.items()}
+					args = GLib.Variant("(sa{sv}as)", (iface, changed, invalidated))
 					self.con.emit_signal(None, path, "org.freedesktop.DBus.Properties", "PropertiesChanged", args)
 
 				object.PropertiesChanged.connect(onPropertiesChanged)
