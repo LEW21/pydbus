@@ -1,3 +1,5 @@
+from __future__ import print_function
+import sys, traceback
 from gi.repository import GLib, Gio
 from . import generic
 from .exitable import ExitableWithAliases
@@ -62,14 +64,27 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			invocation.return_dbus_error(e_type, str(e))
 
 	def get_property(self, connection, sender, object_path, interface_name, property_name):
-		type = self.property_types[interface_name + "." + property_name]
-		result = getattr(self.object, property_name)
-		return GLib.Variant(type, result)
+		# Note: It's impossible to correctly return an exception, as
+		# g_dbus_connection_register_object_with_closures does not support it
+		try:
+			raise KeyError("aaa")
+			type = self.property_types[interface_name + "." + property_name]
+			result = getattr(self.object, property_name)
+			return GLib.Variant(type, result)
+		except Exception:
+			print(traceback.format_exc(), file=sys.stderr)
+			return None
 
 	def set_property(self, connection, sender, object_path, interface_name, property_name, value):
-		type = self.property_types[interface_name + "." + property_name]
-		assert(value.is_signature(type))
-		setattr(self.object, property_name, value.unpack())
+		# Note: It's impossible to correctly return an exception, as
+		# g_dbus_connection_register_object_with_closures does not support it
+		try:
+			type = self.property_types[interface_name + "." + property_name]
+			assert(value.is_signature(type))
+			setattr(self.object, property_name, value.unpack())
+		except Exception:
+			print(traceback.format_exc(), file=sys.stderr)
+			return None
 
 class ObjectRegistration(ExitableWithAliases("unregister")):
 	__slots__ = ()
