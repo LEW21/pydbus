@@ -149,6 +149,42 @@ class OnSignal(object):
 	def __repr__(self):
 		return "<descriptor " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
 
+class Property(object):
+	def __init__(self, iface_name, prop_name, prop_type, access):
+		self._iface_name = iface_name
+		self._type = prop_type
+		self._readable = access.startswith("read")
+		self._writeable = access.endswith("write")
+		self.__name__ = prop_name
+		self.__qualname__ = iface_name + "." + self.__name__
+		self.__doc__ = "(" + prop_type + ") " + access
+
+	def __get__(self, instance, owner):
+		if instance is None:
+			return self
+
+		if not self._readable:
+			raise AttributeError("unreadable attribute")
+
+		return instance._bus.con.call_sync(
+			instance._bus_name, instance._path,
+			"org.freedesktop.DBus.Properties", "Get",
+			GLib.Variant("(ss)", (self._iface_name, self.__name__)), GLib.VariantType.new("(v)"),
+			0, instance._bus.timeout, None).unpack()[0]
+
+	def __set__(self, instance, value):
+		if instance is None or not self._writeable:
+			raise AttributeError("can't set attribute")
+
+		instance._bus.con.call_sync(
+			instance._bus_name, instance._path,
+			"org.freedesktop.DBus.Properties", "Set",
+			GLib.Variant("(ssv)", (self._iface_name, self.__name__, GLib.Variant(self._type, value))), None,
+			0, instance._bus.timeout, None)
+
+	def __repr__(self):
+		return "<property " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
+
 def Interface(iface):
 
 	class interface(ProxyObject):
@@ -187,6 +223,9 @@ def Interface(iface):
 			signal = Signal(iface.attrib["name"], member.attrib["name"], [arg.attrib["type"] for arg in member if arg.tag == "arg"])
 			setattr(interface, member.attrib["name"], signal)
 			setattr(interface, "on" + member.attrib["name"], OnSignal(signal))
+		elif member.tag == "property":
+			setattr(interface, member.attrib["name"],
+					Property(iface.attrib["name"], member.attrib["name"], member.attrib["type"], member.attrib["access"]))
 
 	return interface
 
