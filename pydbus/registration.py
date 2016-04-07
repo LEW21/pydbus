@@ -1,8 +1,9 @@
 import sys, traceback
 from gi.repository import GLib, Gio
 from . import generic
+from .exitable import ExitableWithAliases
 
-class ObjectWrapper:
+class ObjectWrapper(ExitableWithAliases("unwrap")):
 	__slots__ = ["object", "outargs", "property_types"]
 
 	def __init__(self, object, interfaces):
@@ -23,7 +24,7 @@ class ObjectWrapper:
 				s_name = signal.name
 				def EmitSignal(iface, signal):
 					return lambda *args: self.SignalEmitted(iface.name, signal.name, GLib.Variant("(" + "".join(s.signature for s in signal.args) + ")", args))
-				getattr(object, signal.name).connect(EmitSignal(iface, signal))
+				self._at_exit(getattr(object, signal.name).connect(EmitSignal(iface, signal)).__exit__)
 
 		if "org.freedesktop.DBus.Properties" not in (iface.name for iface in interfaces):
 			try:
@@ -31,7 +32,7 @@ class ObjectWrapper:
 					changed = {key: GLib.Variant(self.property_types[iface + "." + key], val) for key, val in changed.items()}
 					args = GLib.Variant("(sa{sv}as)", (iface, changed, invalidated))
 					self.SignalEmitted("org.freedesktop.DBus.Properties", "PropertiesChanged", args)
-				object.PropertiesChanged.connect(onPropertiesChanged)
+				self._at_exit(object.PropertiesChanged.connect(onPropertiesChanged).__exit__)
 			except AttributeError:
 				pass
 
@@ -84,29 +85,20 @@ class ObjectWrapper:
 			print(traceback.format_exc(), file=sys.stderr)
 			return None
 
-class ObjectRegistration(object):
-	__slots__ = ("con", "ids")
+class ObjectRegistration(ExitableWithAliases("unregister")):
+	__slots__ = ()
 
-	def __init__(self, con, path, interfaces, wrapper):
+	def __init__(self, con, path, interfaces, wrapper, own_wrapper=False):
+		if own_wrapper:
+			self._at_exit(wrapper.__exit__)
+
 		def func(interface_name, signal_name, parameters):
 			con.emit_signal(None, path, interface_name, signal_name, parameters)
-		wrapper.SignalEmitted.connect(func)
 
-		self.con = con
-		self.ids = [con.register_object(path, interface, wrapper.call_method, wrapper.get_property, wrapper.set_property) for interface in interfaces]
+		self._at_exit(wrapper.SignalEmitted.connect(func).__exit__)
 
-	def unregister(self):
-		for id in self.ids:
-			self.con.unregister_object(id)
-		self.con = None
-		self.ids = None
-
-	def __enter__(self):
-		return self
-
-	def __exit__(self, exc_type, exc_value, traceback):
-		if not self.ids is None:
-			self.unregister()
+		ids = [con.register_object(path, interface, wrapper.call_method, wrapper.get_property, wrapper.set_property) for interface in interfaces]
+		self._at_exit(lambda: [con.unregister_object(id) for id in ids])
 
 class RegistrationMixin:
 	__slots__ = ()
@@ -125,4 +117,4 @@ class RegistrationMixin:
 		interfaces = sum((ni.interfaces for ni in node_info), [])
 
 		wrapper = ObjectWrapper(object, interfaces)
-		return ObjectRegistration(self.con, path, interfaces, wrapper)
+		return ObjectRegistration(self.con, path, interfaces, wrapper, own_wrapper=True)
