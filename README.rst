@@ -7,6 +7,8 @@ It's based on PyGI_, the Python GObject Introspection bindings, which is the rec
 
 It's pythonic!
 
+And now, it can also publish objects!
+
 Examples
 --------
 
@@ -51,8 +53,6 @@ Watch for new systemd jobs
 	systemd.onJobNew = print
 	GObject.MainLoop().run()
 
-.. _PyGI: https://wiki.gnome.org/PyGObject
-
 View object's API
 ~~~~~~~~~~~~~~~~~
 .. code-block:: python
@@ -64,11 +64,13 @@ View object's API
 
 	help(notifications)
 
-Use tab-completion
-~~~~~~~~~~~~~~~~~~
+More examples & documentation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Console tab-completion is also supported! Type `notifications.` and press Tab two times to see all DBUS methods; type `notifications.N` and press Tab to get it autocomplete
+The Tutorial_ contains more examples and docs.
 
+.. _PyGI: https://wiki.gnome.org/PyGObject
+.. _Tutorial: https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst
 
 Copyright Information
 ---------------------
