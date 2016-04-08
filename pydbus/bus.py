@@ -8,7 +8,7 @@ from .publication import PublicationMixin
 class Bus(ProxyMixin, OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin, PublicationMixin):
 	Type = Gio.BusType
 
-	def __init__(self, type, timeout=10):
+	def __init__(self, type, timeout=1000):
 		self.con = Gio.bus_get_sync(type, None)
 		self.timeout = timeout
 
