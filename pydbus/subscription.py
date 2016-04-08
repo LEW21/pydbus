@@ -1,28 +1,13 @@
 from gi.repository import Gio
+from .exitable import ExitableWithAliases
 
-class Subscription(object):
+class Subscription(ExitableWithAliases("unsubscribe", "disconnect")):
 	Flags = Gio.DBusSignalFlags
-	__slots__ = ("con", "id")
+	__slots__ = ()
 
 	def __init__(self, con, sender, iface, member, object, arg0, flags, callback):
-		self.con = con
-		self.id = con.signal_subscribe(sender, iface, member, object, arg0, flags, callback)
-
-	def unsubscribe(self):
-		self.con.signal_unsubscribe(self.id)
-		self.con = None
-		self.id = None
-
-	def disconnect(self):
-		"""An alias for unsubscribe()"""
-		self.unsubscribe()
-
-	def __enter__(self):
-		return self
-
-	def __exit__(self, exc_type, exc_value, traceback):
-		if not self.id is None:
-			self.unsubscribe()
+		id = con.signal_subscribe(sender, iface, member, object, arg0, flags, callback)
+		self._at_exit(lambda: con.signal_unsubscribe(id))
 
 class SubscriptionMixin(object):
 	__slots__ = ()
