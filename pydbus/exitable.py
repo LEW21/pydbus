@@ -34,7 +34,10 @@ class Exitable(object):
 
 	@property
 	def _exited(self):
-		return self._at_exit_cbs is None
+		try:
+			return self._at_exit_cbs is None
+		except AttributeError:
+			return True
 
 def ExitableWithAliases(*exit_methods):
 	class CustomExitable(Exitable):
