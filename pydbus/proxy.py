@@ -1,6 +1,7 @@
 from gi.repository import GLib
 from xml.etree import ElementTree as ET
 from .auto_names import *
+from . import generic
 
 try:
 	from inspect import Signature, Parameter
@@ -55,42 +56,26 @@ class ProxyObject(object):
 		self._bus_name = bus_name
 		self._path = path
 
-class Signal(object):
-	def __init__(self, iface, signal, args):
-		self.iface = iface
-		self.signal = signal
-		self.args = args
-		self.__name__ = signal
-		self.__qualname__ = iface + "." + self.__name__
-		self.__doc__ = "Signal. Callback: (" + ", ".join(args) + ")"
+class ProxySignal(object):
+	def __init__(self, iface_name, signal):
+		self._iface_name = iface_name
+		self.__name__ = signal.attrib["name"]
+		self.__qualname__ = self._iface_name + "." + self.__name__
+
+		self._args = [arg.attrib["type"] for arg in signal if arg.tag == "arg"]
+		self.__doc__ = "Signal. Callback: (" + ", ".join(self._args) + ")"
 
 	def connect(self, object, callback):
 		"""Subscribe to the signal."""
 		def signal_fired(sender, object, iface, signal, params):
 			callback(*params)
-		return object._bus.subscribe(sender=object._bus_name, object=object._path, iface=self.iface, signal=self.signal, signal_fired=signal_fired)
+		return object._bus.subscribe(sender=object._bus_name, object=object._path, iface=self._iface_name, signal=self.__name__, signal_fired=signal_fired)
 
 	def __get__(self, instance, owner):
 		if instance is None:
 			return self
 
-		class BoundSignal(object):
-			__slots__ = ("object", "signal")
-			__qualname__ = __name__ = self.iface + "." + self.signal
-			__module__ = "DBUS"
-
-			def __init__(self, object, signal):
-				self.object = object
-				self.signal = signal
-
-			def connect(self, callback):
-				return self.signal.connect(self.object, callback)
-			connect.__doc__ = "Subscribe to the signal. Callback: (" + ", ".join(self.args) + ")"
-
-			def __repr__(self):
-				return "<bound signal " + self.signal.__qualname__ + " of " + repr(self.object) + ">"
-
-		return BoundSignal(instance, self)
+		return generic.bound_signal(self, instance)
 
 	def __set__(self, instance, value):
 		raise AttributeError("can't set attribute")
@@ -101,16 +86,16 @@ class Signal(object):
 class OnSignal(object):
 	def __init__(self, signal):
 		self.signal = signal
-		self.__name__ = "on" + signal.signal
-		self.__qualname__ = signal.iface + "." + self.__name__
-		self.__doc__ = "Assign a callback to subscribe to the signal. Assing None to unsubscribe. Callback: (" + ", ".join(signal.args) + ")"
+		self.__name__ = "on" + signal.__name__
+		self.__qualname__ = signal._iface_name + "." + self.__name__
+		self.__doc__ = "Assign a callback to subscribe to the signal. Assing None to unsubscribe. Callback: (" + ", ".join(signal._args) + ")"
 
 	def __get__(self, instance, owner):
 		if instance is None:
 			return self
 
 		try:
-			return getattr(instance, "_on" + self.signal.signal)
+			return getattr(instance, "_on" + self.signal.__name__)
 		except AttributeError:
 			return None
 
@@ -119,32 +104,34 @@ class OnSignal(object):
 			raise AttributeError("can't set attribute")
 
 		try:
-			old = getattr(instance, "_sub" + self.signal.signal)
+			old = getattr(instance, "_sub" + self.signal.__name__)
 			old.unsubscribe()
 		except AttributeError:
 			pass
 
 		if value is None:
-			delattr(instance, "_on" + self.signal.signal)
-			delattr(instance, "_sub" + self.signal.signal)
+			delattr(instance, "_on" + self.signal.__name__)
+			delattr(instance, "_sub" + self.signal.__name__)
 			return
 
 		sub = self.signal.connect(instance, value)
-		setattr(instance, "_on" + self.signal.signal, value)
-		setattr(instance, "_sub" + self.signal.signal, sub)
+		setattr(instance, "_on" + self.signal.__name__, value)
+		setattr(instance, "_sub" + self.signal.__name__, sub)
 
 	def __repr__(self):
 		return "<descriptor " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
 
-class Property(object):
-	def __init__(self, iface_name, prop_name, prop_type, access):
+class ProxyProperty(object):
+	def __init__(self, iface_name, property):
 		self._iface_name = iface_name
-		self._type = prop_type
+		self.__name__ = property.attrib["name"]
+		self.__qualname__ = self._iface_name + "." + self.__name__
+
+		self._type = property.attrib["type"]
+		access = property.attrib["access"]
 		self._readable = access.startswith("read")
 		self._writeable = access.endswith("write")
-		self.__name__ = prop_name
-		self.__qualname__ = iface_name + "." + self.__name__
-		self.__doc__ = "(" + prop_type + ") " + access
+		self.__doc__ = "(" + self._type + ") " + access
 
 	def __get__(self, instance, owner):
 		if instance is None:
@@ -181,14 +168,12 @@ class DBUSSignature(Signature):
 
 		return rendered
 
-bound_method = type(ProxyMixin().get) # TODO find a prettier way to get this type
-
 class ProxyMethod(object):
 	def __get__(self, instance, owner):
 		if instance is None:
 			return self
 
-		return bound_method(self, instance)
+		return generic.bound_method(self, instance)
 
 	def __call__(self, instance, *args):
 		ret = instance._bus.con.call_sync(
@@ -206,12 +191,11 @@ class ProxyMethod(object):
 	def __init__(self, iface_name, method):
 		self._iface_name = iface_name
 		self.__name__ = method.attrib["name"]
-		self.__qualname__ = iface_name + "." + self.__name__
-		self.__module__ = "DBUS"
+		self.__qualname__ = self._iface_name + "." + self.__name__
 
 		inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "in"]
 		self._outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "out"]
-		self._sinargs  = "(" + "".join(x[0] for x in inargs) + ")"
+		self._sinargs  = "(" + "".join(x[1] for x in inargs) + ")"
 		self._soutargs = "(" + "".join(self._outargs) + ")"
 
 		self_param = Parameter("self", Parameter.POSITIONAL_ONLY)
@@ -240,15 +224,15 @@ def Interface(iface):
 	interface.__module__ = "DBUS"
 
 	for member in iface:
+		member_name = member.attrib["name"]
 		if member.tag == "method":
-			setattr(interface, member.attrib["name"], ProxyMethod(iface.attrib["name"], member))
-		elif member.tag == "signal":
-			signal = Signal(iface.attrib["name"], member.attrib["name"], [arg.attrib["type"] for arg in member if arg.tag == "arg"])
-			setattr(interface, member.attrib["name"], signal)
-			setattr(interface, "on" + member.attrib["name"], OnSignal(signal))
+			setattr(interface, member_name, ProxyMethod(interface.__name__, member))
 		elif member.tag == "property":
-			setattr(interface, member.attrib["name"],
-					Property(iface.attrib["name"], member.attrib["name"], member.attrib["type"], member.attrib["access"]))
+			setattr(interface, member_name, ProxyProperty(interface.__name__, member))
+		elif member.tag == "signal":
+			signal = ProxySignal(interface.__name__, member)
+			setattr(interface, member_name, signal)
+			setattr(interface, "on" + member_name, OnSignal(signal))
 
 	return interface
 

@@ -101,3 +101,5 @@ class signal(object):
 
 	def __repr__(self):
 		return "<signal " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
+
+bound_method = type(signal().emit) # TODO find a prettier way to get this type
