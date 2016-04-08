@@ -146,7 +146,7 @@ class Property(object):
 		if not self._readable:
 			raise AttributeError("unreadable attribute")
 
-		return instance["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)[0]
+		return instance["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)
 
 	def __set__(self, instance, value):
 		if instance is None or not self._writeable:
