@@ -4,8 +4,10 @@ from xml.etree import ElementTree as ET
 from .auto_names import *
 from .bus_names import OwnMixin, WatchMixin
 from .subscription import SubscriptionMixin
+from .registration import RegistrationMixin
+from .publication import PublicationMixin
 
-class Bus(OwnMixin, WatchMixin, SubscriptionMixin):
+class Bus(OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin, PublicationMixin):
 	Type = Gio.BusType
 
 	def __init__(self, type, timeout=10):
