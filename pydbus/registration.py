@@ -83,9 +83,10 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			type = self.property_types[interface_name + "." + property_name]
 			assert(value.is_signature(type))
 			setattr(self.object, property_name, value.unpack())
+			return True
 		except Exception:
 			print(traceback.format_exc(), file=sys.stderr)
-			return None
+			return False
 
 class ObjectRegistration(ExitableWithAliases("unregister")):
 	__slots__ = ()
