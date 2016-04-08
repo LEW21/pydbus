@@ -72,7 +72,7 @@ start working with an object in another application, you need to know:
   representing the word processor application itself and an object for
   each document window opened, or it might also provide an object for
   each paragraph within a document.
-  
+
   To identify which one you want to interact with, you use an object path,
   a slash-separated string resembling a filename. For instance, example.com's
   word processor might provide an object at ``/`` representing the word
@@ -261,12 +261,12 @@ in a ''dbus'' class property or in its ''docstring''. For example::
       @property
       def SomeProperty(self):
         return self._someProperty
-        
+
       @SomeProperty.setter
       def SomeProperty(self, value):
         self._someProperty = value
         self.PropertiesChanged("net.lew21.pydbus.TutorialExample", {"SomeProperty": self.SomeProperty}, [])
-        
+
       PropertiesChanged = signal()
 
 If you don't want to put XML in a Python file, you can add XML files to your Python package and use them this way::
@@ -294,7 +294,7 @@ Note, that you can use the publish() method only once per a bus name
 that you want to bind. However, you can use it to export multiple objects
 - by passing them in additional parameters to the method::
 
-    bus.publish("net.lew21.pydbus.TutorialExample", 
+    bus.publish("net.lew21.pydbus.TutorialExample",
       Example(),
       ("Subdir1", Example()),
       ("Subdir2", Example()),
