@@ -37,6 +37,9 @@ class ProxyMixin(object):
 
 		introspection = ET.fromstring(xml)
 
+		if len(introspection) == 0:
+			raise KeyError("no such object")
+
 		return CompositeInterface(introspection)(self, bus_name, object_path)
 
 class ProxyObject(object):
