@@ -19,8 +19,14 @@ class Exitable(object):
 			return
 
 		for cb in reversed(self._at_exit_cbs):
-			if len(inspect.getargspec(cb).args) == 3:
-				cb.__exit__(exc_type, exc_value, traceback)
+			call_with_exc = True
+			try:
+				inspect.getcallargs(cb, exc_type, exc_value, traceback)
+			except TypeError:
+				call_with_exc = False
+
+			if call_with_exc:
+				cb(exc_type, exc_value, traceback)
 			else:
 				cb()
 
