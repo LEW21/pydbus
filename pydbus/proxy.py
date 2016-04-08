@@ -143,21 +143,13 @@ class Property(object):
 		if not self._readable:
 			raise AttributeError("unreadable attribute")
 
-		return instance._bus.con.call_sync(
-			instance._bus_name, instance._path,
-			"org.freedesktop.DBus.Properties", "Get",
-			GLib.Variant("(ss)", (self._iface_name, self.__name__)), GLib.VariantType.new("(v)"),
-			0, instance._bus.timeout, None).unpack()[0]
+		return instance["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)[0]
 
 	def __set__(self, instance, value):
 		if instance is None or not self._writeable:
 			raise AttributeError("can't set attribute")
 
-		instance._bus.con.call_sync(
-			instance._bus_name, instance._path,
-			"org.freedesktop.DBus.Properties", "Set",
-			GLib.Variant("(ssv)", (self._iface_name, self.__name__, GLib.Variant(self._type, value))), None,
-			0, instance._bus.timeout, None)
+		instance["org.freedesktop.DBus.Properties"].Set(self._iface_name, self.__name__, GLib.Variant(self._type, value))
 
 	def __repr__(self):
 		return "<property " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
