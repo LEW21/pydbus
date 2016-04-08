@@ -79,6 +79,7 @@ class signal(object):
 	def __init__(self):
 		self.map = {}
 		self.__qualname__ = "<anonymous signal>" # function uses <lambda> ;)
+		self.__doc__ = "Signal."
 
 	def connect(self, object, callback):
 		"""Subscribe to the signal."""
