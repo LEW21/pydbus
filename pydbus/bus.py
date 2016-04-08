@@ -5,7 +5,7 @@ from .bus_names import OwnMixin, WatchMixin
 from .subscription import SubscriptionMixin
 from .registration import RegistrationMixin
 
-from .context import CompositeContextManagerClass
+from .exitable import ExitableWithAliases
 
 class Bus(OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin):
 	Type = Gio.BusType
@@ -71,7 +71,8 @@ class Bus(OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin):
 		"""Expose objects on the bus. WIP"""
 		bus_name = self._auto_bus_name(bus_name)
 
-		context_managers = [self.own_name(bus_name)]
+		unexpose = ExitableWithAliases("unexpose")()
+		unexpose._at_exit(self.own_name(bus_name).__exit__)
 
 		for object_info in objects:
 			path, object, node_info = (None, None, None)
@@ -87,9 +88,9 @@ class Bus(OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin):
 				object = object_info
 
 			path = self._auto_object_path(bus_name, path)
-			context_managers.append(self.register_object(path, object, node_info))
+			unexpose._at_exit(self.register_object(path, object, node_info).__exit__)
 
-		return CompositeContextManagerClass("unexpose")(*context_managers)
+		return unexpose
 
 	def __enter__(self):
 		return self
