@@ -67,7 +67,6 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 		# Note: It's impossible to correctly return an exception, as
 		# g_dbus_connection_register_object_with_closures does not support it
 		try:
-			raise KeyError("aaa")
 			type = self.property_types[interface_name + "." + property_name]
 			result = getattr(self.object, property_name)
 			return GLib.Variant(type, result)
