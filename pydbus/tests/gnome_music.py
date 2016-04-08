@@ -1,3 +1,4 @@
+from __future__ import print_function
 from pydbus import SessionBus
 from gi.repository import GObject, GLib
 import subprocess
