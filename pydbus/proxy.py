@@ -181,6 +181,51 @@ class DBUSSignature(Signature):
 
 		return rendered
 
+bound_method = type(ProxyMixin().get) # TODO find a prettier way to get this type
+
+class ProxyMethod(object):
+	def __get__(self, instance, owner):
+		if instance is None:
+			return self
+
+		return bound_method(self, instance)
+
+	def __call__(self, instance, *args):
+		ret = instance._bus.con.call_sync(
+			instance._bus_name, instance._path,
+			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
+			0, instance._bus.timeout, None).unpack()
+
+		if len(self._outargs) == 0:
+			return None
+		elif len(self._outargs) == 1:
+			return ret[0]
+		else:
+			return ret
+
+	def __init__(self, iface_name, method):
+		self._iface_name = iface_name
+		self.__name__ = method.attrib["name"]
+		self.__qualname__ = iface_name + "." + self.__name__
+		self.__module__ = "DBUS"
+
+		inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "in"]
+		self._outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "out"]
+		self._sinargs  = "(" + "".join(x[0] for x in inargs) + ")"
+		self._soutargs = "(" + "".join(self._outargs) + ")"
+
+		self_param = Parameter("self", Parameter.POSITIONAL_ONLY)
+		pos_params = [Parameter(a[0] if a[0] else "arg" + str(i), Parameter.POSITIONAL_ONLY, annotation=a[1]) for i, a in enumerate(inargs)]
+		ret_type = Signature.empty if len(self._outargs) == 0 else self._outargs[0] if len(self._outargs) == 1 else "(" + ", ".join(self._outargs) + ")"
+
+		self.__signature__ = DBUSSignature([self_param] + pos_params, return_annotation=ret_type)
+
+		if put_signature_in_doc:
+			self.__doc__ = self.__name__ + str(self.__signature__)
+
+	def __repr__(self):
+		return "<function " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
+
 def Interface(iface):
 
 	class interface(ProxyObject):
@@ -194,42 +239,9 @@ def Interface(iface):
 	interface.__qualname__ = interface.__name__ = iface.attrib["name"]
 	interface.__module__ = "DBUS"
 
-	def Functor(method):
-		iface_name = iface.attrib["name"]
-		method_name = method.attrib["name"]
-		inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "in"]
-		outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "out"]
-		sinargs  = "(" + "".join(x[0] for x in inargs) + ")"
-		soutargs = "(" + "".join(outargs) + ")"
-		def functor(self, *args):
-			ret = self._bus.con.call_sync(
-				self._bus_name, self._path,
-				iface_name, method_name, GLib.Variant(sinargs, args), GLib.VariantType.new(soutargs),
-				0, self._bus.timeout, None).unpack()
-
-			if ret and len(ret) == 1:
-				return ret[0]
-			else:
-				return ret
-
-		functor.__name__ = method_name
-		functor.__qualname__ = iface_name + "." + functor.__name__
-		functor.__module__ = "DBUS"
-
-		self_param = Parameter("self", Parameter.POSITIONAL_OR_KEYWORD)
-		pos_params = [Parameter(a[0] if a[0] else "arg" + str(i), Parameter.POSITIONAL_OR_KEYWORD, annotation=a[1]) for i, a in enumerate(inargs)]
-		ret_type = Signature.empty if len(outargs) == 0 else outargs[0] if len(outargs) == 1 else "(" + ", ".join(outargs) + ")"
-
-		functor.__signature__ = DBUSSignature([self_param] + pos_params, return_annotation=ret_type)
-
-		if put_signature_in_doc:
-			functor.__doc__ = functor.__name__ + str(functor.__signature__)
-
-		return functor
-
 	for member in iface:
 		if member.tag == "method":
-			setattr(interface, member.attrib["name"], Functor(member))
+			setattr(interface, member.attrib["name"], ProxyMethod(iface.attrib["name"], member))
 		elif member.tag == "signal":
 			signal = Signal(iface.attrib["name"], member.attrib["name"], [arg.attrib["type"] for arg in member if arg.tag == "arg"])
 			setattr(interface, member.attrib["name"], signal)
