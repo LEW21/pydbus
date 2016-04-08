@@ -9,7 +9,7 @@ pydbus tutorial
 .. _`Collabora Ltd.`: http://www.collabora.co.uk/
 .. _`Janusz Lewandowski`: http://lew21.net/
 
-This tutorial requires Python 2.7 or up, and ``pydbus`` 0.4 or up.
+This tutorial requires Python 2.7 or up, and ``pydbus`` 0.5 or up.
 
 .. contents::
 

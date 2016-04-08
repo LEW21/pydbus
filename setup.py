@@ -7,7 +7,7 @@ with open('README.rst') as f:
 
 setup(
 	name = "pydbus",
-	version = "0.3",
+	version = "0.5",
 	description = "Pythonic DBus library",
 	long_description = readme,
 	author = "Janusz Lewandowski",
@@ -18,7 +18,7 @@ setup(
 
 	packages = find_packages(),
 	package_data = {
-		'': ['LICENSE, *.rd'],
+		'': ['LICENSE, *.rst'],
 	},
 	zip_safe = True,
 	classifiers = [

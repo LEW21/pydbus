@@ -7,7 +7,7 @@ It's based on PyGI_, the Python GObject Introspection bindings, which is the rec
 
 It's pythonic!
 
-And now, it can also publish objects!
+And now, it can also publish objects! Changelog: https://github.com/LEW21/pydbus/releases
 
 Examples
 --------
