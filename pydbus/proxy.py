@@ -2,6 +2,13 @@ from gi.repository import GLib
 from xml.etree import ElementTree as ET
 from .auto_names import *
 
+try:
+	from inspect import Signature, Parameter
+	put_signature_in_doc = False
+except:
+	from ._inspect3 import Signature, Parameter
+	put_signature_in_doc = True
+
 class ProxyMixin(object):
 	__slots__ = ()
 
@@ -157,6 +164,23 @@ class Property(object):
 	def __repr__(self):
 		return "<property " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
 
+class DBUSSignature(Signature):
+
+	def __str__(self):
+		result = []
+		for param in self.parameters.values():
+			if param.name == "self":
+				result.append("self")
+			else:
+				result.append(":" + param.annotation)
+
+		rendered = '({})'.format(', '.join(result))
+
+		if self.return_annotation is not Signature.empty:
+			rendered += ' -> {}'.format(self.return_annotation)
+
+		return rendered
+
 def Interface(iface):
 
 	class interface(ProxyObject):
@@ -191,7 +215,16 @@ def Interface(iface):
 		functor.__name__ = method_name
 		functor.__qualname__ = iface_name + "." + functor.__name__
 		functor.__module__ = "DBUS"
-		functor.__doc__ = "(" + ", ".join(inargs) + ")" + " -> " + "(" + ", ".join(outargs) + ")"
+
+		self_param = Parameter("self", Parameter.POSITIONAL_OR_KEYWORD)
+		pos_params = [Parameter(chr(ord('a')+i), Parameter.POSITIONAL_OR_KEYWORD, annotation=t) for i, t in enumerate(inargs)]
+		ret_type = Signature.empty if len(outargs) == 0 else outargs[0] if len(outargs) == 1 else "(" + ", ".join(outargs) + ")"
+
+		functor.__signature__ = DBUSSignature([self_param] + pos_params, return_annotation=ret_type)
+
+		if put_signature_in_doc:
+			functor.__doc__ = functor.__name__ + str(functor.__signature__)
+
 		return functor
 
 	for member in iface:
