@@ -1,6 +1,7 @@
 from gi.repository import Gio, GLib
 from xml.etree import ElementTree as ET
 
+from .auto_names import *
 from .bus_names import OwnMixin, WatchMixin
 from .subscription import SubscriptionMixin
 
@@ -33,13 +34,8 @@ class Bus(OwnMixin, WatchMixin, SubscriptionMixin):
 		>>> bus.get(".systemd1")[".Manager"]
 		which will give you access to the one specific interface.
 		"""
-		if bus_name[0] == ".":
-			#Default namespace
-			bus_name = "org.freedesktop" + bus_name
-
-		if object_path is None:
-			# They always name it like that.
-			object_path = "/" + bus_name.replace(".", "/")
+		bus_name = auto_bus_name(bus_name)
+		object_path = auto_object_path(bus_name, object_path)
 
 		xml = self.con.call_sync(
 			bus_name, object_path,
