@@ -28,11 +28,11 @@ class MyDBUSService(object):
 
 	def Hello(self):
 		"""returns the string 'Hello, World!'"""
-		return ("Hello, World!",)
+		return "Hello, World!"
 
 	def EchoString(self, s):
 		"""returns whatever is passed to it"""
-		return (s,)
+		return s
 
 	def Quit(self):
 		"""removes this object from the DBUS connection and exits"""
