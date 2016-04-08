@@ -169,10 +169,10 @@ class DBUSSignature(Signature):
 	def __str__(self):
 		result = []
 		for param in self.parameters.values():
-			if param.name == "self":
-				result.append("self")
-			else:
-				result.append(":" + param.annotation)
+			p = param.name if not param.name.startswith("arg") else ""
+			if type(param.annotation) == str:
+				p += ":" + param.annotation
+			result.append(p)
 
 		rendered = '({})'.format(', '.join(result))
 
@@ -197,9 +197,9 @@ def Interface(iface):
 	def Functor(method):
 		iface_name = iface.attrib["name"]
 		method_name = method.attrib["name"]
-		inargs  = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "in"]
+		inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "in"]
 		outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "out"]
-		sinargs  = "(" + "".join(inargs) + ")"
+		sinargs  = "(" + "".join(x[0] for x in inargs) + ")"
 		soutargs = "(" + "".join(outargs) + ")"
 		def functor(self, *args):
 			ret = self._bus.con.call_sync(
@@ -217,7 +217,7 @@ def Interface(iface):
 		functor.__module__ = "DBUS"
 
 		self_param = Parameter("self", Parameter.POSITIONAL_OR_KEYWORD)
-		pos_params = [Parameter(chr(ord('a')+i), Parameter.POSITIONAL_OR_KEYWORD, annotation=t) for i, t in enumerate(inargs)]
+		pos_params = [Parameter(a[0] if a[0] else "arg" + str(i), Parameter.POSITIONAL_OR_KEYWORD, annotation=a[1]) for i, a in enumerate(inargs)]
 		ret_type = Signature.empty if len(outargs) == 0 else outargs[0] if len(outargs) == 1 else "(" + ", ".join(outargs) + ")"
 
 		functor.__signature__ = DBUSSignature([self_param] + pos_params, return_annotation=ret_type)
@@ -262,7 +262,7 @@ def CompositeInterface(introspection):
 				except:
 					pass
 
-	ifaces = sorted([x for x in introspection], key=lambda x: int(x.attrib["name"].startswith("org.freedesktop.DBus.")))
+	ifaces = sorted([x for x in introspection if x.tag == "interface"], key=lambda x: int(x.attrib["name"].startswith("org.freedesktop.DBus.")))
 	CompositeObject.__bases__ = tuple(Interface(iface) for iface in ifaces)
 	CompositeObject.__name__ = "<CompositeObject>"
 	CompositeObject.__qualname__ = "<CompositeObject>(" + "+".join(x.__name__ for x in CompositeObject.__bases__) + ")"
