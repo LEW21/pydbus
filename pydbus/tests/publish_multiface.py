@@ -26,14 +26,14 @@ class TestObject(object):
 		done += 1
 		if done == 2:
 			loop.quit()
-		return ("M1",)
+		return "M1"
 
 	def Method2(self):
 		global done
 		done += 1
 		if done == 2:
 			loop.quit()
-		return ("M2",)
+		return "M2"
 
 with SessionBus() as bus:
 	with bus.publish("net.lew21.pydbus.tests.expose_multiface", TestObject()):

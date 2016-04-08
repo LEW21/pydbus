@@ -53,6 +53,8 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 			if len(outargs) == 0:
 				invocation.return_value(None)
+			elif len(outargs) == 1:
+				invocation.return_value(GLib.Variant(soutargs, (result,)))
 			else:
 				invocation.return_value(GLib.Variant(soutargs, result))
 

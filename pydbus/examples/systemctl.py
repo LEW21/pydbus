@@ -14,7 +14,7 @@ import sys
 
 try:
 	if len(sys.argv) < 2:
-		for unit in manager.ListUnits()[0]:
+		for unit in manager.ListUnits():
 			print(unit)
 	else:
 		if sys.argv[1] == "--help":

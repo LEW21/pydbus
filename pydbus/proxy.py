@@ -175,10 +175,16 @@ def Interface(iface):
 		sinargs  = "(" + "".join(inargs) + ")"
 		soutargs = "(" + "".join(outargs) + ")"
 		def functor(self, *args):
-			return self._bus.con.call_sync(
+			ret = self._bus.con.call_sync(
 				self._bus_name, self._path,
 				iface_name, method_name, GLib.Variant(sinargs, args), GLib.VariantType.new(soutargs),
 				0, self._bus.timeout, None).unpack()
+
+			if ret and len(ret) == 1:
+				return ret[0]
+			else:
+				return ret
+
 		functor.__name__ = method_name
 		functor.__qualname__ = iface_name + "." + functor.__name__
 		functor.__module__ = "DBUS"

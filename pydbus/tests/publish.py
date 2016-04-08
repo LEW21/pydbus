@@ -22,7 +22,7 @@ class TestObject(object):
 		self.id = id
 
 	def HelloWorld(self, a, b):
-		res = (self.id + ": " + a + str(b),)
+		res = self.id + ": " + a + str(b)
 		global done
 		done += 1
 		if done == 2:

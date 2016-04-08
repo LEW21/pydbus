@@ -30,7 +30,7 @@ List systemd units
 	bus = SystemBus()
 	systemd = bus.get(".systemd1")
 
-	for unit in systemd.ListUnits()[0]:
+	for unit in systemd.ListUnits():
 	    print(unit)
 
 Watch for new systemd jobs
