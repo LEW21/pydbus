@@ -54,25 +54,13 @@ class OwnMixin(object):
 		name_lost_handler    = (lambda con, name: name_lost())    if name_lost    is not None else None
 		return NameOwner(self.con, name, flags, name_aquired_handler, name_lost_handler)
 
-	def unown_name(self, name_owner):
-		"""Stops owning a name.
-		
-		Deprecated. Use name_owner.unown() or use name_owner in a with statement.
-		
-		Parameters
-		----------
-		name_owner : NameOwner
-			Object returned by own_name().
-		"""
-		name_owner.unown()
-
 class WatchMixin(object):
 	__slots__ = ()
 	NameWatcherFlags = NameWatcher.Flags
 
 	def watch_name(self, name, flags=0, name_appeared=None, name_vanished=None):
 		"""Asynchronously watches a bus name.
-		
+
 		Starts watching name on the bus specified by bus_type and calls
 		name_appeared and name_vanished when the name is known to have a owner
 		respectively known to lose its owner.
@@ -104,18 +92,6 @@ class WatchMixin(object):
 		name_appeared_handler = (lambda con, name, name_owner: name_appeared(name_owner)) if name_appeared is not None else None
 		name_vanished_handler = (lambda con, name:             name_vanished())           if name_vanished is not None else None
 		return NameWatcher(self.con, name, flags, name_appeared_handler, name_vanished_handler)
-
-	def unwatch_name(self, name_watcher):
-		"""Stops watching a name.
-		
-		Deprecated. Use name_watcher.unwatch() or use name_watcher in a with statement.
-		
-		Parameters
-		----------
-		name_watcher : NameWatcher
-			Object returned by watch_name().
-		"""
-		name_watcher.unwatch()
 
 if __name__ == "__main__":
 	from . import SessionBus
