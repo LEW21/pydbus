@@ -1,5 +1,6 @@
 from gi.repository import GLib
 from .generic import bound_method
+from .identifier import filter_identifier
 
 try:
 	from inspect import Signature, Parameter
@@ -37,7 +38,16 @@ class ProxyMethod(object):
 		self._soutargs = "(" + "".join(self._outargs) + ")"
 
 		self_param = Parameter("self", Parameter.POSITIONAL_ONLY)
-		pos_params = [Parameter(a[0] if a[0] else "arg" + str(i), Parameter.POSITIONAL_ONLY, annotation=a[1]) for i, a in enumerate(inargs)]
+		pos_params = []
+		for i, a in enumerate(inargs):
+			name = filter_identifier(a[0])
+
+			if not name:
+				name = "arg" + str(i)
+
+			param = Parameter(name, Parameter.POSITIONAL_ONLY, annotation=a[1])
+
+			pos_params.append(param)
 		ret_type = Signature.empty if len(self._outargs) == 0 else self._outargs[0] if len(self._outargs) == 1 else "(" + ", ".join(self._outargs) + ")"
 
 		self.__signature__ = DBUSSignature([self_param] + pos_params, return_annotation=ret_type)
