@@ -32,14 +32,14 @@ class ProxyMethod(object):
 		self.__name__ = method.attrib["name"]
 		self.__qualname__ = self._iface_name + "." + self.__name__
 
-		inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "in"]
+		self._inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "in"]
 		self._outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "out"]
-		self._sinargs  = "(" + "".join(x[1] for x in inargs) + ")"
+		self._sinargs  = "(" + "".join(x[1] for x in self._inargs) + ")"
 		self._soutargs = "(" + "".join(self._outargs) + ")"
 
 		self_param = Parameter("self", Parameter.POSITIONAL_ONLY)
 		pos_params = []
-		for i, a in enumerate(inargs):
+		for i, a in enumerate(self._inargs):
 			name = filter_identifier(a[0])
 
 			if not name:
@@ -56,6 +56,12 @@ class ProxyMethod(object):
 			self.__doc__ = self.__name__ + str(self.__signature__)
 
 	def __call__(self, instance, *args):
+		argdiff = len(args) - len(self._inargs)
+		if argdiff < 0:
+			raise TypeError(self.__qualname__ + " missing {} required positional argument(s)".format(-argdiff))
+		elif argdiff > 0:
+			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
+
 		ret = instance._bus.con.call_sync(
 			instance._bus_name, instance._path,
 			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
