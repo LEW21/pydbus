@@ -35,11 +35,11 @@ class Bus(ProxyMixin, RequestNameMixin, OwnMixin, WatchMixin, SubscriptionMixin,
 			self._polkit_authority = self.get(".PolicyKit1", "Authority")
 			return self._polkit_authority
 
-def SystemBus():
-	return Bus(Bus.Type.SYSTEM)
+def SystemBus(timeout=1000):
+	return Bus(Bus.Type.SYSTEM, timeout=timeout)
 
-def SessionBus():
-	return Bus(Bus.Type.SESSION)
+def SessionBus(timeout=1000):
+	return Bus(Bus.Type.SESSION, timeout=timeout)
 
 if __name__ == "__main__":
 	import sys
