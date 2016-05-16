@@ -24,11 +24,10 @@ A decorator for Polkit authorization
 
 from __future__ import print_function, absolute_import
 
-from gi.repository import GObject, GLib, Polkit, Gio
-import traceback
-import inspect
+from gi.repository import GLib, Polkit, Gio
 import functools
-from pydbus import registration
+from pydbus import registration, generic
+# import traceback
 
 __all__ = ['PolkitAuthorization']
 
@@ -46,18 +45,11 @@ class PolkitAuthorization(object):
 		self.flags = flags
 
 	def __call__(self, func):
-		# check, if func needs the dbus_bus and dbus_method_invokation kw args
-		try:
-			method_args = inspect.getargspec(func)[0]
-		except TypeError:
-			# not a function
-			method_args = ()
-		is_async = getattr(func, "async", None)
-		needs_dbus_method_invocation = ("dbus_method_invocation" in method_args or
-										getattr(func, "arg_dbus_method_invocation", None) or
-										is_async)
-		needs_dbus_bus = ("dbus_bus" in method_args or getattr(func, "arg_dbus_bus", None))
-		needs_polkit_is_authorized = ("polkit_is_authorized" in method_args or getattr(func, "arg_polkit_is_authorized", None))
+		func_info = generic.inspect_function(func, flag_names=('async',), arg_names=('dbus_bus', 'dbus_method_invocation', "polkit_is_authorized"))
+		is_async = func_info['async']
+		needs_dbus_method_invocation = func_info["dbus_method_invocation"]
+		needs_dbus_bus = func_info["dbus_bus"]
+		needs_polkit_is_authorized = func_info["polkit_is_authorized"]
 
 		@functools.wraps(func)
 		def wrapper(*args, **kw):
@@ -81,7 +73,7 @@ class PolkitAuthorization(object):
 				GLib.timeout_add(timeout, cancellable.cancel)
 				Polkit.Authority.get_async(cancellable, self._cb_get_authority_ready, state)
 			except Exception as e:
-				traceback.print_exc()  # FIXME: better error reporting. logging?
+				# traceback.print_exc()  # FIXME: better error reporting. logging?
 				method_invocation.return_exception(e)
 
 		wrapper.async = True
@@ -109,7 +101,7 @@ class PolkitAuthorization(object):
 										self._cb_check_authorization_ready,
 										state)
 		except Exception as e:
-			traceback.print_exc()  # FIXME: better error reporting. logging?
+			# traceback.print_exc()  # FIXME: better error reporting. logging?
 			method_invocation.return_exception(e)
 
 	def _cb_check_authorization_ready(self, authority, res, state):
@@ -130,5 +122,5 @@ class PolkitAuthorization(object):
 				method_invocation.return_value(result)
 
 		except Exception as e:
-			traceback.print_exc()  # FIXME: better error reporting. logging?
+			# traceback.print_exc()  # FIXME: better error reporting. logging?
 			method_invocation.return_exception(e)

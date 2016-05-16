@@ -1,5 +1,5 @@
 from __future__ import print_function
-import sys, traceback, inspect
+import sys, traceback
 from gi.repository import GLib, Gio
 from . import generic
 from .exitable import ExitableWithAliases
@@ -75,21 +75,22 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			invocation.return_exception = return_exception
 
 			method = getattr(self.object, method_name)
-			is_async = getattr(method, "async", None)
-			try:
-				method_args = inspect.getargspec(method)[0]
-			except TypeError:
-				# not a function
-				method_args = ()
+			method_info = generic.inspect_function(method, flag_names=('async',), arg_names=('dbus_bus', 'dbus_method_invocation'))
+
+			if method_info["async"] and not method_info["dbus_method_invocation"]:
+				# for now, we require a asynchronous method to accept the argument 'dbus_method_invocation'
+				# and to return its result itself.
+				raise TypeError("an asynchronous method must accept the argument 'dbus_method_invocation'")
 
 			kw = {}
-			if "dbus_bus" in method_args or getattr(method, "arg_dbus_bus", None):
+			if method_info["dbus_bus"]:
 				kw["dbus_bus"] = self.bus
-			if "dbus_method_invocation" in method_args or getattr(method, "arg_dbus_bus", None) or is_async:
+			if method_info["dbus_method_invocation"]:
 				kw["dbus_method_invocation"] = invocation
 
 			result = method(*parameters, **kw)
-			if not (is_async or result is METHOD_IS_ASYNC):
+			if not (result is METHOD_IS_ASYNC or method_info["async"]):
+				# func is synchronous and returned its result. Send it back to the remote caller.
 				return_value(result)
 
 		except Exception as e:
