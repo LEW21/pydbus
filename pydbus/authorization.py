@@ -23,7 +23,8 @@ A decorator for Polkit authorization
 """
 
 from __future__ import print_function, absolute_import
-
+import gi
+gi.require_version('Polkit', '1.0')
 from gi.repository import GLib, Polkit, Gio
 import functools
 from pydbus import registration, generic
