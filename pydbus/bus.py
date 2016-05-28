@@ -18,11 +18,11 @@ class Bus(ProxyMixin, OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin
 	def __exit__(self, exc_type, exc_value, traceback):
 		self.con = None
 
-def SystemBus():
-	return Bus(Bus.Type.SYSTEM)
+def SystemBus(timeout=1000):
+	return Bus(Bus.Type.SYSTEM, timeout=timeout)
 
-def SessionBus():
-	return Bus(Bus.Type.SESSION)
+def SessionBus(timeout=1000):
+	return Bus(Bus.Type.SESSION, timeout=timeout)
 
 if __name__ == "__main__":
 	import sys
