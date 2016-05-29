@@ -18,7 +18,7 @@ class GreenFunc(object):
 		def cb(_, res):
 			my_greenlet.switch(res)
 
-		self.start(*args, cb)
+		self.start(*([arg for arg in args] + [cb]))
 
 		res = my_greenlet.parent.switch()
 
