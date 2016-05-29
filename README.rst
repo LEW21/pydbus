@@ -1,5 +1,7 @@
 pydbus
 ======
+.. image:: https://travis-ci.org/LEW21/pydbus.svg?branch=master
+    :target: https://travis-ci.org/LEW21/pydbus
 
 Pythonic DBus library.
 

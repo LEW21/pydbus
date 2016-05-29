@@ -1,0 +1,18 @@
+sudo: required
+
+env:
+  - distribution: ubuntu
+    version: 16.04
+    python: 3.5
+#  - distribution: ubuntu
+#    version: 16.04
+#    python: 2.7
+
+services:
+  - docker
+
+before_install:
+  - "docker pull ${distribution}:${version}"
+
+script:
+  - "docker build --file=tests/py${python}-${distribution}-${version}.dockerfile ."
