@@ -6,6 +6,8 @@ from .proxy_method import ProxyMethod
 from .proxy_property import ProxyProperty
 from .proxy_signal import ProxySignal, OnSignal
 
+from .green import GreenFunc
+
 class ProxyMixin(object):
 	__slots__ = ()
 
@@ -34,7 +36,7 @@ class ProxyMixin(object):
 		bus_name = auto_bus_name(bus_name)
 		object_path = auto_object_path(bus_name, object_path)
 
-		ret = self.con.call_sync(
+		ret = GreenFunc(self.con.call, self.con.call_finish, self.con.call_sync)(
 			bus_name, object_path,
 			'org.freedesktop.DBus.Introspectable', "Introspect", None, GLib.VariantType.new("(s)"),
 			0, self.timeout, None)

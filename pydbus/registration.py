@@ -3,6 +3,7 @@ import sys, traceback
 from gi.repository import GLib, Gio
 from . import generic
 from .exitable import ExitableWithAliases
+from .green import spawn_in_green_thread
 from functools import partial
 from .method_call_context import MethodCallContext
 
@@ -50,6 +51,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 	SignalEmitted = generic.signal()
 
+	@spawn_in_green_thread
 	def call_method(self, bus, connection, sender, object_path, interface_name, method_name, parameters, invocation):
 		try:
 			try:

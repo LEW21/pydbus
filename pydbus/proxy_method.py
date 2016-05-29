@@ -1,6 +1,7 @@
 from gi.repository import GLib
 from .generic import bound_method
 from .identifier import filter_identifier
+from .green import GreenFunc
 
 try:
 	from inspect import Signature, Parameter
@@ -77,7 +78,7 @@ class ProxyMethod(object):
 				pass
 			timeout = int(timeout * 1000)
 
-		ret = instance._bus.con.call_sync(
+		ret = GreenFunc(instance._bus.con.call, instance._bus.con.call_finish, instance._bus.con.call_sync)(
 			instance._bus_name, instance._path,
 			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
 			0, timeout, None).unpack()
