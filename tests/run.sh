@@ -15,6 +15,13 @@ rm "$ADDRESS_FILE" "$PID_FILE"
 
 PYTHON=${1:-python}
 
+"$PYTHON" -m pydbus.examples.notifications_server &
+NOTIF_PID=$!
+trap 'kill -TERM $PID $NOTIF_PID' EXIT
+
+sleep 1
+
+"$PYTHON" -m pydbus.tests.context
 "$PYTHON" -m pydbus.tests.identifier
 "$PYTHON" -m pydbus.tests.publish
 "$PYTHON" -m pydbus.tests.publish_multiface
