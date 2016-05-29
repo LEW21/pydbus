@@ -4,12 +4,13 @@ from .bus_names import OwnMixin, WatchMixin
 from .subscription import SubscriptionMixin
 from .registration import RegistrationMixin
 from .publication import PublicationMixin
+from .green import GreenFunc
 
 class Bus(ProxyMixin, OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin, PublicationMixin):
 	Type = Gio.BusType
 
 	def __init__(self, type, timeout=1000):
-		self.con = Gio.bus_get_sync(type, None)
+		self.con = GreenFunc(Gio.bus_get, Gio.bus_get_finish, Gio.bus_get_sync)(type, None)
 		self.timeout = timeout
 
 	def __enter__(self):

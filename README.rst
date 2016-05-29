@@ -7,9 +7,13 @@ It's based on PyGI_, the Python GObject Introspection bindings, which is the rec
 
 It's pythonic!
 
-And now, it can also publish objects! However, publication support requires GLib 2.46 or newer.
+Since 0.5, it supports publishing objects on the bus - however this requires GLib 2.46 or newer.
 
-Changelog: https://github.com/LEW21/pydbus/releases
+In the git master, it supports greenlet_-based concurrency - if the greenlet package is installed. All remotely-called methods on published objects will be run in new greenlets - and will be suspended automatically if they call any external DBus methods (or pydbus.green.sleep), so that other method calls can be handled while they're waiting for a reply.
+
+However, pydbus requires GLib's MainLoop, and won't work correctly with the gevent/eventlet's one.
+
+Full changelog: https://github.com/LEW21/pydbus/releases
 
 Examples
 --------
@@ -72,6 +76,7 @@ More examples & documentation
 The Tutorial_ contains more examples and docs.
 
 .. _PyGI: https://wiki.gnome.org/PyGObject
+.. _greenlet: https://greenlet.readthedocs.io/
 .. _Tutorial: https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst
 
 Copyright Information

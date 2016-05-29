@@ -3,6 +3,7 @@ import sys, traceback
 from gi.repository import GLib, Gio
 from . import generic
 from .exitable import ExitableWithAliases
+from .green import spawn_in_green_thread
 
 class ObjectWrapper(ExitableWithAliases("unwrap")):
 	__slots__ = ["object", "outargs", "property_types"]
@@ -39,6 +40,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 	SignalEmitted = generic.signal()
 
+	@spawn_in_green_thread
 	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
 		try:
 			outargs = self.outargs[interface_name + "." + method_name]
