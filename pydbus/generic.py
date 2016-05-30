@@ -4,6 +4,9 @@ Utilities implemented in this file are not dependent
 on dbus, they can be used everywhere.
 """
 
+import inspect
+
+
 class subscription(object):
 	__slots__ = ("callback_list", "callback")
 
@@ -103,3 +106,53 @@ class signal(object):
 		return "<signal " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
 
 bound_method = type(signal().emit) # TODO find a prettier way to get this type
+
+
+def inspect_function(func, flag_names, arg_names):
+	"""Inspect a function or method.
+
+	This function inspects *func* and returns
+	boolean flags and information, whether *func* wants a partiucular
+	arguments.
+
+	The flag *NAME* is set, if *func* has an attribute *NAME*, whose
+	value is true in a boolean context.
+
+	The function wants the argument *NAME*, it *NAME* is in the list of
+	named arguments or if *func* has an attribute ``arg_``*NAME*, whose
+	value is true in a boolean context.
+
+	:parameter func: a callable object.
+	:parameter flag_names: an iterable, that yields flag names (strings)
+	:type flag_names: :class:`~collections.Iterable`
+	:parameter arg_names: an iterable, that yields potential argument names.
+	:type arg_names: :class:`~collections.Iterable`
+	:returns: a dictionary, that contains a boolean value for each flag-name
+	and arg-name.
+	:rtype: dict
+	"""
+	result = {}
+	for name in flag_names:
+		try:
+			value = bool(getattr(func, name))  # be careful, func can be anything
+		except Exception:
+			value = False
+		result[name] = value
+
+	if arg_names:
+		try:
+			func_args = inspect.getargspec(func)[0]
+		except TypeError:
+			# not a function
+			func_args = ()
+		for name in arg_names:
+			if name in func_args:
+				result[name] = True
+				continue
+			try:
+				value = bool(getattr(func, "arg_" + name))
+			except Exception:
+				value = False
+			result[name] = value
+
+	return result

@@ -5,11 +5,15 @@ from . import generic
 from .exitable import ExitableWithAliases
 from .green import spawn_in_green_thread
 
-class ObjectWrapper(ExitableWithAliases("unwrap")):
-	__slots__ = ["object", "outargs", "property_types"]
+METHOD_IS_ASYNC = object()
 
-	def __init__(self, object, interfaces):
+
+class ObjectWrapper(ExitableWithAliases("unwrap")):
+	__slots__ = ["object", "outargs", "property_types", "bus"]
+
+	def __init__(self, object, interfaces, bus):
 		self.object = object
+		self.bus = bus
 
 		self.outargs = {}
 		for iface in interfaces:
@@ -42,30 +46,57 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 	@spawn_in_green_thread
 	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
+		def return_exception(exc):
+			if isinstance(exc, GLib.GError):
+				# the much simpler invocation.return_gerror(exc) raises TypeError.
+				invocation.return_error_literal(GLib.quark_from_string(exc.domain), exc.code, exc.message)
+			else:
+				# TODO Think of a better way to translate Python exception types to DBus error types.
+				e_type = type(exc).__name__
+				if "." not in e_type:
+					e_type = "unknown." + e_type
+				invocation.return_dbus_error(e_type, str(exc))
+
 		try:
 			outargs = self.outargs[interface_name + "." + method_name]
+			loutargs = len(outargs)
 			soutargs = "(" + "".join(outargs) + ")"
 
+			invocation.return_value_raw = return_value_raw = invocation.return_value
+
+			def return_value(result):
+				if loutargs == 0:
+					return_value_raw(None)
+				elif loutargs == 1:
+					return_value_raw(GLib.Variant(soutargs, (result,)))
+				else:
+					return_value_raw(GLib.Variant(soutargs, result))
+				return False
+
+			invocation.return_value = return_value
+			invocation.return_exception = return_exception
+
 			method = getattr(self.object, method_name)
+			method_info = generic.inspect_function(method, flag_names=('async',), arg_names=('dbus_bus', 'dbus_method_invocation'))
 
-			result = method(*parameters)
+			if method_info["async"] and not method_info["dbus_method_invocation"]:
+				# for now, we require a asynchronous method to accept the argument 'dbus_method_invocation'
+				# and to return its result itself.
+				raise TypeError("an asynchronous method must accept the argument 'dbus_method_invocation'")
 
-			#if len(outargs) == 1:
-			#	result = (result,)
+			kw = {}
+			if method_info["dbus_bus"]:
+				kw["dbus_bus"] = self.bus
+			if method_info["dbus_method_invocation"]:
+				kw["dbus_method_invocation"] = invocation
 
-			if len(outargs) == 0:
-				invocation.return_value(None)
-			elif len(outargs) == 1:
-				invocation.return_value(GLib.Variant(soutargs, (result,)))
-			else:
-				invocation.return_value(GLib.Variant(soutargs, result))
+			result = method(*parameters, **kw)
+			if not (result is METHOD_IS_ASYNC or method_info["async"]):
+				# func is synchronous and returned its result. Send it back to the remote caller.
+				return_value(result)
 
 		except Exception as e:
-			#TODO Think of a better way to translate Python exception types to DBus error types.
-			e_type = type(e).__name__
-			if not "." in e_type:
-				e_type = "unknown." + e_type
-			invocation.return_dbus_error(e_type, str(e))
+			return_exception(e)
 
 	def get_property(self, connection, sender, object_path, interface_name, property_name):
 		# Note: It's impossible to correctly return an exception, as
@@ -121,5 +152,5 @@ class RegistrationMixin:
 		node_info = [Gio.DBusNodeInfo.new_for_xml(ni) for ni in node_info]
 		interfaces = sum((ni.interfaces for ni in node_info), [])
 
-		wrapper = ObjectWrapper(object, interfaces)
+		wrapper = ObjectWrapper(object, interfaces, self)
 		return ObjectRegistration(self.con, path, interfaces, wrapper, own_wrapper=True)
