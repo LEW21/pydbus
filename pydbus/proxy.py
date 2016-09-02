@@ -36,7 +36,12 @@ class ProxyMixin(object):
 		bus_name = auto_bus_name(bus_name)
 		object_path = auto_object_path(bus_name, object_path)
 
-		xml, = GreenFunc(self.con.call, self.con.call_finish, self.con.call_sync)(
+		try:
+			con = GreenFunc(self.con.call, self.con.call_finish, self.con.call_sync)
+		except NotImplementedError:
+			# We have an GLib < 2.46 use legacy support
+			con = self.con.call_sync
+		xml, = con(
 			bus_name, object_path,
 			'org.freedesktop.DBus.Introspectable', "Introspect", None, GLib.VariantType.new("(s)"),
 			0, self.timeout, None).unpack()
