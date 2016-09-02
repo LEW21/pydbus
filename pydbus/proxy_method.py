@@ -63,7 +63,12 @@ class ProxyMethod(object):
 		elif argdiff > 0:
 			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
 
-		ret = GreenFunc(instance._bus.con.call, instance._bus.con.call_finish, instance._bus.con.call_sync)(
+		try:
+			con = GreenFunc(instance._bus.con.call, instance._bus.con.call_finish, instance._bus.con.call_sync)
+		except NotImplementedError:
+			# We have an GLib < 2.46 use legacy support
+			con = instance._bus.con.call_sync
+		ret = con(
 			instance._bus_name, instance._path,
 			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
 			0, instance._bus.timeout, None).unpack()
