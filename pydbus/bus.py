@@ -19,6 +19,14 @@ class Bus(ProxyMixin, OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin
 	def __exit__(self, exc_type, exc_value, traceback):
 		self.con = None
 
+	@property
+	def polkit_authority(self):
+		try:
+			return self._polkit_authority
+		except AttributeError:
+			self._polkit_authority = self.get(".PolicyKit1", "Authority")
+			return self._polkit_authority
+
 def SystemBus(timeout=1000):
 	return Bus(Bus.Type.SYSTEM, timeout=timeout)
 
