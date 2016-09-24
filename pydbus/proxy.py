@@ -36,15 +36,20 @@ class ProxyMixin(object):
 		bus_name = auto_bus_name(bus_name)
 		object_path = auto_object_path(bus_name, object_path)
 
-		xml, = GreenFunc(self.con.call, self.con.call_finish, self.con.call_sync)(
+		ret = GreenFunc(self.con.call, self.con.call_finish, self.con.call_sync)(
 			bus_name, object_path,
 			'org.freedesktop.DBus.Introspectable', "Introspect", None, GLib.VariantType.new("(s)"),
-			0, self.timeout, None).unpack()
+			0, self.timeout, None)
 
-		introspection = ET.fromstring(xml)
+		if not ret:
+			raise KeyError("no such object; you might need to pass object path as the 2nd argument for get()")
 
-		if len(introspection) == 0:
-			raise KeyError("no such object")
+		xml, = ret.unpack()
+
+		try:
+			introspection = ET.fromstring(xml)
+		except:
+			raise KeyError("object provides invalid introspection XML")
 
 		return CompositeInterface(introspection)(self, bus_name, object_path)
 
@@ -103,6 +108,8 @@ def CompositeInterface(introspection):
 					pass
 
 	ifaces = sorted([x for x in introspection if x.tag == "interface"], key=lambda x: int(x.attrib["name"].startswith("org.freedesktop.DBus.")))
+	if not ifaces:
+		raise KeyError("object does not export any interfaces; you might need to pass object path as the 2nd argument for get()")
 	CompositeObject.__bases__ = tuple(Interface(iface) for iface in ifaces)
 	CompositeObject.__name__ = "<CompositeObject>"
 	CompositeObject.__qualname__ = "<CompositeObject>(" + "+".join(x.__name__ for x in CompositeObject.__bases__) + ")"
