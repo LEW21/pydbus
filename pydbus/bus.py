@@ -27,6 +27,14 @@ class Bus(ProxyMixin, RequestNameMixin, OwnMixin, WatchMixin, SubscriptionMixin,
 			self._dbus = self.get(".DBus")[""]
 			return self._dbus
 
+	@property
+	def polkit_authority(self):
+		try:
+			return self._polkit_authority
+		except AttributeError:
+			self._polkit_authority = self.get(".PolicyKit1", "Authority")
+			return self._polkit_authority
+
 def SystemBus():
 	return Bus(Bus.Type.SYSTEM)
 
