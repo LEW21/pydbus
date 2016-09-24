@@ -56,12 +56,18 @@ class ProxyMethod(object):
 		if put_signature_in_doc:
 			self.__doc__ = self.__name__ + str(self.__signature__)
 
-	def __call__(self, instance, *args, timeout=None):
+	def __call__(self, instance, *args, **kwargs):
 		argdiff = len(args) - len(self._inargs)
 		if argdiff < 0:
 			raise TypeError(self.__qualname__ + " missing {} required positional argument(s)".format(-argdiff))
 		elif argdiff > 0:
 			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
+
+		# Python 2 sux
+		for kwarg in kwargs:
+			if kwarg not in ("timeout",):
+				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
+		timeout = kwargs.get("timeout", None)
 
 		if timeout is None:
 			timeout = GObject.G_MAXINT
