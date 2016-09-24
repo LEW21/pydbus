@@ -1,7 +1,5 @@
 import greenlet
 from functools import wraps
-from gi.repository import GLib
-import time
 
 class GreenFunc(object):
 	def __init__(self, start, finish, sync):
@@ -23,20 +21,6 @@ class GreenFunc(object):
 		res = my_greenlet.parent.switch()
 
 		return self.finish(res)
-
-def sleep(seconds):
-	my_greenlet = greenlet.getcurrent()
-
-	if not my_greenlet.parent:
-		time.sleep(seconds)
-		return
-
-	def cb():
-		my_greenlet.switch()
-		return False
-
-	GLib.timeout_add(seconds * 1000, cb)
-	my_greenlet.parent.switch()
 
 def spawn_in_green_thread(func):
 	@wraps(func)
