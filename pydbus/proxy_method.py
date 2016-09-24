@@ -1,4 +1,4 @@
-from gi.repository import GLib
+from gi.repository import GLib, GObject
 from .generic import bound_method
 from .identifier import filter_identifier
 from .green import GreenFunc
@@ -56,17 +56,26 @@ class ProxyMethod(object):
 		if put_signature_in_doc:
 			self.__doc__ = self.__name__ + str(self.__signature__)
 
-	def __call__(self, instance, *args):
+	def __call__(self, instance, *args, timeout=None):
 		argdiff = len(args) - len(self._inargs)
 		if argdiff < 0:
 			raise TypeError(self.__qualname__ + " missing {} required positional argument(s)".format(-argdiff))
 		elif argdiff > 0:
 			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
 
+		if timeout is None:
+			timeout = GObject.G_MAXINT
+		else:
+			try:
+				timeout = timeout.total_seconds()
+			except AttributeError:
+				pass
+			timeout = int(timeout * 1000)
+
 		ret = GreenFunc(instance._bus.con.call, instance._bus.con.call_finish, instance._bus.con.call_sync)(
 			instance._bus_name, instance._path,
 			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
-			0, instance._bus.timeout, None).unpack()
+			0, timeout, None).unpack()
 
 		if len(self._outargs) == 0:
 			return None
