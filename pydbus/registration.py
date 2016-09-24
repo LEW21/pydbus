@@ -3,6 +3,13 @@ import sys, traceback
 from gi.repository import GLib, Gio
 from . import generic
 from .exitable import ExitableWithAliases
+from functools import partial
+from .method_call_context import MethodCallContext
+
+try:
+	from inspect import signature, Parameter
+except:
+	from ._inspect3 import signature, Parameter
 
 class ObjectWrapper(ExitableWithAliases("unwrap")):
 	__slots__ = ["object", "outargs", "property_types"]
@@ -39,17 +46,20 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 	SignalEmitted = generic.signal()
 
-	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
+	def call_method(self, bus, connection, sender, object_path, interface_name, method_name, parameters, invocation):
 		try:
 			outargs = self.outargs[interface_name + "." + method_name]
 			soutargs = "(" + "".join(outargs) + ")"
 
 			method = getattr(self.object, method_name)
 
-			result = method(*parameters)
+			sig = signature(method)
 
-			#if len(outargs) == 1:
-			#	result = (result,)
+			kwargs = {}
+			if "dbus_context" in sig.parameters and sig.parameters["dbus_context"].kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY):
+				kwargs["dbus_context"] = MethodCallContext(bus, invocation)
+
+			result = method(*parameters, **kwargs)
 
 			if len(outargs) == 0:
 				invocation.return_value(None)
@@ -91,24 +101,24 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 class ObjectRegistration(ExitableWithAliases("unregister")):
 	__slots__ = ()
 
-	def __init__(self, con, path, interfaces, wrapper, own_wrapper=False):
+	def __init__(self, bus, path, interfaces, wrapper, own_wrapper=False):
 		if own_wrapper:
 			self._at_exit(wrapper.__exit__)
 
 		def func(interface_name, signal_name, parameters):
-			con.emit_signal(None, path, interface_name, signal_name, parameters)
+			bus.con.emit_signal(None, path, interface_name, signal_name, parameters)
 
 		self._at_exit(wrapper.SignalEmitted.connect(func).__exit__)
 
 		try:
-			ids = [con.register_object(path, interface, wrapper.call_method, wrapper.get_property, wrapper.set_property) for interface in interfaces]
+			ids = [bus.con.register_object(path, interface, partial(wrapper.call_method, bus), wrapper.get_property, wrapper.set_property) for interface in interfaces]
 		except TypeError as e:
 			if str(e).startswith("argument vtable: Expected Gio.DBusInterfaceVTable"):
 				raise Exception("GLib 2.46 is required to publish objects; it is impossible in older versions.")
 			else:
 				raise
 
-		self._at_exit(lambda: [con.unregister_object(id) for id in ids])
+		self._at_exit(lambda: [bus.con.unregister_object(id) for id in ids])
 
 class RegistrationMixin:
 	__slots__ = ()
@@ -127,4 +137,4 @@ class RegistrationMixin:
 		interfaces = sum((ni.interfaces for ni in node_info), [])
 
 		wrapper = ObjectWrapper(object, interfaces)
-		return ObjectRegistration(self.con, path, interfaces, wrapper, own_wrapper=True)
+		return ObjectRegistration(self, path, interfaces, wrapper, own_wrapper=True)
