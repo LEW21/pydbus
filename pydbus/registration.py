@@ -102,7 +102,14 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 
 		self._at_exit(wrapper.SignalEmitted.connect(func).__exit__)
 
-		ids = [con.register_object(path, interface, wrapper.call_method, wrapper.get_property, wrapper.set_property) for interface in interfaces]
+		try:
+			ids = [con.register_object(path, interface, wrapper.call_method, wrapper.get_property, wrapper.set_property) for interface in interfaces]
+		except TypeError as e:
+			if str(e).startswith("argument vtable: Expected Gio.DBusInterfaceVTable"):
+				raise Exception("GLib 2.46 is required to publish objects; it is impossible in older versions.")
+			else:
+				raise
+
 		self._at_exit(lambda: [con.unregister_object(id) for id in ids])
 
 class RegistrationMixin:
