@@ -24,4 +24,5 @@ sleep 1
 "$PYTHON" -m pydbus.tests.context
 "$PYTHON" -m pydbus.tests.identifier
 "$PYTHON" -m pydbus.tests.publish
+"$PYTHON" -m pydbus.tests.publish_properties
 "$PYTHON" -m pydbus.tests.publish_multiface
