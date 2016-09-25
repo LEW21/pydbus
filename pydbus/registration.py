@@ -13,7 +13,7 @@ except:
 	from ._inspect3 import signature, Parameter
 
 class ObjectWrapper(ExitableWithAliases("unwrap")):
-	__slots__ = ["object", "outargs", "property_types"]
+	__slots__ = ["object", "outargs", "readable_properties", "writable_properties"]
 
 	def __init__(self, object, interfaces):
 		self.object = object
@@ -23,10 +23,14 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			for method in iface.methods:
 				self.outargs[iface.name + "." + method.name] = [arg.signature for arg in method.out_args]
 
-		self.property_types = {}
+		self.readable_properties = {}
+		self.writable_properties = {}
 		for iface in interfaces:
 			for prop in iface.properties:
-				self.property_types[iface.name + "." + prop.name] = prop.signature
+				if prop.flags & Gio.DBusPropertyInfoFlags.READABLE:
+					self.readable_properties[iface.name + "." + prop.name] = prop.signature
+				if prop.flags & Gio.DBusPropertyInfoFlags.WRITABLE:
+					self.writable_properties[iface.name + "." + prop.name] = prop.signature
 
 		for iface in interfaces:
 			for signal in iface.signals:
@@ -38,7 +42,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 		if "org.freedesktop.DBus.Properties" not in (iface.name for iface in interfaces):
 			try:
 				def onPropertiesChanged(iface, changed, invalidated):
-					changed = {key: GLib.Variant(self.property_types[iface + "." + key], val) for key, val in changed.items()}
+					changed = {key: GLib.Variant(self.readable_properties[iface + "." + key], val) for key, val in changed.items()}
 					args = GLib.Variant("(sa{sv}as)", (iface, changed, invalidated))
 					self.SignalEmitted("org.freedesktop.DBus.Properties", "PropertiesChanged", args)
 				self._at_exit(object.PropertiesChanged.connect(onPropertiesChanged).__exit__)
@@ -50,10 +54,24 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 	@spawn_in_green_thread
 	def call_method(self, bus, connection, sender, object_path, interface_name, method_name, parameters, invocation):
 		try:
-			outargs = self.outargs[interface_name + "." + method_name]
-			soutargs = "(" + "".join(outargs) + ")"
-
-			method = getattr(self.object, method_name)
+			try:
+				outargs = self.outargs[interface_name + "." + method_name]
+				method = getattr(self.object, method_name)
+			except KeyError:
+				if interface_name == "org.freedesktop.DBus.Properties":
+					if method_name == "Get":
+						method = self.Get
+						outargs = ["v"]
+					elif method_name == "GetAll":
+						method = self.GetAll
+						outargs = ["a{sv}"]
+					elif method_name == "Set":
+						method = self.Set
+						outargs = []
+					else:
+						raise
+				else:
+					raise
 
 			sig = signature(method)
 
@@ -66,9 +84,9 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			if len(outargs) == 0:
 				invocation.return_value(None)
 			elif len(outargs) == 1:
-				invocation.return_value(GLib.Variant(soutargs, (result,)))
+				invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", (result,)))
 			else:
-				invocation.return_value(GLib.Variant(soutargs, result))
+				invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", result))
 
 		except Exception as e:
 			#TODO Think of a better way to translate Python exception types to DBus error types.
@@ -77,28 +95,22 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 				e_type = "unknown." + e_type
 			invocation.return_dbus_error(e_type, str(e))
 
-	def get_property(self, connection, sender, object_path, interface_name, property_name):
-		# Note: It's impossible to correctly return an exception, as
-		# g_dbus_connection_register_object_with_closures does not support it
-		try:
-			type = self.property_types[interface_name + "." + property_name]
-			result = getattr(self.object, property_name)
-			return GLib.Variant(type, result)
-		except Exception:
-			print(traceback.format_exc(), file=sys.stderr)
-			return None
+	def Get(self, interface_name, property_name):
+		type = self.readable_properties[interface_name + "." + property_name]
+		result = getattr(self.object, property_name)
+		return GLib.Variant(type, result)
 
-	def set_property(self, connection, sender, object_path, interface_name, property_name, value):
-		# Note: It's impossible to correctly return an exception, as
-		# g_dbus_connection_register_object_with_closures does not support it
-		try:
-			type = self.property_types[interface_name + "." + property_name]
-			assert(value.is_signature(type))
-			setattr(self.object, property_name, value.unpack())
-			return True
-		except Exception:
-			print(traceback.format_exc(), file=sys.stderr)
-			return False
+	def GetAll(self, interface_name):
+		ret = {}
+		for name, type in self.readable_properties.items():
+			ns, local = name.rsplit(".", 1)
+			if ns == interface_name:
+				ret[local] = GLib.Variant(type, getattr(self.object, local))
+		return ret
+
+	def Set(self, interface_name, property_name, value):
+		self.writable_properties[interface_name + "." + property_name]
+		setattr(self.object, property_name, value)
 
 class ObjectRegistration(ExitableWithAliases("unregister")):
 	__slots__ = ()
@@ -113,7 +125,7 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 		self._at_exit(wrapper.SignalEmitted.connect(func).__exit__)
 
 		try:
-			ids = [bus.con.register_object(path, interface, partial(wrapper.call_method, bus), wrapper.get_property, wrapper.set_property) for interface in interfaces]
+			ids = [bus.con.register_object(path, interface, partial(wrapper.call_method, bus), None, None) for interface in interfaces]
 		except TypeError as e:
 			if str(e).startswith("argument vtable: Expected Gio.DBusInterfaceVTable"):
 				raise Exception("GLib 2.46 is required to publish objects; it is impossible in older versions.")
