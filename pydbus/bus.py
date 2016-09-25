@@ -1,12 +1,13 @@
 from gi.repository import Gio
 from .proxy import ProxyMixin
+from .request_name import RequestNameMixin
 from .bus_names import OwnMixin, WatchMixin
 from .subscription import SubscriptionMixin
 from .registration import RegistrationMixin
 from .publication import PublicationMixin
 from .green import GreenFunc
 
-class Bus(ProxyMixin, OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin, PublicationMixin):
+class Bus(ProxyMixin, RequestNameMixin, OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin, PublicationMixin):
 	Type = Gio.BusType
 
 	def __init__(self, type, timeout=1000):
@@ -18,6 +19,14 @@ class Bus(ProxyMixin, OwnMixin, WatchMixin, SubscriptionMixin, RegistrationMixin
 
 	def __exit__(self, exc_type, exc_value, traceback):
 		self.con = None
+
+	@property
+	def dbus(self):
+		try:
+			return self._dbus
+		except AttributeError:
+			self._dbus = self.get(".DBus")[""]
+			return self._dbus
 
 	@property
 	def polkit_authority(self):

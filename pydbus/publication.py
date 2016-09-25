@@ -5,9 +5,15 @@ from .auto_names import *
 class Publication(ExitableWithAliases("unpublish")):
 	__slots__ = ()
 
-	def __init__(self, bus, bus_name, *objects):
+	def __init__(self, bus, bus_name, *objects, **kwargs): # allow_replacement=True, replace=False
+		# Python 2 sux
+		for kwarg in kwargs:
+			if kwarg not in ("allow_replacement", "replace",):
+				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
+		allow_replacement = kwargs.get("allow_replacement", True)
+		replace = kwargs.get("replace", False)
+
 		bus_name = auto_bus_name(bus_name)
-		self._at_exit(bus.own_name(bus_name).__exit__)
 
 		for object_info in objects:
 			path, object, node_info = (None, None, None)
@@ -24,6 +30,9 @@ class Publication(ExitableWithAliases("unpublish")):
 
 			path = auto_object_path(bus_name, path)
 			self._at_exit(bus.register_object(path, object, node_info).__exit__)
+
+		# Request name only after registering all the objects.
+		self._at_exit(bus.request_name(bus_name, allow_replacement=allow_replacement, replace=replace).__exit__)
 
 class PublicationMixin(object):
 	__slots__ = ()
