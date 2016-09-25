@@ -1,4 +1,4 @@
-from gi.repository import GLib, GObject
+from gi.repository import GLib
 from .generic import bound_method
 from .identifier import filter_identifier
 from .green import GreenFunc
@@ -70,7 +70,7 @@ class ProxyMethod(object):
 		timeout = kwargs.get("timeout", None)
 
 		if timeout is None:
-			timeout = GObject.G_MAXINT
+			timeout = GLib.MAXINT
 		else:
 			try:
 				timeout = timeout.total_seconds()

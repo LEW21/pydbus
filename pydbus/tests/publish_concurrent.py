@@ -1,11 +1,11 @@
 from pydbus import SessionBus
-from gi.repository import GObject, GLib
+from gi.repository import GLib
 from threading import Thread
 from pydbus.green import sleep
 import sys
 
 done = 0
-loop = GObject.MainLoop()
+loop = GLib.MainLoop()
 
 log = []
 
