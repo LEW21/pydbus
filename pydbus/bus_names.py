@@ -1,5 +1,6 @@
 from gi.repository import Gio
 from .exitable import ExitableWithAliases
+import warnings
 
 class NameOwner(ExitableWithAliases("unown")):
 	Flags = Gio.BusNameOwnerFlags
@@ -22,7 +23,7 @@ class OwnMixin(object):
 	NameOwnerFlags = NameOwner.Flags
 
 	def own_name(self, name, flags=0, name_aquired=None, name_lost=None):
-		"""Asynchronously aquires a bus name.
+		"""[DEPRECATED] Asynchronously aquires a bus name.
 
 		Starts acquiring name on the bus specified by bus_type and calls
 		name_acquired and name_lost when the name is acquired respectively lost.
@@ -50,6 +51,8 @@ class OwnMixin(object):
 		See https://developer.gnome.org/gio/2.44/gio-Owning-Bus-Names.html#g-bus-own-name
 		for more information.
 		"""
+		warnings.warn("own_name() is deprecated, use request_name() instead.", DeprecationWarning)
+
 		name_aquired_handler = (lambda con, name: name_aquired()) if name_aquired is not None else None
 		name_lost_handler    = (lambda con, name: name_lost())    if name_lost    is not None else None
 		return NameOwner(self.con, name, flags, name_aquired_handler, name_lost_handler)
