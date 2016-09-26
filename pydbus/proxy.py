@@ -5,11 +5,12 @@ from .auto_names import *
 from .proxy_method import ProxyMethod
 from .proxy_property import ProxyProperty
 from .proxy_signal import ProxySignal, OnSignal
+from .timeout import timeout_to_glib
 
 class ProxyMixin(object):
 	__slots__ = ()
 
-	def get(self, bus_name, object_path=None):
+	def get(self, bus_name, object_path=None, **kwargs):
 		"""Get a remote object.
 
 		Parameters
@@ -31,13 +32,19 @@ class ProxyMixin(object):
 		>>> bus.get(".systemd1")[".Manager"]
 		which will give you access to the one specific interface.
 		"""
+		# Python 2 sux
+		for kwarg in kwargs:
+			if kwarg not in ("timeout",):
+				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
+		timeout = kwargs.get("timeout", None)
+
 		bus_name = auto_bus_name(bus_name)
 		object_path = auto_object_path(bus_name, object_path)
 
 		ret = self.con.call_sync(
 			bus_name, object_path,
 			'org.freedesktop.DBus.Introspectable', "Introspect", None, GLib.VariantType.new("(s)"),
-			0, self.timeout, None)
+			0, timeout_to_glib(timeout), None)
 
 		if not ret:
 			raise KeyError("no such object; you might need to pass object path as the 2nd argument for get()")
