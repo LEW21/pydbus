@@ -15,15 +15,6 @@ rm "$ADDRESS_FILE" "$PID_FILE"
 
 PYTHON=${1:-python}
 
-if [ "$2" != "dontpublish" ]
-then
-	"$PYTHON" -m pydbus.examples.notifications_server &
-	NOTIF_PID=$!
-	trap 'kill -TERM $PID $NOTIF_PID' EXIT
-fi
-
-sleep 1
-
 "$PYTHON" -m pydbus.tests.context
 "$PYTHON" -m pydbus.tests.identifier
 if [ "$2" != "dontpublish" ]
