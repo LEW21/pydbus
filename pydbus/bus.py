@@ -50,7 +50,7 @@ class Bus(ProxyMixin, RequestNameMixin, OwnMixin, WatchMixin, SubscriptionMixin,
 		try:
 			return self._polkit_authority
 		except AttributeError:
-			self._polkit_authority = self.get(".PolicyKit1", "Authority")
+			self._polkit_authority = self.get(".PolicyKit1", "Authority")[""]
 			return self._polkit_authority
 
 def SystemBus():
