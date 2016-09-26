@@ -58,13 +58,3 @@ def SystemBus():
 
 def SessionBus():
 	return bus_get(Bus.Type.SESSION)
-
-if __name__ == "__main__":
-	import sys
-	title = sys.argv[1] if len(sys.argv) >= 2 else "Hello World!"
-	message = sys.argv[2] if len(sys.argv) >= 3 else 'pydbus works :)'
-
-	bus = SessionBus()
-	notifications = bus.get('.Notifications') # org.freedesktop automatically prepended
-	notifications[""].Notify('test', 0, 'dialog-information', title, message, [], {}, 5000)
-	# [""] is not required, but makes us compatible with Gnome 2030.

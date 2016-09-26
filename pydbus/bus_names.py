@@ -95,15 +95,3 @@ class WatchMixin(object):
 		name_appeared_handler = (lambda con, name, name_owner: name_appeared(name_owner)) if name_appeared is not None else None
 		name_vanished_handler = (lambda con, name:             name_vanished())           if name_vanished is not None else None
 		return NameWatcher(self.con, name, flags, name_appeared_handler, name_vanished_handler)
-
-if __name__ == "__main__":
-	from . import SessionBus
-	from gi.repository import GObject
-
-	def echo(x):
-		print(x)
-
-	bus = SessionBus()
-	bus.watch_name("com.example", 0, echo)
-	bus.own_name("com.example")
-	GObject.MainLoop().run()
