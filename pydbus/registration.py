@@ -127,7 +127,7 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 		self._at_exit(wrapper.SignalEmitted.connect(func).__exit__)
 
 		try:
-			ids = [bus.con.register_object(path, interface, wrapper.call_method, None, None) for interface in interfaces]
+			ids = [bus.con.register_object(path, interface, wrapper.call_method) for interface in interfaces]
 		except TypeError as e:
 			if str(e).startswith("argument vtable: Expected Gio.DBusInterfaceVTable"):
 				raise Exception("GLib 2.46 is required to publish objects; it is impossible in older versions.")

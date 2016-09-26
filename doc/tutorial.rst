@@ -86,7 +86,7 @@ Setting up an event loop
 
 To handle signals emitted by exported objects, or to export your own objects, you need to setup an event loop.
 
-The only main loop supported by ``pydbus`` is GLib.MainLoop.
+``pydbus`` supports two event loops: GLib.MainLoop (fastest - recommended for GLib-only projects) and gevent (recommended for WSGI apps and projects using other IO utilities).
 
 GLib.MainLoop
 -------------
@@ -102,6 +102,27 @@ To execute the loop use::
     loop.run()
 
 While ``loop.run()`` is executing, GLib will watch for signals you're subscribed to, or accesses to objects you exported, and execute correct callbacks when appropriate. To stop, call ``loop.quit()``.
+
+gevent (pydbus 0.7+)
+--------------------
+
+To use pydbus with gevent's main loop, you need to monkey patch Python at the beggining of your program (before importing pydbus)::
+
+    from gevent import monkey
+    monkey.patch_all()
+
+As gevent assumes that the main control flow is just a greenlet, to let other greenlets work (and handle incoming signals, method calls, etc) you usually need to put it to sleep::
+
+    from gevent.event import Event
+    stop_event = Event()
+    stop_event.wait()
+
+Of course, you can also use BaseServer.serve_forever(), or - in case of WSGI apps - the event loop of your WSGI server.
+
+WSGI
+~~~~
+
+When serving your app with ``gunicorn -k gevent`` Python is monkey-patched automatically, and gunicorn runs the event loop, so you don't need to do anything.
 
 .. _proxy object:
 
@@ -331,6 +352,13 @@ In this case, you can use ``bus.request_name()`` and ``bus.register_object()`` y
 See ``help(bus.request_name)`` and ``help(bus.register_object)`` for details.
 
 .. --------------------------------------------------------------------
+
+Concurrency
+===========
+
+Since pydbus 0.7, if you have greenlet_ installed, pydbus will run all callbacks (signal callbacks, methods, property-getters and setters) in new greenlets. They will be suspended automatically if they call any external DBus methods (or - if you're using gevent monkeypatching - any IO operations), so that other callbacks can be handled while they're waiting for a reply.
+
+.. _greenlet: https://greenlet.readthedocs.io/
 
 Data types
 ==========

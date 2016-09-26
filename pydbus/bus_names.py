@@ -7,7 +7,7 @@ class NameOwner(ExitableWithAliases("unown")):
 	__slots__ = ()
 
 	def __init__(self, con, name, flags, name_aquired_handler, name_lost_handler):
-		id = Gio.bus_own_name_on_connection(con, name, flags, name_aquired_handler, name_lost_handler)
+		id = Gio.bus_own_name_on_connection(con.pygi, name, flags, name_aquired_handler, name_lost_handler)
 		self._at_exit(lambda: Gio.bus_unown_name(id))
 
 class NameWatcher(ExitableWithAliases("unwatch")):
@@ -15,8 +15,8 @@ class NameWatcher(ExitableWithAliases("unwatch")):
 	__slots__ = ()
 
 	def __init__(self, con, name, flags, name_appeared_handler, name_vanished_handler):
-		id = Gio.bus_watch_name_on_connection(con, name, flags, name_appeared_handler, name_vanished_handler)
-		self._at_exit(lambda: Gio.bus_unwatch_name(id))
+		id = con.watch_name(name, flags, name_appeared_handler, name_vanished_handler)
+		self._at_exit(lambda: con.unwatch_name(id))
 
 class OwnMixin(object):
 	__slots__ = ()

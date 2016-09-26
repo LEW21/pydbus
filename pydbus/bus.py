@@ -1,4 +1,5 @@
 from gi.repository import Gio
+from .greenglib import gio
 from .proxy import ProxyMixin
 from .request_name import RequestNameMixin
 from .bus_names import OwnMixin, WatchMixin
@@ -13,13 +14,18 @@ def pydbus_property(self):
 		self._pydbus = Bus(self)
 		return self._pydbus
 
-Gio.DBusConnection.pydbus = property(pydbus_property)
+gio.DBusConnection.pydbus = property(pydbus_property)
+
+def pygi_pydbus_property(self):
+	return self.green.pydbus
+
+Gio.DBusConnection.pydbus = property(pygi_pydbus_property)
 
 def bus_get(type):
-	return Gio.bus_get_sync(type, None).pydbus
+	return gio.bus_get(type).pydbus
 
 def connect(address):
-	c = Gio.DBusConnection.new_for_address_sync(address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION, None, None)
+	c = gio.DBusConnection.new_for_address(address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION)
 	c.pydbus.autoclose = True
 	return c.pydbus
 

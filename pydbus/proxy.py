@@ -41,10 +41,10 @@ class ProxyMixin(object):
 		bus_name = auto_bus_name(bus_name)
 		object_path = auto_object_path(bus_name, object_path)
 
-		ret = self.con.call_sync(
+		ret = self.con.call(
 			bus_name, object_path,
 			'org.freedesktop.DBus.Introspectable', "Introspect", None, GLib.VariantType.new("(s)"),
-			0, timeout_to_glib(timeout), None)
+			0, timeout_to_glib(timeout))
 
 		if not ret:
 			raise KeyError("no such object; you might need to pass object path as the 2nd argument for get()")

@@ -7,6 +7,8 @@ pydbus
 
 Pythonic DBus library.
 
+Since 0.7, it works nicely with gevent.
+
 Changelog: https://github.com/LEW21/pydbus/releases
 
 Requirements
@@ -14,10 +16,12 @@ Requirements
 * Python 2.7+ - but works best on 3.4+ (help system is nicer there)
 * PyGI_ (not packaged on pypi, you need to install it from your distribution's repository - it's usually called python-gi, python-gobject or pygobject)
 * GLib_ 2.46+ and girepository_ 1.46+ (Ubuntu 16.04+) - for object publication support
+* greenlet_ - optional, spawns all callbacks in new greenlets
 
 .. _PyGI: https://wiki.gnome.org/Projects/PyGObject
 .. _GLib: https://developer.gnome.org/glib/
 .. _girepository: https://wiki.gnome.org/Projects/GObjectIntrospection
+.. _greenlet: https://greenlet.readthedocs.io/
 
 Examples
 --------
