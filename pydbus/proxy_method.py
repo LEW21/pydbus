@@ -69,10 +69,10 @@ class ProxyMethod(object):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
 
-		ret = instance._bus.con.call_sync(
+		ret = instance._bus.con.call(
 			instance._bus_name, instance._path,
 			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
-			0, timeout_to_glib(timeout), None).unpack()
+			0, timeout_to_glib(timeout)).unpack()
 
 		if len(self._outargs) == 0:
 			return None
