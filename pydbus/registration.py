@@ -5,6 +5,7 @@ from . import generic
 from .exitable import ExitableWithAliases
 from functools import partial
 from .method_call_context import MethodCallContext
+import logging
 
 try:
 	from inspect import signature, Parameter
@@ -87,6 +88,9 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 				invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", result))
 
 		except Exception as e:
+			logger = logging.getLogger(__name__)
+			logger.exception("Exception while handling %s.%s()", interface_name, method_name)
+
 			#TODO Think of a better way to translate Python exception types to DBus error types.
 			e_type = type(e).__name__
 			if not "." in e_type:
