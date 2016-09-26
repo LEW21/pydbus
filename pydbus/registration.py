@@ -51,7 +51,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 	SignalEmitted = generic.signal()
 
-	def call_method(self, bus, connection, sender, object_path, interface_name, method_name, parameters, invocation):
+	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
 		try:
 			try:
 				outargs = self.outargs[interface_name + "." + method_name]
@@ -76,7 +76,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 			kwargs = {}
 			if "dbus_context" in sig.parameters and sig.parameters["dbus_context"].kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY):
-				kwargs["dbus_context"] = MethodCallContext(bus, invocation)
+				kwargs["dbus_context"] = MethodCallContext(invocation)
 
 			result = method(*parameters, **kwargs)
 
@@ -127,7 +127,7 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 		self._at_exit(wrapper.SignalEmitted.connect(func).__exit__)
 
 		try:
-			ids = [bus.con.register_object(path, interface, partial(wrapper.call_method, bus), None, None) for interface in interfaces]
+			ids = [bus.con.register_object(path, interface, wrapper.call_method, None, None) for interface in interfaces]
 		except TypeError as e:
 			if str(e).startswith("argument vtable: Expected Gio.DBusInterfaceVTable"):
 				raise Exception("GLib 2.46 is required to publish objects; it is impossible in older versions.")

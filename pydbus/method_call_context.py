@@ -4,9 +4,12 @@ from collections import namedtuple
 AuthorizationResult = namedtuple("AuthorizationResult", "is_authorized is_challenge details")
 
 class MethodCallContext(object):
-	def __init__(self, bus, gdbus_method_invocation):
-		self.bus = bus
+	def __init__(self, gdbus_method_invocation):
 		self._mi = gdbus_method_invocation
+
+	@property
+	def bus(self):
+		return self._mi.get_connection().pydbus
 
 	@property
 	def sender(self):
