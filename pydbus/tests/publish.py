@@ -30,33 +30,33 @@ class TestObject(object):
 		print(res)
 		return res
 
-with SessionBus() as bus:
-	with bus.publish("net.lew21.pydbus.Test", TestObject("Main"), ("Lol", TestObject("Lol"))):
-		remoteMain = bus.get("net.lew21.pydbus.Test")
-		remoteLol = bus.get("net.lew21.pydbus.Test", "Lol")
+bus = SessionBus()
 
-		def t1_func():
-			print(remoteMain.HelloWorld("t", 1))
+with bus.publish("net.lew21.pydbus.Test", TestObject("Main"), ("Lol", TestObject("Lol"))):
+	remoteMain = bus.get("net.lew21.pydbus.Test")
+	remoteLol = bus.get("net.lew21.pydbus.Test", "Lol")
 
-		def t2_func():
-			print(remoteLol.HelloWorld("t", 2))
+	def t1_func():
+		print(remoteMain.HelloWorld("t", 1))
 
-		t1 = Thread(None, t1_func)
-		t2 = Thread(None, t2_func)
-		t1.daemon = True
-		t2.daemon = True
+	def t2_func():
+		print(remoteLol.HelloWorld("t", 2))
 
-		def handle_timeout():
-			print("ERROR: Timeout.")
-			sys.exit(1)
+	t1 = Thread(None, t1_func)
+	t2 = Thread(None, t2_func)
+	t1.daemon = True
+	t2.daemon = True
 
-		GLib.timeout_add_seconds(2, handle_timeout)
+	def handle_timeout():
+		print("ERROR: Timeout.")
+		sys.exit(1)
 
-		t1.start()
-		t2.start()
+	GLib.timeout_add_seconds(2, handle_timeout)
 
-		loop.run()
+	t1.start()
+	t2.start()
 
-		t1.join()
-		t2.join()
+	loop.run()
 
+	t1.join()
+	t2.join()

@@ -35,25 +35,26 @@ class TestObject(object):
 			loop.quit()
 		return "M2"
 
-with SessionBus() as bus:
-	with bus.publish("net.lew21.pydbus.tests.expose_multiface", TestObject()):
-		remote = bus.get("net.lew21.pydbus.tests.expose_multiface")
+bus = SessionBus()
 
-		def t1_func():
-			print(remote.Method1())
-			print(remote.Method2())
+with bus.publish("net.lew21.pydbus.tests.expose_multiface", TestObject()):
+	remote = bus.get("net.lew21.pydbus.tests.expose_multiface")
 
-		t1 = Thread(None, t1_func)
-		t1.daemon = True
+	def t1_func():
+		print(remote.Method1())
+		print(remote.Method2())
 
-		def handle_timeout():
-			print("ERROR: Timeout.")
-			sys.exit(1)
+	t1 = Thread(None, t1_func)
+	t1.daemon = True
 
-		GLib.timeout_add_seconds(2, handle_timeout)
+	def handle_timeout():
+		print("ERROR: Timeout.")
+		sys.exit(1)
 
-		t1.start()
+	GLib.timeout_add_seconds(2, handle_timeout)
 
-		loop.run()
+	t1.start()
 
-		t1.join()
+	loop.run()
+
+	t1.join()
