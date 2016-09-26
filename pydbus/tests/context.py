@@ -1,32 +1,39 @@
-from pydbus import SessionBus
+from pydbus import SessionBus, connect
+import os
+
+DBUS_SESSION_BUS_ADDRESS = os.getenv("DBUS_SESSION_BUS_ADDRESS")
+
+with connect(DBUS_SESSION_BUS_ADDRESS) as bus:
+	bus.dbus
+
+del bus._dbus
+try:
+	bus.dbus
+	assert(False)
+except RuntimeError:
+	pass
 
 with SessionBus() as bus:
-	assert(bus.dbus.RequestName)
+	pass
 
-assert(bus.con is None)
+# SessionBus() and SystemBus() are not closed automatically, so this should work:
+bus.dbus
 
-with SessionBus() as bus:
-	assert(bus.dbus.RequestName)
+with bus.request_name("net.lew21.Test"):
+	pass
 
-assert(bus.con is None)
+with bus.request_name("net.lew21.Test"):
+	pass
 
-with SessionBus() as bus:
-
-	with bus.request_name("net.lew21.Test"):
+with bus.request_name("net.lew21.Test"):
+	try:
+		bus.request_name("net.lew21.Test")
+		assert(False)
+	except RuntimeError:
 		pass
 
-	with bus.request_name("net.lew21.Test"):
-		pass
+with bus.watch_name("net.lew21.Test"):
+	pass
 
-	with bus.request_name("net.lew21.Test"):
-		try:
-			bus.request_name("net.lew21.Test")
-			assert(False)
-		except RuntimeError:
-			pass
-
-	with bus.watch_name("net.lew21.Test"):
-		pass
-
-	with bus.subscribe(sender="net.lew21.Test"):
-		pass
+with bus.subscribe(sender="net.lew21.Test"):
+	pass
