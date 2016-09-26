@@ -1,4 +1,4 @@
-from gi.repository import GLib, GObject
+from gi.repository import GLib
 from .generic import bound_method
 from .identifier import filter_identifier
 from .timeout import timeout_to_glib

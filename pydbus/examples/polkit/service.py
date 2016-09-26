@@ -1,8 +1,8 @@
 from pydbus import SystemBus
-from gi.repository import GObject
+from gi.repository import GLib
 import logging
 
-loop = GObject.MainLoop()
+loop = GLib.MainLoop()
 
 class TestObject(object):
 	dbus = '''

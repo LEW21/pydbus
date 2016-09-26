@@ -2,14 +2,14 @@
 pydbus tutorial
 ===============
 
-:Author: `Janusz Lewandowski`_
+:Author: `Linus Lewandowski`_
 :Based on: python-dbus tutorial by Simon McVittie, `Collabora Ltd.`_ (2006-06-14)
-:Date: 2016-04-08
+:Date: 2016-09-26
 
 .. _`Collabora Ltd.`: http://www.collabora.co.uk/
-.. _`Janusz Lewandowski`: http://lew21.net/
+.. _`Linus Lewandowski`: http://lew21.net/
 
-This tutorial requires Python 2.7 or up, and ``pydbus`` 0.5 or up.
+This tutorial requires Python 2.7 or up, and ``pydbus`` 0.6 or up.
 
 .. contents::
 
@@ -86,13 +86,16 @@ Setting up an event loop
 
 To handle signals emitted by exported objects, or to export your own objects, you need to setup an event loop.
 
-The only main loop supported by ``pydbus`` is GLib's GObject.MainLoop.
+The only main loop supported by ``pydbus`` is GLib.MainLoop.
+
+GLib.MainLoop
+-------------
 
 To create the loop object use::
 
-    from gi.repository import GObject
+    from gi.repository import GLib
 
-    loop = GObject.MainLoop()
+    loop = GLib.MainLoop()
 
 To execute the loop use::
 
@@ -315,7 +318,7 @@ See also
 
 See the example in ``pydbus/examples/clientserver/server.py``.
 
-.. _bus.own_name:
+.. _bus.request_name:
 .. _bus.register_object:
 
 Lower level API
@@ -324,8 +327,8 @@ Lower level API
 Sometimes, you can't just publish everything in one call, you need more control
 over the process of binding a name and exporting single objects.
 
-In this case, you can use ``bus.own_name()`` and ``bus.register_object()`` yourself.
-See ``help(bus.own_name)`` and ``help(bus.register_object)`` for details.
+In this case, you can use ``bus.request_name()`` and ``bus.register_object()`` yourself.
+See ``help(bus.request_name)`` and ``help(bus.register_object)`` for details.
 
 .. --------------------------------------------------------------------
 
@@ -380,7 +383,7 @@ License for this document
 
 Copyright 2006-2007 `Collabora Ltd.`_
 
-Copyright 2016 `Janusz Lewandowski`_
+Copyright 2016 `Linus Lewandowski`_
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation

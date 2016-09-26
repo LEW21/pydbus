@@ -7,13 +7,17 @@ pydbus
 
 Pythonic DBus library.
 
-It's based on PyGI_, the Python GObject Introspection bindings, which is the recommended way to use GLib from Python. Unfortunately, PyGI is not packaged on pypi, so you need to install it from your distribution's repository (usually called python-gi, python-gobject or pygobject3).
-
-It's pythonic!
-
-And now, it can also publish objects! However, publication support requires GLib 2.46 or newer.
-
 Changelog: https://github.com/LEW21/pydbus/releases
+
+Requirements
+------------
+* Python 2.7+ - but works best on 3.4+ (help system is nicer there)
+* PyGI_ (not packaged on pypi, you need to install it from your distribution's repository - it's usually called python-gi, python-gobject or pygobject)
+* GLib_ 2.46+ and girepository_ 1.46+ (Ubuntu 16.04+) - for object publication support
+
+.. _PyGI: https://wiki.gnome.org/Projects/PyGObject
+.. _GLib: https://developer.gnome.org/glib/
+.. _girepository: https://wiki.gnome.org/Projects/GObjectIntrospection
 
 Examples
 --------
@@ -46,18 +50,18 @@ Watch for new systemd jobs
 .. code-block:: python
 
 	from pydbus import SystemBus
-	from gi.repository import GObject
+	from gi.repository import GLib
 
 	bus = SystemBus()
 	systemd = bus.get(".systemd1")
 
 	systemd.JobNew.connect(print)
-	GObject.MainLoop().run()
+	GLib.MainLoop().run()
 
 	# or
 
 	systemd.onJobNew = print
-	GObject.MainLoop().run()
+	GLib.MainLoop().run()
 
 View object's API
 ~~~~~~~~~~~~~~~~~
@@ -75,7 +79,6 @@ More examples & documentation
 
 The Tutorial_ contains more examples and docs.
 
-.. _PyGI: https://wiki.gnome.org/PyGObject
 .. _Tutorial: https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst
 
 Copyright Information

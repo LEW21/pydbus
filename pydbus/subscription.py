@@ -19,8 +19,8 @@ class SubscriptionMixin(object):
 		Subscribes to signals on connection and invokes signal_fired callback
 		whenever the signal is received.
 
-		To receive signal_fired callback, you need GLib main loop.
-		You can execute it with GObject.MainLoop().run().
+		To receive signal_fired callback, you need an event loop.
+		https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst#setting-up-an-event-loop
 
 		Parameters
 		----------
