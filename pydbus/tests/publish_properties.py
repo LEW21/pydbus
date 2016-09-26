@@ -1,4 +1,4 @@
-from pydbus import SessionBus
+from pydbus import SessionBus, Variant
 from gi.repository import GLib
 from threading import Thread
 import sys
@@ -40,7 +40,7 @@ with SessionBus() as bus:
 			except GLib.GError:
 				pass
 			try:
-				remote.Set("net.lew21.pydbus.tests.publish_properties", "Foo", GLib.Variant("s", "haxor"))
+				remote.Set("net.lew21.pydbus.tests.publish_properties", "Foo", Variant("s", "haxor"))
 				assert(False)
 			except GLib.GError:
 				pass

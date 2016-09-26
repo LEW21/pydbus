@@ -1,5 +1,4 @@
 from pydbus import SystemBus
-from gi.repository import Gio
 
 bus = SystemBus()
 
