@@ -28,13 +28,20 @@ bus = SessionBus()
 
 with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 	remote = bus.get("net.lew21.pydbus.tests.publish_properties")
+	remote_iface = remote['net.lew21.pydbus.tests.publish_properties']
 
 	def t1_func():
-		assert(remote.Foo == "foo")
-		assert(remote.Foobar == "foobar")
+		for obj in [remote, remote_iface]:
+			assert(obj.Foo == "foo")
+			assert(obj.Foobar == "foobar")
+			obj.Foobar = "barfoo"
+			assert(obj.Foobar == "barfoo")
+			obj.Foobar = "foobar"
+			assert(obj.Foobar == "foobar")
+			obj.Bar = "rab"
+
 		remote.Foobar = "barfoo"
-		assert(remote.Foobar == "barfoo")
-		remote.Bar = "rab"
+
 		try:
 			remote.Get("net.lew21.pydbus.tests.publish_properties", "Bar")
 			assert(False)

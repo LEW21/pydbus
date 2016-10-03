@@ -59,10 +59,11 @@ class ProxyMixin(object):
 		return CompositeInterface(introspection)(self, bus_name, object_path)
 
 class ProxyObject(object):
-	def __init__(self, bus, bus_name, path):
+	def __init__(self, bus, bus_name, path, object=None):
 		self._bus = bus
 		self._bus_name = bus_name
 		self._path = path
+		self._object = object if object else self
 
 def Interface(iface):
 
@@ -102,7 +103,7 @@ def CompositeInterface(introspection):
 			assert(len(matching_bases) == 1)
 
 			iface_class = matching_bases[0]
-			return iface_class(self._bus, self._bus_name, self._path)
+			return iface_class(self._bus, self._bus_name, self._path, self)
 
 		@classmethod
 		def _Introspect(cls):
