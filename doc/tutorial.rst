@@ -370,6 +370,11 @@ the correct argument types. Python types are converted into the right
 D-Bus data types automatically, if possible; ``TypeError`` is raised
 if the type is inappropriate.
 
+Strings
+-------
+
+In Python 3, strings are represented as ``str`` objects. In Python 2, ``unicode`` is used instead - and pydbus automatically interprets ``str`` arguments as UTF8-encoded strings.
+
 Container types
 ---------------
 

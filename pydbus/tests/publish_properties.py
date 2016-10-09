@@ -32,15 +32,15 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 
 	def t1_func():
 		for obj in [remote, remote_iface]:
-			assert(obj.Foo == "foo")
-			assert(obj.Foobar == "foobar")
-			obj.Foobar = "barfoo"
-			assert(obj.Foobar == "barfoo")
-			obj.Foobar = "foobar"
-			assert(obj.Foobar == "foobar")
-			obj.Bar = "rab"
+			assert(obj.Foo == u"foo")
+			assert(obj.Foobar == u"foobar")
+			obj.Foobar = u"barfoo"
+			assert(obj.Foobar == u"barfoo")
+			obj.Foobar = u"foobar"
+			assert(obj.Foobar == u"foobar")
+			obj.Bar = u"rab"
 
-		remote.Foobar = "barfoo"
+		remote.Foobar = u"barfoo"
 
 		try:
 			remote.Get("net.lew21.pydbus.tests.publish_properties", "Bar")

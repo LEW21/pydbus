@@ -24,6 +24,14 @@ class Variant(GLib.Variant):
 	get_child_value = auto_upcast(GLib.Variant.get_child_value)
 	lookup_value = auto_upcast(GLib.Variant.lookup_value)
 
+	# Python 2
+	def get_string(self):
+		s = super(Variant, self).get_string()
+		try:
+			return s.decode("utf-8")
+		except AttributeError:
+			return s
+
 	def get_bytes(self):
 		return variant_get_bytes(self)
 
