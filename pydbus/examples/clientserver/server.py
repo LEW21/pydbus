@@ -5,10 +5,10 @@
 # Python DBUS Test Server
 # runs until the Quit() method is called via DBUS
 
-from gi.repository import GObject
+from gi.repository import GLib
 from pydbus import SessionBus
 
-loop = GObject.MainLoop()
+loop = GLib.MainLoop()
 
 class MyDBUSService(object):
 	"""

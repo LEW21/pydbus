@@ -28,8 +28,8 @@ class OwnMixin(object):
 		Starts acquiring name on the bus specified by bus_type and calls
 		name_acquired and name_lost when the name is acquired respectively lost.
 
-		To receive name_aquired and name_lost callbacks, you need GLib main loop.
-		You can execute it with GObject.MainLoop().run().
+		To receive name_aquired and name_lost callbacks, you need an event loop.
+		https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst#setting-up-an-event-loop
 
 		Parameters
 		----------
@@ -68,8 +68,8 @@ class WatchMixin(object):
 		name_appeared and name_vanished when the name is known to have a owner
 		respectively known to lose its owner.
 
-		To receive name_appeared and name_vanished callbacks, you need GLib main loop.
-		You can execute it with GObject.MainLoop().run().
+		To receive name_appeared and name_vanished callbacks, you need an event loop.
+		https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst#setting-up-an-event-loop
 
 		Parameters
 		----------

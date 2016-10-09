@@ -1,10 +1,10 @@
 from __future__ import print_function
 from pydbus import SessionBus
-from gi.repository import GObject, GLib
+from gi.repository import GLib
 import subprocess
 from time import sleep
 
-loop = GObject.MainLoop()
+loop = GLib.MainLoop()
 
 subprocess.Popen("gnome-music")
 sleep(5)
