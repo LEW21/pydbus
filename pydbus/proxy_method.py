@@ -2,6 +2,7 @@ from gi.repository import GLib
 from .generic import bound_method
 from .identifier import filter_identifier
 from .timeout import timeout_to_glib
+from . import Variant
 
 try:
 	from inspect import Signature, Parameter
@@ -71,7 +72,7 @@ class ProxyMethod(object):
 
 		ret = instance._bus.con.call(
 			instance._bus_name, instance._path,
-			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
+			self._iface_name, self.__name__, Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
 			0, timeout_to_glib(timeout)).unpack()
 
 		if len(self._outargs) == 0:

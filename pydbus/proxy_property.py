@@ -1,4 +1,4 @@
-from gi.repository import GLib
+from . import Variant
 
 class ProxyProperty(object):
 	def __init__(self, iface_name, property):
@@ -19,13 +19,13 @@ class ProxyProperty(object):
 		if not self._readable:
 			raise AttributeError("unreadable attribute")
 
-		return instance._object["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)
+		return instance._object["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__).unpack()
 
 	def __set__(self, instance, value):
 		if instance is None or not self._writeable:
 			raise AttributeError("can't set attribute")
 
-		instance._object["org.freedesktop.DBus.Properties"].Set(self._iface_name, self.__name__, GLib.Variant(self._type, value))
+		instance._object["org.freedesktop.DBus.Properties"].Set(self._iface_name, self.__name__, Variant(self._type, value))
 
 	def __repr__(self):
 		return "<property " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"

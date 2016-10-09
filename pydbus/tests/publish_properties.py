@@ -52,7 +52,7 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 			assert(False)
 		except GLib.GError:
 			pass
-		assert(remote.GetAll("net.lew21.pydbus.tests.publish_properties") == {'Foobar': 'barfoo', 'Foo': 'foo'})
+		assert(remote.GetAll("net.lew21.pydbus.tests.publish_properties") == {'Foobar': Variant('s', u'barfoo'), 'Foo': Variant('s', u'foo')})
 		remote.Quit()
 
 	t1 = Thread(None, t1_func)

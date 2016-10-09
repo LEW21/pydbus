@@ -1,6 +1,7 @@
 from gi.repository import Gio
 from functools import wraps
 from .._engine import AsyncFunction, Spawner, GreenProperty
+from ..glib._variant import upcast as upcast_variant
 
 def bus_get(bus_type):
 	bus = AsyncFunction(Gio.bus_get_sync, Gio.bus_get, Gio.bus_get_finish)(bus_type)
@@ -26,7 +27,7 @@ class DBusConnection(object):
 
 	def call(self, bus_name, object_path, interface_name, method_name, parameters, reply_type, flags, timeout_msec):
 		f = AsyncFunction(self.pygi.call_sync, self.pygi.call, self.pygi.call_finish)
-		return f(bus_name, object_path, interface_name, method_name, parameters, reply_type, flags, timeout_msec)
+		return upcast_variant(f(bus_name, object_path, interface_name, method_name, parameters, reply_type, flags, timeout_msec))
 
 	def signal_subscribe(self, sender, interface_name, member, object_path, arg0, flags, callback):
 		return self.pygi.signal_subscribe(sender, interface_name, member, object_path, arg0, flags, Spawner(callback))

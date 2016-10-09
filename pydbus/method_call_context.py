@@ -1,5 +1,5 @@
-from gi.repository import GLib
 from collections import namedtuple
+from . import Variant
 
 AuthorizationResult = namedtuple("AuthorizationResult", "is_authorized is_challenge details")
 
@@ -28,7 +28,7 @@ class MethodCallContext(object):
 		return self._mi.get_method_name()
 
 	def check_authorization(self, action_id, details, interactive=False):
-		return AuthorizationResult(*self.bus.polkit_authority.CheckAuthorization(('system-bus-name', {'name': GLib.Variant("s", self.sender)}), action_id, details, 1 if interactive else 0, ''))
+		return AuthorizationResult(*self.bus.polkit_authority.CheckAuthorization(('system-bus-name', {'name': Variant("s", self.sender)}), action_id, details, 1 if interactive else 0, ''))
 
 	def is_authorized(self, action_id, details, interactive=False):
 		return self.check_authorization(action_id, details, interactive).is_authorized
