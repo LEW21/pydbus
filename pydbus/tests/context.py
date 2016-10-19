@@ -1,39 +1,40 @@
 from pydbus import SessionBus, connect
 import os
 
-DBUS_SESSION_BUS_ADDRESS = os.getenv("DBUS_SESSION_BUS_ADDRESS")
+import pytest
 
-with connect(DBUS_SESSION_BUS_ADDRESS) as bus:
-	bus.dbus
 
-del bus._dbus
-try:
-	bus.dbus
-	assert(False)
-except RuntimeError:
-	pass
+def test_remove_dbus():
+	DBUS_SESSION_BUS_ADDRESS = os.getenv("DBUS_SESSION_BUS_ADDRESS")
 
-with SessionBus() as bus:
-	pass
+	with connect(DBUS_SESSION_BUS_ADDRESS) as bus:
+		bus.dbus
 
-# SessionBus() and SystemBus() are not closed automatically, so this should work:
-bus.dbus
+	del bus._dbus
+	with pytest.raises(RuntimeError):
+		bus.dbus
 
-with bus.request_name("net.lew21.Test"):
-	pass
 
-with bus.request_name("net.lew21.Test"):
-	pass
-
-with bus.request_name("net.lew21.Test"):
-	try:
-		bus.request_name("net.lew21.Test")
-		assert(False)
-	except RuntimeError:
+def test_use_exited_bus():
+	"""Test using a bus instance after its context manager."""
+	with SessionBus() as bus:
 		pass
 
-with bus.watch_name("net.lew21.Test"):
-	pass
+	# SessionBus() and SystemBus() are not closed automatically, so this should work:
+	bus.dbus
 
-with bus.subscribe(sender="net.lew21.Test"):
-	pass
+	with bus.request_name("net.lew21.Test"):
+		pass
+
+	with bus.request_name("net.lew21.Test"):
+		pass
+
+	with bus.request_name("net.lew21.Test"):
+		with pytest.raises(RuntimeError):
+			bus.request_name("net.lew21.Test")
+
+	with bus.watch_name("net.lew21.Test"):
+		pass
+
+	with bus.subscribe(sender="net.lew21.Test"):
+		pass
