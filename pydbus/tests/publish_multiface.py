@@ -1,12 +1,14 @@
 from pydbus import SessionBus
 from gi.repository import GLib
-from threading import Thread
+from threading import Thread, Lock
 import sys
+import time
 
-done = 0
-loop = GLib.MainLoop()
+import pytest
 
-class TestObject(object):
+from pydbus.tests.util import ClientThread
+
+class DummyObject(object):
 	'''
 <node>
 	<interface name='net.lew21.pydbus.tests.Iface1'>
@@ -21,40 +23,90 @@ class TestObject(object):
 	</interface>
 </node>
 	'''
+
+	def __init__(self):
+		self.done = []
+
 	def Method1(self):
-		global done
-		done += 1
-		if done == 2:
-			loop.quit()
-		return "M1"
+		self.done += ["Method1"]
+		return self.done[-1]
 
 	def Method2(self):
-		global done
-		done += 1
-		if done == 2:
-			loop.quit()
-		return "M2"
+		self.done += ["Method2"]
+		return self.done[-1]
 
-bus = SessionBus()
 
-with bus.publish("net.lew21.pydbus.tests.expose_multiface", TestObject()):
-	remote = bus.get("net.lew21.pydbus.tests.expose_multiface")
+@pytest.fixture
+def defaults():
+	loop = GLib.MainLoop()
+	loop.cancelled = False
+	bus = SessionBus()
 
-	def t1_func():
-		print(remote.Method1())
-		print(remote.Method2())
+	obj = DummyObject()
+	with bus.publish("net.lew21.pydbus.tests.expose_multiface", obj):
+		yield loop, obj, bus.get("net.lew21.pydbus.tests.expose_multiface")
 
-	t1 = Thread(None, t1_func)
-	t1.daemon = True
 
-	def handle_timeout():
-		print("ERROR: Timeout.")
-		sys.exit(1)
+def run(loop, func):
+	thread = ClientThread(func, loop)
+	GLib.timeout_add_seconds(2, loop.quit)
 
-	GLib.timeout_add_seconds(2, handle_timeout)
-
-	t1.start()
-
+	thread.start()
 	loop.run()
 
-	t1.join()
+	try:
+		return thread.result
+	except ValueError:
+		pytest.fail('Unable to finish thread')
+
+
+def test_using_multiface(defaults):
+	def thread_func():
+		results = []
+		results += [remote.Method1()]
+		results += [remote.Method2()]
+		return results
+
+	loop, obj, remote = defaults
+
+	result = run(loop, thread_func)
+
+	assert result == ["Method1", "Method2"]
+	assert obj.done == ["Method1", "Method2"]
+
+
+@pytest.mark.parametrize("interface, method", [
+	("net.lew21.pydbus.tests.Iface1", "Method1"),
+	("net.lew21.pydbus.tests.Iface2", "Method2"),
+])
+def test_using_specific_interface(defaults, interface, method):
+	def thread_func():
+		return getattr(remote, method)()
+
+	loop, obj, remote = defaults
+	remote = remote[interface]
+
+	result = run(loop, thread_func)
+
+	assert result == method
+	assert obj.done == [method]
+
+
+@pytest.mark.parametrize("interface, method", [
+	("net.lew21.pydbus.tests.Iface1", "Method2"),
+	("net.lew21.pydbus.tests.Iface2", "Method1"),
+])
+def test_using_wrong_interface(defaults, interface, method):
+	def thread_func():
+		with pytest.raises(AttributeError) as e:
+			getattr(remote, method)()
+		return e
+
+	loop, obj, remote = defaults
+	remote = remote[interface]
+
+	result = run(loop, thread_func)
+
+	assert str(result.value) == "'{}' object has no attribute '{}'".format(
+		interface, method)
+	assert obj.done == []

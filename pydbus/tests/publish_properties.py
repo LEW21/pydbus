@@ -3,17 +3,18 @@ from gi.repository import GLib
 from threading import Thread
 import sys
 
-done = 0
-loop = GLib.MainLoop()
+import pytest
 
-class TestObject(object):
+from pydbus.tests.util import ClientPool, ClientThread
+
+
+class DummyObject(object):
 	'''
 <node>
 	<interface name='net.lew21.pydbus.tests.publish_properties'>
 		<property name="Foobar" type="s" access="readwrite"/>
 		<property name="Foo" type="s" access="read"/>
 		<property name="Bar" type="s" access="write"/>
-		<method name='Quit'/>
 	</interface>
 </node>
 	'''
@@ -21,51 +22,40 @@ class TestObject(object):
 		self.Foo = "foo"
 		self.Foobar = "foobar"
 
-	def Quit(self):
-		loop.quit()
 
-bus = SessionBus()
+def test_properties():
+	bus = SessionBus()
+	loop = GLib.MainLoop()
 
-with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
-	remote = bus.get("net.lew21.pydbus.tests.publish_properties")
-	remote_iface = remote['net.lew21.pydbus.tests.publish_properties']
+	with bus.publish("net.lew21.pydbus.tests.publish_properties", DummyObject()):
+		remote = bus.get("net.lew21.pydbus.tests.publish_properties")
+		remote_iface = remote['net.lew21.pydbus.tests.publish_properties']
 
-	def t1_func():
-		for obj in [remote, remote_iface]:
-			assert(obj.Foo == "foo")
-			assert(obj.Foobar == "foobar")
-			obj.Foobar = "barfoo"
-			assert(obj.Foobar == "barfoo")
-			obj.Foobar = "foobar"
-			assert(obj.Foobar == "foobar")
-			obj.Bar = "rab"
+		def t1_func():
+			for obj in [remote, remote_iface]:
+				assert(obj.Foo == "foo")
+				assert(obj.Foobar == "foobar")
+				obj.Foobar = "barfoo"
+				assert(obj.Foobar == "barfoo")
+				obj.Foobar = "foobar"
+				assert(obj.Foobar == "foobar")
+				obj.Bar = "rab"
 
-		remote.Foobar = "barfoo"
+			remote.Foobar = "barfoo"
 
-		try:
-			remote.Get("net.lew21.pydbus.tests.publish_properties", "Bar")
-			assert(False)
-		except GLib.GError:
-			pass
-		try:
-			remote.Set("net.lew21.pydbus.tests.publish_properties", "Foo", Variant("s", "haxor"))
-			assert(False)
-		except GLib.GError:
-			pass
-		assert(remote.GetAll("net.lew21.pydbus.tests.publish_properties") == {'Foobar': 'barfoo', 'Foo': 'foo'})
-		remote.Quit()
+			with pytest.raises(GLib.GError):
+				remote.Get("net.lew21.pydbus.tests.publish_properties", "Bar")
+			with pytest.raises(GLib.GError):
+				remote.Set("net.lew21.pydbus.tests.publish_properties", "Foo", Variant("s", "haxor"))
+			assert(remote.GetAll("net.lew21.pydbus.tests.publish_properties") == {'Foobar': 'barfoo', 'Foo': 'foo'})
 
-	t1 = Thread(None, t1_func)
-	t1.daemon = True
+		t1 = ClientThread(t1_func, loop)
 
-	def handle_timeout():
-		print("ERROR: Timeout.")
-		sys.exit(1)
+		GLib.timeout_add_seconds(2, loop.quit)
 
-	GLib.timeout_add_seconds(2, handle_timeout)
+		t1.start()
 
-	t1.start()
+		loop.run()
 
-	loop.run()
-
-	t1.join()
+		# The result is not important, but it might reraise the assertion
+		t1.result
