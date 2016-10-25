@@ -238,21 +238,11 @@ To prepare a class for exporting on the Bus, provide the dbus introspection XML
 in a ''dbus'' class property or in its ''docstring''. For example::
 
     from pydbus.generic import signal
+    from pydbus.xml_generator import interface, signalled, attach_introspection_xml
 
+    @attach_introspection_xml
+    @interface("net.lew21.pydbus.TutorialExample")
     class Example(object):
-      """
-        <node>
-          <interface name='net.lew21.pydbus.TutorialExample'>
-            <method name='EchoString'>
-              <arg type='s' name='a' direction='in'/>
-              <arg type='s' name='response' direction='out'/>
-            </method>
-            <property name="SomeProperty" type="s" access="readwrite">
-              <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
-            </property>
-          </interface>
-        </node>
-      """
 
       def EchoString(self, s):
         """returns whatever is passed to it"""
@@ -265,7 +255,7 @@ in a ''dbus'' class property or in its ''docstring''. For example::
       def SomeProperty(self):
         return self._someProperty
 
-      @SomeProperty.setter
+      @signalled(SomeProperty)
       def SomeProperty(self, value):
         self._someProperty = value
         self.PropertiesChanged("net.lew21.pydbus.TutorialExample", {"SomeProperty": self.SomeProperty}, [])

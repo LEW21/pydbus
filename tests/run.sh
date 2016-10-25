@@ -17,6 +17,7 @@ PYTHON=${1:-python}
 
 "$PYTHON" -m pydbus.tests.context
 "$PYTHON" -m pydbus.tests.identifier
+"$PYTHON" -m pydbus.tests.xml_generator
 if [ "$2" != "dontpublish" ]
 then
 	"$PYTHON" -m pydbus.tests.publish
