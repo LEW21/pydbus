@@ -46,7 +46,7 @@ class DBusConnection(object):
 	def unregister_object(self, registration_id):
 		return self.pygi.unregister_object(registration_id)
 
-	def emit_signal(destination_bus_name, object_path, interface_name, signal_name, parameters):
+	def emit_signal(self, destination_bus_name, object_path, interface_name, signal_name, parameters):
 		return self.pygi.emit_signal(destination_bus_name, object_path, interface_name, signal_name, parameters)
 
 	watch_name = bus_watch_name_on_connection
