@@ -35,7 +35,7 @@ class Bus(ProxyMixin, RequestNameMixin, OwnMixin, WatchMixin, SubscriptionMixin,
 
 	def __exit__(self, exc_type, exc_value, traceback):
 		if self.autoclose:
-			self.con.close()
+			self.con.close_sync(None)
 
 	@property
 	def dbus(self):
