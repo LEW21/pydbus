@@ -44,6 +44,15 @@ List systemd units
 
 	for unit in systemd.ListUnits():
 	    print(unit)
+	    
+Start or stop systemd unit
+~~~~~~~~~~~~~~~~~~
+.. code-block:: python
+	from pydbus import SystemBus
+	bus = SystemBus()
+	systemd = bus.get(".systemd1")
+	job1 = systemd.StopUnit("ssh.service", "fail")
+	job2 = systemd.StartUnit("ssh.service", "fail")
 
 Watch for new systemd jobs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
