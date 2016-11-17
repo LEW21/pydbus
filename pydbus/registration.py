@@ -74,11 +74,14 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 			sig = signature(method)
 
-			kwargs = {}
+			kwargs = {"sender": sender, "object_path": object_path, "interface_name": interface_name}
 			if "dbus_context" in sig.parameters and sig.parameters["dbus_context"].kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY):
 				kwargs["dbus_context"] = MethodCallContext(invocation)
 
-			result = method(*parameters, **kwargs)
+			try:
+				result = method(*parameters, **kwargs)
+			except TypeError:
+				result = method(*parameters)
 
 			if len(outargs) == 0:
 				invocation.return_value(None)
