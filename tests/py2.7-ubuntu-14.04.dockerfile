@@ -1,7 +1,7 @@
 FROM ubuntu:14.04
 RUN apt-get update
 
-RUN apt-get install -y dbus python-gi python-pip psmisc python-dev
+RUN apt-get install -y dbus python-gi python-pip psmisc python-dev dbus-x11
 RUN python2 --version
 RUN pip2 install greenlet
 
