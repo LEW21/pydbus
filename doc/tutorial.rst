@@ -188,7 +188,7 @@ in another, it won't work.
 See also
 ~~~~~~~~
 
-See the examples in ``pydbus/examples/systemctl.py`` and ``pydbus/tests/gnome_music.py``.
+See the examples in ``examples/systemctl.py`` and ``tests/gnome_music.py``.
 
 Interfaces
 ----------
@@ -316,7 +316,7 @@ method, that can be used as a context manager.
 See also
 ~~~~~~~~
 
-See the example in ``pydbus/examples/clientserver/server.py``.
+See the example in ``examples/clientserver/server.py``.
 
 .. _bus.request_name:
 .. _bus.register_object:
