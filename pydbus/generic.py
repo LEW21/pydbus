@@ -76,10 +76,16 @@ class signal(object):
 	- they will be forwarded to all subscribed callbacks.
 	"""
 
-	def __init__(self):
+	def __init__(self, method=None):
+		# if used as a decorator, method is defined
+		self.method = method
 		self.map = {}
-		self.__qualname__ = "<anonymous signal>" # function uses <lambda> ;)
 		self.__doc__ = "Signal."
+		if method is None:
+			self.__qualname__ = "<anonymous signal>" # function uses <lambda> ;)
+		else:
+			self.__qualname__ = "signal '{}'".format(method.__name__)
+			self.__name__ = method.__name__
 
 	def connect(self, object, callback):
 		"""Subscribe to the signal."""
