@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 with open('README.rst') as f:
 	readme = f.read()
 
 setup(
 	name = "pydbus",
-	version = "0.5.1",
+	version = "0.6.0",
 	description = "Pythonic DBus library",
 	long_description = readme,
-	author = "Janusz Lewandowski",
-	author_email = "lew21@xtreeme.org",
+	author = "Linus Lewandowski",
+	author_email = "linus@lew21.net",
 	url = "https://github.com/LEW21/pydbus",
 	keywords = "dbus",
 	license = "LGPLv2+",
 
-	packages = find_packages(),
-	package_data = {
-		'': ['LICENSE, *.rst'],
-	},
+	packages = ["pydbus"],
+	package_data = {"": ["LICENSE"]},
+	package_dir = {"pydbus": "pydbus"},
 	zip_safe = True,
 	classifiers = [
 		'Development Status :: 5 - Production/Stable',
