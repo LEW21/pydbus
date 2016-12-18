@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+cd "$(dirname "$(dirname "$0")")"
+
 ADDRESS_FILE=$(mktemp /tmp/pydbustest.XXXXXXXXX)
 PID_FILE=$(mktemp /tmp/pydbustest.XXXXXXXXX)
 
@@ -15,11 +17,9 @@ rm "$ADDRESS_FILE" "$PID_FILE"
 
 PYTHON=${1:-python}
 
-"$PYTHON" -m pydbus.tests.context
-"$PYTHON" -m pydbus.tests.identifier
+FILES="pydbus/tests/identifier.py pydbus/tests/context.py"
 if [ "$2" != "dontpublish" ]
 then
-	"$PYTHON" -m pydbus.tests.publish
-	"$PYTHON" -m pydbus.tests.publish_properties
-	"$PYTHON" -m pydbus.tests.publish_multiface
+	FILES="$FILES pydbus/tests/publish.py pydbus/tests/publish_properties.py pydbus/tests/publish_multiface.py"
 fi
+"$PYTHON" -m pytest -v $FILES

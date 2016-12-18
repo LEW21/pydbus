@@ -3,10 +3,10 @@ from gi.repository import GLib
 from threading import Thread
 import sys
 
-done = 0
-loop = GLib.MainLoop()
+from pydbus.tests.util import ClientPool, ClientThread
 
-class TestObject(object):
+
+class DummyObject(object):
 	'''
 <node>
 	<interface name='net.lvht.Foo1'>
@@ -23,40 +23,33 @@ class TestObject(object):
 
 	def HelloWorld(self, a, b):
 		res = self.id + ": " + a + str(b)
-		global done
-		done += 1
-		if done == 2:
-			loop.quit()
-		print(res)
 		return res
 
-bus = SessionBus()
 
-with bus.publish("net.lew21.pydbus.Test", TestObject("Main"), ("Lol", TestObject("Lol"))):
-	remoteMain = bus.get("net.lew21.pydbus.Test")
-	remoteLol = bus.get("net.lew21.pydbus.Test", "Lol")
+def test_multiple_requests():
+	loop = GLib.MainLoop()
+	bus = SessionBus()
 
-	def t1_func():
-		print(remoteMain.HelloWorld("t", 1))
+	with bus.publish("net.lew21.pydbus.Test", DummyObject("Main"), ("Lol", DummyObject("Lol"))):
+		remoteMain = bus.get("net.lew21.pydbus.Test")
+		remoteLol = bus.get("net.lew21.pydbus.Test", "Lol")
 
-	def t2_func():
-		print(remoteLol.HelloWorld("t", 2))
+		def t1_func():
+			return remoteMain.HelloWorld("t", 1)
 
-	t1 = Thread(None, t1_func)
-	t2 = Thread(None, t2_func)
-	t1.daemon = True
-	t2.daemon = True
+		def t2_func():
+			return remoteLol.HelloWorld("t", 2)
 
-	def handle_timeout():
-		print("ERROR: Timeout.")
-		sys.exit(1)
+		pool = ClientPool(loop.quit)
+		t1 = ClientThread(t1_func, loop, pool)
+		t2 = ClientThread(t2_func, loop, pool)
 
-	GLib.timeout_add_seconds(2, handle_timeout)
+		GLib.timeout_add_seconds(2, loop.quit)
 
-	t1.start()
-	t2.start()
+		t1.start()
+		t2.start()
 
-	loop.run()
+		loop.run()
 
-	t1.join()
-	t2.join()
+		assert t1.result == "Main: t1"
+		assert t2.result == "Lol: t2"
