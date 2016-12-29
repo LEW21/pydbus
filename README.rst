@@ -46,7 +46,7 @@ List systemd units
 	    print(unit)
 
 Start or stop systemd unit
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. code-block:: python
 
 	from pydbus import SystemBus
