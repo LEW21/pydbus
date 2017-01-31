@@ -39,6 +39,9 @@ class QueueConsumer:
 	def __iter__(self):
 		return self
 
+	def next(self):
+		return self.__next__()
+
 	def __next__(self):
 		if self.queue.events:
 			return self.queue.events.pop(0)
@@ -59,6 +62,9 @@ class GreenConsumer:
 
 	def __iter__(self):
 		return self
+
+	def next(self):
+		return self.__next__()
 
 	def __next__(self):
 		try:
