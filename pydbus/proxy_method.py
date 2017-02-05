@@ -33,8 +33,8 @@ class ProxyMethod(object):
 		self.__name__ = method.attrib["name"]
 		self.__qualname__ = self._iface_name + "." + self.__name__
 
-		self._inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "in"]
-		self._outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib["direction"] == "out"]
+		self._inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib.get("direction", "in") == "in"]
+		self._outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib.get("direction", "in") == "out"]
 		self._sinargs  = "(" + "".join(x[1] for x in self._inargs) + ")"
 		self._soutargs = "(" + "".join(self._outargs) + ")"
 
