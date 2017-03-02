@@ -9,11 +9,20 @@ class ProxySignal(object):
 		self._args = [arg.attrib["type"] for arg in signal if arg.tag == "arg"]
 		self.__doc__ = "Signal. Callback: (" + ", ".join(self._args) + ")"
 
-	def connect(self, object, callback):
+	def connect(self, obj, callback):
 		"""Subscribe to the signal."""
-		def signal_fired(sender, object, iface, signal, params):
+		def signal_fired(sender, obj, iface, signal, params):
+			
+			if self.translator:
+				params=self.translator.translate(
+				iface,
+				signal,
+				params,
+				2,True)
+			if not isinstance(params,tuple): params=(params,)
 			callback(*params)
-		return object._bus.subscribe(sender=object._bus_name, object=object._path, iface=self._iface_name, signal=self.__name__, signal_fired=signal_fired)
+		self.translator = obj._bus._ProxyMixin__translator
+		return obj._bus.subscribe(sender=obj._bus_name, obj=obj._path, iface=self._iface_name, signal=self.__name__, signal_fired=signal_fired)
 
 	def __get__(self, instance, owner):
 		if instance is None:

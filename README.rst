@@ -5,7 +5,7 @@ pydbus
 .. image:: https://badge.fury.io/py/pydbus.svg
     :target: https://badge.fury.io/py/pydbus
 
-Pythonic DBus library.
+Pythonic DBus library, with translation of ints used as states or flags.
 
 Changelog: https://github.com/LEW21/pydbus/releases
 
@@ -44,6 +44,24 @@ List systemd units
 
 	for unit in systemd.ListUnits():
 	    print(unit)
+	    
+Handle flags and states natively
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: python
+
+	from pydbus import SystemBus
+	from tests.nmdefines import PydbusNetworkManagerSpec,NM_DBUS_INTERFACE,NM_DBUS_INTERFACE_DEVICE
+	
+    bus=SystemBus()
+    #old C way
+    nm=bus.get("org.freedesktop.NetworkManager",'Devices/0')["org.freedesktop.NetworkManager.Device"]
+    print(str(nm.Capabilities) + ", "+str(nm.DeviceType))
+    #7, 14
+    
+    #pythonic way
+    nm_trans=bus.get(NM_DBUS_INTERFACE,'Devices/0',translation_spec=PydbusNetworkManagerSpec)[NM_DBUS_INTERFACE_DEVICE]
+    print(str(nm_trans.Capabilities) + ", "+str(nm_trans.DeviceType))
+    #('NM_SUPPORTED', 'CARRIER_DETECT', 'IS_SOFTWARE'), GENERIC
 
 Start or stop systemd unit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,11 +110,16 @@ More examples & documentation
 The Tutorial_ contains more examples and docs.
 
 .. _Tutorial: https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst
+.. _Tutorial: https://github.com/LEW21/pydbus/blob/master/doc/autotranslator_tutorial.rst
 
 Copyright Information
 ---------------------
 
+
 Copyright (C) 2014, 2015, 2016 Linus Lewandowski <linus@lew21.net>
+
+translator.py, nmdefines.py and autotranslator_tutorial.rst
+Copyright (C) 2017 Quiet Fountain LLC <hcoin@quietfountain.com>
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public

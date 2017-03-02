@@ -15,8 +15,8 @@ def pydbus_property(self):
 
 Gio.DBusConnection.pydbus = property(pydbus_property)
 
-def bus_get(type):
-	return Gio.bus_get_sync(type, None).pydbus
+def bus_get(bustype):
+	return Gio.bus_get_sync(bustype, None).pydbus
 
 def connect(address):
 	c = Gio.DBusConnection.new_for_address_sync(address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION, None, None)

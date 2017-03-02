@@ -2,6 +2,7 @@ from pydbus import SessionBus, connect
 import os
 
 DBUS_SESSION_BUS_ADDRESS = os.getenv("DBUS_SESSION_BUS_ADDRESS")
+if DBUS_SESSION_BUS_ADDRESS == None: DBUS_SESSION_BUS_ADDRESS="unix:path=/var/run/dbus/system_bus_socket"
 
 with connect(DBUS_SESSION_BUS_ADDRESS) as bus:
 	bus.dbus

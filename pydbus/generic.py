@@ -81,13 +81,13 @@ class signal(object):
 		self.__qualname__ = "<anonymous signal>" # function uses <lambda> ;)
 		self.__doc__ = "Signal."
 
-	def connect(self, object, callback):
+	def connect(self, obj, callback):
 		"""Subscribe to the signal."""
-		return subscription(self.map.setdefault(object, []), callback)
+		return subscription(self.map.setdefault(obj, []), callback)
 
-	def emit(self, object, *args):
+	def emit(self, obj, *args):
 		"""Emit the signal."""
-		for cb in self.map.get(object, []):
+		for cb in self.map.get(obj, []):
 			cb(*args)
 
 	def __get__(self, instance, owner):

@@ -4,10 +4,10 @@ from .identifier import filter_identifier
 from .timeout import timeout_to_glib
 
 try:
-	from inspect import Signature, Parameter
+	from inspect import Signature, Parameter #@UnusedImport
 	put_signature_in_doc = False
 except:
-	from ._inspect3 import Signature, Parameter
+	from ._inspect3 import Signature, Parameter  #@Reimport
 	put_signature_in_doc = True
 
 class DBUSSignature(Signature):
@@ -69,10 +69,30 @@ class ProxyMethod(object):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
 
-		ret = instance._bus.con.call_sync(
-			instance._bus_name, instance._path,
-			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
-			0, timeout_to_glib(timeout), None).unpack()
+		if instance._bus._ProxyMixin__translator:
+			if (self._iface_name != "org.freedesktop.DBus.Properties") and (len(args)>0) :
+				args= instance._bus._ProxyMixin__translator.translate(
+					instance._object,
+					self.__name__,
+					args,
+					0,False)
+				
+			ret = instance._bus.con.call_sync(
+				instance._bus_name, instance._path,
+				self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
+				0, timeout_to_glib(timeout), None).unpack()
+			if len(self._outargs)>0:
+				ret=instance._bus._ProxyMixin__translator.translate(
+					instance._object,
+					self.__name__,
+					ret if isinstance(ret,tuple) else (ret,),
+					1,True)
+				if not isinstance(ret,tuple): ret = (ret,)
+		else:
+			ret = instance._bus.con.call_sync(
+				instance._bus_name, instance._path,
+				self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
+				0, timeout_to_glib(timeout), None).unpack()
 
 		if len(self._outargs) == 0:
 			return None
