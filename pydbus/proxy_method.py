@@ -60,7 +60,7 @@ class ProxyMethod(object):
 		argdiff = len(args) - len(self._inargs)
 		if argdiff < 0:
 			raise TypeError(self.__qualname__ + " missing {} required positional argument(s)".format(-argdiff))
-		elif argdiff > 0:
+		if argdiff > 0:
 			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
 
 		# Python 2 sux

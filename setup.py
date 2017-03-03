@@ -16,7 +16,7 @@ setup(
 	keywords = "dbus",
 	license = "LGPLv2+",
 
-	packages = ["pydbus"],
+	packages = ["pydbus","pydbus.translations"],
 	package_data = {"": ["LICENSE"]},
 	package_dir = {"pydbus": "pydbus"},
 	zip_safe = True,
