@@ -64,29 +64,39 @@ class ProxyMethod(object):
 			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
 
 		# Python 2 sux
-		for kwarg in kwargs:
-			if kwarg not in ("timeout",):
-				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
-		timeout = kwargs.get("timeout", None)
+		if instance._bus._ProxyMixin__translator==None:
+			for kwarg in kwargs:
+				if kwarg not in ("_pydbus_timeout","timeout"):
+					raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
+			timeout = kwargs.get("timeout", kwargs.get("_pydbus_timeout"),None)
+		else:
+			timeout = kwargs.get("_pydbus_timeout")
 
 		if instance._bus._ProxyMixin__translator:
+			retained_args = args
 			if (self._iface_name != "org.freedesktop.DBus.Properties") and (len(args)>0) :
 				args= instance._bus._ProxyMixin__translator.translate(
 					instance._object,
 					self.__name__,
 					args,
-					0,False)
+					0,False,self._sinargs,kwargs)
 				
 			ret = instance._bus.con.call_sync(
-				instance._bus_name, instance._path,
-				self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
-				0, timeout_to_glib(timeout), None).unpack()
+				instance._bus_name, 
+				instance._path,
+				self._iface_name,
+				self.__name__,
+				GLib.Variant(self._sinargs, args),
+				GLib.VariantType.new(self._soutargs),
+				0,
+				timeout_to_glib(timeout),
+				None).unpack()
 			if len(self._outargs)>0:
 				ret=instance._bus._ProxyMixin__translator.translate(
 					instance._object,
 					self.__name__,
 					ret if isinstance(ret,tuple) else (ret,),
-					1,True)
+					1,True,self._soutargs,retained_args,kwargs)
 				if not isinstance(ret,tuple): ret = (ret,)
 		else:
 			ret = instance._bus.con.call_sync(

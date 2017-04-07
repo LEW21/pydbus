@@ -5,9 +5,15 @@ pydbus
 .. image:: https://badge.fury.io/py/pydbus.svg
     :target: https://badge.fury.io/py/pydbus
 
-Pythonic DBus library, with translation of ints used as states or flags.
+tl,dr: When accessing a dbus path, if you enable a dictionary for these
+routines that describes anything special about it, all the dbus-specific issues
+are invisibly managed so well it appears as if it was written from the ground
+up as a local python routine. It's very hard to tell the difference between a
+local python method, property or signal vs. one handled by a partner over the
+dbus. Given a well written translation spec, the user need know nothing further
+about dbus operations.
 
-Changelog: https://github.com/LEW21/pydbus/releases
+Changelog: https://github.com/hcoin/pydbus
 
 Requirements
 ------------
@@ -18,6 +24,12 @@ Requirements
 .. _PyGI: https://wiki.gnome.org/Projects/PyGObject
 .. _GLib: https://developer.gnome.org/glib/
 .. _girepository: https://wiki.gnome.org/Projects/GObjectIntrospection
+
+
+Getting Started and Documentation
+---------------------------------
+https://github.com/hcoin/pydbus/wiki
+
 
 Examples
 --------
@@ -118,7 +130,7 @@ Copyright Information
 
 Copyright (C) 2014, 2015, 2016 Linus Lewandowski <linus@lew21.net>
 
-translator.py, nmdefines.py and autotranslator_tutorial.rst
+wiki, translator.py, nmdefines.py and autotranslator_tutorial.rst
 Copyright (C) 2017 Quiet Fountain LLC <hcoin@quietfountain.com>
 
 This library is free software; you can redistribute it and/or

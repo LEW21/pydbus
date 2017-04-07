@@ -40,13 +40,14 @@ class ProxyMixin(object):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
 		translation_spec = kwargs.get("translation_spec", None)
-		if translation_spec == None:
-			self.__translator=None
-		else:
-			self.__translator = PydbusCPythonTranslator(translation_spec)
 
 		bus_name = auto_bus_name(bus_name)
 		object_path = auto_object_path(bus_name, object_path)
+
+		if translation_spec == None:
+			self.__translator=None
+		else:
+			self.__translator = PydbusCPythonTranslator(translation_spec,bus_name)
 
 		ret = self.con.call_sync(
 			bus_name, object_path,

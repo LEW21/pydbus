@@ -567,6 +567,11 @@ PydbusNetworkManagerSpec = {
         "Capabilities" : (None, None, None, NMCapability),
         "Connectivity" : (None, None, None, NMConnectivityState)
         },
+    NM_DBUS_INTERFACE_SETTINGS:
+        {
+        "AddConnection": ({'_is_variant': 'a{sa{sv}}'},None,None,None),
+        "AddConnectionUnsaved": ({'_is_variant': 'a{sa{sv}}'},None,None,None),
+        },
    NM_DBUS_INTERFACE_DEVICE:
         {
         "StateChanged" : (None, None, NMDeviceStateChangedSignal, None),
