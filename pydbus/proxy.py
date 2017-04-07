@@ -10,7 +10,7 @@ from .timeout import timeout_to_glib
 class ProxyMixin(object):
 	__slots__ = ()
 
-	def get(self, bus_name, object_path=None, **kwargs):
+	def get(self, bus_name, object_path=None, deep=True, **kwargs):
 		"""Get a remote object.
 
 		Parameters
@@ -20,6 +20,10 @@ class ProxyMixin(object):
 			You may start with "." - then org.freedesktop will be automatically prepended.
 		object_path : string, optional
 			Path of the object. If not provided, bus_name translated to path format is used.
+		deep : boolean, optional (default True)
+			Turn on or off deep introspection, if turned on, the returned object will have an
+			attribute node that corresponds to its sub-tree of objects.
+			For legacy behaviour, set this to False.
 
 		Returns
 		-------
@@ -56,7 +60,12 @@ class ProxyMixin(object):
 		except:
 			raise KeyError("object provides invalid introspection XML")
 
-		return CompositeInterface(introspection)(self, bus_name, object_path)
+		ci = CompositeInterface(introspection)(self, bus_name, object_path)
+		if deep:
+			node_names = [ n.attrib["name"] for n in introspection if n.tag == "node" ]
+			ci.nodes = { n: self.get(bus_name, object_path + "/" + n, deep=True, **kwargs)
+				for n in node_names }
+		return ci
 
 class ProxyObject(object):
 	def __init__(self, bus, bus_name, path, object=None):
