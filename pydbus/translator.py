@@ -23,11 +23,135 @@ from gi.repository.GLib import (Variant)  # ,VariantBuilder,VariantType)
 from importlib import import_module
 from ipaddress import (IPv4Address, IPv6Address, IPv4Network)
 import re
-from builtins import list
-from cProfile import label
 
 
+class TranslationRequest(object):
+    '''Everything specific to each translation request is held here.'''
+    def __init__(self, tkargs, tkwargs, bus_name, dataflow_guidance, ctop, ptoc):
+        self.pydevobject = tkwargs.get('pydevobject',tkargs[0])
+#            pydevobject is returned by pydbus.[SessionBus|SystemBus]().get(...) with optional ...[particular.device.path]
+        self.keyname = tkwargs.get('keyname',tkargs[1])
+#            keyname is a string that's the name of either a dbus method, signal or property.
+        self.callerargs = tkwargs.get('callerargs',tkargs[2])
+        if not isinstance(self.callerargs,(list,tuple)): 
+            self.callerargs=(self.callerargs,)
+            
+#            a tuple containing the argument(s) to be evaluated for translation.
+        self.calledby = tkwargs.get('calledby',('method','signal','property')[tkargs[3]])
+        self.calledby_index = ('method','signal','property').index(self.calledby)
+#            index into offset2calledby: 0 for a method, 1 for a signal, 2 for a property.
+        self.call_direction = "fromDbusToPython" if tkwargs.get('fromDbusToPython',tkargs[4]) else "fromPythonToDbus"
+#            fromDbusToPython when processing arguments being returned by a method, signal or property.
+#            fromPythonToDbus when processing arguments being passed to a method, signal or property.
+        self.introspection = tkwargs.get('introspection',tkargs[5])
+#            introspection = the introspection provided GLib.Variant format string, or None if we're
+#            to use defaults.
+        self.retained_pyarg = tkwargs.get('retained_pyarg',tkargs[6])
+#             retained_pyarg is only populated on the return side of a method call (dbus to python). If the 
+#             outgoing call had at least one argument, this points to argument[0], otherwise none.
+#             If the guidance key { "_new_return_instance" : True } the same dictionary or object
+#             used to supply name/value pairs to the call will be populated by the return values
+#             using guidance names in the from call guidance. If the names match, the from dbus
+#             item will replace the to dbus item.
+        self.kwargs = tkwargs
+        self.dir_specific_trans_function = ctop  if self.call_direction == 'fromDbusToPython' else ptoc
+#             Function to manage python to dbus or dbus to python translation specifics
 
+ 
+        self.translation_possible = False
+        
+        if isinstance(self.pydevobject, str): 
+            pathlist = (self.pydevobject,)
+        else: 
+            class_str = str(self.pydevobject.__class__)
+            if class_str.find('CompositeObject') >= 0:
+                pathlist = re.split("\\(|\\)", class_str)[1].split('+')
+            else:
+                pathlist_m = re.search("'DBUS\.(.*)\'", class_str)
+                if not pathlist_m: 
+                    return
+                pathlist = (pathlist_m[1],)
+        for self.dbus_pathname in pathlist:
+            # pydev classes are often composite, search through all the classes
+            # part of this one, hunting for dbus path match to our translation key
+            if self.dbus_pathname == bus_name:
+#           We found a translation match for a dbus path.
+                try:
+                    self.guidance = dataflow_guidance[self.keyname]
+#           We have information on this key
+                    self.arglist_guidance = \
+                        self.guidance.from_dbus_guidance[self.calledby_index] if self.call_direction == 'fromDbusToPython' else \
+                        self.guidance.to_dbus_guidance[self.calledby_index]
+#           load the guidance about how to process this argument list. 
+                    self.translation_possible = True
+                    break
+                except:
+                    # Either we have no translation guidance for this path,
+                    # or we have a path and no guidance for the key being processed
+                    # for the particular dbus to python or python to dbus direction.
+                    continue
+        if not self.translation_possible: return
+        self.modified_introspection = \
+            variant_introspection_rewrite(self.introspection,
+                                          self.arglist_guidance.overall_variant_expansion_list)
+#        v -> v:non-variant-allowed-possibilities. e.g. 'av' --> 'av:(uu/(iii.ss):'
+        
+#       Arguments on the python side can be in the traditional ordered list,
+#       Or can take advantage of the argument naming feature, which allows
+#       argument passing as either one dictionary with names as keys or
+#       object with argument names as attribute names.
+
+        if self.call_direction == 'fromDbusToPython':      
+            # We have python arguments. Do we need to unpack
+            # them from an object or dict to relieve the user
+            # from keeping track of article order?
+            self.pre_call_args = convert_arguments_python_to_dbus(self.arglist_guidance, self.callerargs, self.kwargs)
+#           pre call args are now a list in the traditional positional format only.
+#           The introspection string may contain a variant replaced with guidance
+#           by the translation spec, the guidance can be in many forms, one
+#           of which will match the argument list provided.
+             
+        else:
+#           We have args from Dbus, which needs no 'on the way in' translation, the argument list is 
+#           already in list format.
+            self.pre_call_args = self.callerargs
+        
+        self.reset_postcall_results()
+        self.post_trans_args = []
+        
+    def reset_postcall_results(self):
+        self.post_call_args = []
+        self.post_call_arg_index = -1
+        self.accumulated_variant_results = [] 
+        self.accumulated_variant_introspection = ''
+        
+
+
+######## The translation object setup is complete.  Proceed with the translation.
+
+    def complain(self, prefix):
+        raise ValueError(prefix + " for dbus path " + self.dbus_pathname + " key " + self.keyname + " called for a " + self.calledby + " direction " + self.call_direction)
+    
+    def flush_accumulated_variant_introspection(self):
+        if len(self.accumulated_variant_results) > 0:
+            print(self.accumulated_variant_introspection + " " + str(self.accumulated_variant_results) + '\n')
+            self.post_call_args += [Variant(self.accumulated_variant_introspection, *self.accumulated_variant_results)]
+            self.accumulated_variant_results = []
+            self.accumulated_variant_introspection = ''
+            self.post_call_arg_index += 1
+            
+    def route_processed_argument_position(self, result, single_var_position_introspection, within_variant):
+        if within_variant == 'new variant': 
+            self.flush_accumulated_variant_introspection()
+        if within_variant:
+            self.accumulated_variant_results += result
+            self.accumulated_variant_introspection += single_var_position_introspection
+        else:
+            self.flush_accumulated_variant_introspection()
+            self.post_call_args += result
+            self.post_call_arg_index += 1
+            
+##############################################################################            
 
 def _isolate_format(args):
     '''a helper function that breaks an introspection string
@@ -65,7 +189,35 @@ def _isolate_format(args):
         pattern = remainder
     return (next_arg, remainder)
 
+def container_content_introspection_format(a_something):
+    if a_something[0] == 'a': 
+        container_of_what, dontcare = _isolate_format(a_something[1:])  # @UnusedVariable
+    elif a_something[0] == '{':
+        container_of_what = a_something[1:].rstrip('}')
+    elif a_something[0] == '(':
+        container_of_what = a_something[1:].rstrip(')')
+    else:
+        raise ValueError("Expected container introspection string, not " + a_something)
+    return container_of_what
 
+def extract_single_variable_from_introspection(introspection):
+    # These are whole variables, so i u as a(su) a{sa(ui)}
+    while True:
+        this_arg, introspection = _isolate_format(introspection)
+        if this_arg == None: return
+        if this_arg == '': 
+            yield '', False
+            continue
+        if this_arg[0] != 'v': 
+            yield(this_arg, False)
+            continue
+        variant_split = this_arg[1:].split(':')[1]
+        result = 'new variant'
+        while True:
+            this_arg, variant_split = _isolate_format(variant_split)
+            if this_arg == None: break
+            yield this_arg, result
+            result = True
 
             
 class DataFlowGuidance(object):
@@ -87,6 +239,7 @@ class DataFlowGuidance(object):
         
         got_one = False
         list_of_direction_specific_guidance = [ None for i in range(0, len(lsg)) ]
+        self.dbus_guidance = list_of_direction_specific_guidance
         if from_python_to_dbus:
             self.to_dbus_guidance = list_of_direction_specific_guidance
         else:
@@ -102,11 +255,12 @@ class DataFlowGuidance(object):
                 got_one_arg = False
                 arglist = ArgSpecGuidance()
                 list_of_direction_specific_guidance[i] = arglist
-                self.dbus_side_argument_list_size=0
+                self.dbus_side_argument_list_size = 0
                 for arg_position_index, arg_specific_translation_spec in self.original_guidance_list[i].items():
                     if isinstance(arg_position_index, int): 
                         got_one_arg = True
-                        arg_guidance = SingleArgumentOptimizedGuidance(arg_specific_translation_spec, arg_position_index, from_python_to_dbus)
+                        arg_guidance = SingleArgumentOptimizedGuidance(arg_specific_translation_spec,
+                                        arg_position_index, from_python_to_dbus, self.key_for_this_dbus_path)
                         arglist.arguments[arg_position_index] = arg_guidance
                         arglist.overall_variant_expansion_list += arg_guidance.local_variant_expansion_list
                         if self.dbus_side_argument_list_size < arg_position_index:
@@ -168,7 +322,7 @@ class SingleArgumentOptimizedGuidance(object):
     either in the to or from dbus/python direction of a specific
     signal, property or method n optimized result.'''
          
-    def __init__(self, arg, arg_position_index, direction_is_from_python_to_dbus):
+    def __init__(self, arg, arg_position_index, direction_is_from_python_to_dbus, keyname='testkey'):
         '''Return a optimized, validated translation guidance from an argument spec.
         
         Here we receive a translation specification for a specific dbus path, and
@@ -180,7 +334,7 @@ class SingleArgumentOptimizedGuidance(object):
     
         self.arg_position_index = arg_position_index
         self.direction_is_from_python_to_dbus = direction_is_from_python_to_dbus
-        self.local_variant_expansion_list=[]
+        self.local_variant_expansion_list = []
         
         self.auto_container_active = False
         # If true, and any convencience feature is used, during argument processing
@@ -255,6 +409,19 @@ class SingleArgumentOptimizedGuidance(object):
                 raise ValueError("_return as list must either omitted or be one of True, False, 'single','shortest'")
             
         
+        if self.container:
+            sublist = DataFlowGuidance(keyname)
+            sublist.init_helper_validate_arglistspec([self.container],direction_is_from_python_to_dbus)
+            self.container =sublist
+            # SingleArgumentOptimizedGuidance(self.container, arg_position_index, direction_is_from_python_to_dbus)
+
+        if self.container_keys:
+            sublist = DataFlowGuidance(keyname)
+            sublist.init_helper_validate_arglistspec([self.container_keys],direction_is_from_python_to_dbus)
+            
+            self.container_keys = sublist 
+            
+            #SingleArgumentOptimizedGuidance(self.container_keys, arg_position_index, direction_is_from_python_to_dbus)
         # That's all the pre-processing we can do on spec parts that affect all the arguments. 
         # get the keys and values in k,v or v,k format expected owing to the
         # direction of this usage.
@@ -284,13 +451,13 @@ class SingleArgumentOptimizedGuidance(object):
             for match, function in self.original_spec:
                 try:
                     cre = re.compile(match)
-                    self.compiled_re[match]= [cre, function, None]
+                    self.compiled_re[match] = [cre, function, None]
                 except:
-                    self.compiled_re[match] = [None, function,None]
+                    self.compiled_re[match] = [None, function, None]
                 if not callable(function):
                     try:
                         self.compiled_re[match][2] = import_module(function[0])
-                        self.compiled_re[match][1] = eval('self.compiled_re[match][2].'+function[1])
+                        self.compiled_re[match][1] = eval('self.compiled_re[match][2].' + function[1])
                     except:
                         raise ValueError("Match functions must be callable or (a,b): m=import_module(a), callable(eval('m.'+b)")
                     if not callable(self.compiled_re[match][1]):           
@@ -318,9 +485,9 @@ class SingleArgumentOptimizedGuidance(object):
 
 
 
-    def _init_helper_validate_one_to_one_map(self,direction_is_from_python_to_dbus):
+    def _init_helper_validate_one_to_one_map(self, direction_is_from_python_to_dbus):
         for dbus, python in self.original_spec:
-            #python , dbus = (a , b) if direction_is_from_python_to_dbus else (b, a)
+            # python , dbus = (a , b) if direction_is_from_python_to_dbus else (b, a)
             if not isinstance(dbus, int):
                 raise ValueError("All dbus values in number-means-label maps must be ints, not " + str(dbus))
             if not isinstance(python, str):
@@ -330,14 +497,14 @@ class SingleArgumentOptimizedGuidance(object):
             else:
                 self.map[dbus] = python
         
-    def init_helper_guidance_validate_bitfield(self,direction_is_from_python_to_dbus):
+    def init_helper_guidance_validate_bitfield(self, direction_is_from_python_to_dbus):
         '''Validate and optimize the bitfield specification line items, set guidance.map.''' 
 
         self.wants_everything_else = False
         # Bitfields have an optional variable to mean 'everything not otherwise mentioned.'
         # By default, false.  Set it if we find it.
-        for dbus,python in self.original_spec:
-            #python , dbus = (a , b) if direction_is_from_python_to_dbus else (b, a)
+        for dbus, python in self.original_spec:
+            # python , dbus = (a , b) if direction_is_from_python_to_dbus else (b, a)
             # python=line_item[0]
             # dbus=line_item[1]
             
@@ -450,7 +617,7 @@ class SingleArgumentOptimizedGuidance(object):
 
         def mask_test(self, target):
             '''True iif the right bits in target are on and maybe off.'''
-            #ret = False
+            # ret = False
             if self.offbits != None:  # If there are bits that must be off, check them.
                 if (target & self.offbits) != 0: return False
             #    ret = True # We've been asked to test for offbits, and they're off.
@@ -643,8 +810,8 @@ class SingleArgumentOptimizedGuidance(object):
             return self.int_bitmask_and_value(target)[0]
                 
         
-        def target_value(self,mini_int):            
-            return self.int_bitmask_and_value(mini_int,False)[0]
+        def target_value(self, mini_int):            
+            return self.int_bitmask_and_value(mini_int, False)[0]
             
         
 def default_pyarg_conversion_to_variant(python_arg):
@@ -762,16 +929,16 @@ def default_pyarg_conversion_to_variant(python_arg):
  
     # non-container types
 
-    def _int_to_variant( v):  
+    def _int_to_variant(v):  
         return Variant.new_int32(v)
     
-    def _bool_to_variant( v):  
+    def _bool_to_variant(v):  
         return Variant.new_boolean(v)
         
-    def _float_to_variant( v):  
+    def _float_to_variant(v):  
         return Variant.new_double(v)
 
-    def _string_to_variant( v):
+    def _string_to_variant(v):
         return Variant.new_string(v)
 
 
@@ -812,28 +979,22 @@ def default_pyarg_conversion_to_variant(python_arg):
 def variant_introspection_rewrite(introspection, translation_guidance):            
     if not isinstance(introspection, str):
         # if there is no introspection string, move on.
-        modified_sargs = ''
-    elif 'v' not in introspection:
-        # if there is no variant request to process, move on.
-        modified_sargs = introspection
-    else:
-        # if the translation spec has variant expansion, apply it
-        index = -1
-        modified_sargs = ''
-        for nonvariantarg in introspection.split('v'):
-            if index == -1:
-                # accept any item before the first v
-                modified_sargs += nonvariantarg 
-            else:
-                # we have a v
-                modified_sargs += 'v:'
-                try:  # if default guidance, do v::
-                    modified_sargs += translation_guidance[index]
-                except:
-                    pass
-                modified_sargs += ':'
+        return ''
+    # if the translation spec has variant expansion, apply it
+    introspection_variant_split_list = introspection.split('v')
+    modified_sargs = introspection_variant_split_list[0] 
+
+    index = 0
+    for nonvariantarg in introspection_variant_split_list[1:]:
+        # we have a v
+        modified_sargs += 'v:'
+        try:  # if default guidance, do v::
+            modified_sargs += translation_guidance[index]
             index += 1
-    return modified_sargs       
+        except:
+            pass
+        modified_sargs += ':' + nonvariantarg
+    return modified_sargs  
 
 
 def convert_arguments_python_to_dbus(arglist_guidance, python_args, python_kwargs):                
@@ -859,7 +1020,7 @@ def convert_arguments_python_to_dbus(arglist_guidance, python_args, python_kwarg
                 dbus_args[attribute_position] = getattr(python_args, attribute_name, None)            
     else:  # from Dbus arguments are already in list format.
         # we have incoming dbus arguments, they are already an arglist
-        dbus_args = python_args if isinstance(python_args,(tuple,list)) else [python_args]
+        dbus_args = python_args if isinstance(python_args, (tuple, list)) else [python_args]
 
     return dbus_args
 
@@ -896,6 +1057,31 @@ def convert_arguments_dbus_to_python(arglist_guidance, post_call_args, retained_
     return (post_trans_args)
 
 
+
+def variant_guidance_possibilities(modified_introspection_string):
+    # Because guidance for variants in python to dbus can have
+    # multiple paths bacuase of v:aa/bb: construct
+    # return a valid path for each call.
+    if not isinstance(modified_introspection_string, str): 
+        yield ''
+        return
+    if 'v' not in modified_introspection_string:
+        yield modified_introspection_string
+        return
+    m_str = modified_introspection_string.split(':')  # xxxv: 
+    if len(m_str) < 2: return modified_introspection_string
+    repeat_check = m_str[1].split('.')
+    if (len(repeat_check) < 2):
+        variable_portion = repeat_check[0]
+        tail_portion = ''
+    else:
+        variable_portion = repeat_check[0]
+        tail_portion = repeat_check[1]
+        
+    possibilities = variable_portion.split('/')
+    for p in possibilities:
+        for s in  variant_guidance_possibilities(':'.join(m_str[2:])) :
+            yield m_str[0] + ':' + p + tail_portion + ':' + s
 
 
 class BlankClass(object):
@@ -985,8 +1171,8 @@ class PydbusCPythonTranslator(object):
             raise ValueError("The translation specification object must be a dictionary, not a " + type(self.spec))
         
         self.dataflow_guidance = {}
-        if len(self.original_guidance)==0:
-            raise ValueError("There are no keys in the dictionary for dbus path "+ self.bus_name)
+        if len(self.original_guidance) == 0:
+            raise ValueError("There are no keys in the dictionary for dbus path " + self.bus_name)
         for key_for_this_dbus_path, per_key_desired_translation_types_and_directions in self.original_guidance.items():
             # Validate the input
             if not isinstance(key_for_this_dbus_path, str):
@@ -994,7 +1180,7 @@ class PydbusCPythonTranslator(object):
             if per_key_desired_translation_types_and_directions == None:
                 continue
             if not isinstance(per_key_desired_translation_types_and_directions, dict):
-                raise ValueError("Each per-key translation spec must be either None or a dict, not "+repr(per_key_desired_translation_types_and_directions))
+                raise ValueError("Each per-key translation spec must be either None or a dict, not " + repr(per_key_desired_translation_types_and_directions))
             
             # Create the object representing this key for this path.
             guidance_for_one_key = DataFlowGuidance(key_for_this_dbus_path)
@@ -1035,7 +1221,7 @@ class PydbusCPythonTranslator(object):
     #### End of code dealing with 'v' in introspection format to be 
     #### converted to dbus without guidance from the translation spec.   
 
-    def _one_ctop(self, trans, cvalue, argformat='', argument_index=0, enable_auto_container=True,key_for_this_dbus_path='Unknown'):
+    def _one_ctop(self, tro, trans, cvalue, argformat='', argument_index=0, enable_auto_container=True):
         # Here we are given a single dbus/Glib cvalue,
         # with instructions to use a translation dictionary
         # entry to return a pythonic representation of it, possibly
@@ -1057,76 +1243,11 @@ class PydbusCPythonTranslator(object):
         # as provided for in the specific translation in use.
         
         # argument_index is a 0 based offset of the argument number, left to right.
-         
-        if not isinstance(trans, SingleArgumentOptimizedGuidance):
-            # If this isn't guidance we understand, return the variable unchanged.
-            return cvalue
-
-        if trans.match_to_function:
-            # We have a match function.  See whether the introspection 
-            # exists directly
-            match_this = str(argument_index) + ":" + str(argformat)
-            match_tuple = trans.compiled_re.get(argformat, None)
-            
-            function=None
-            if match_tuple == None:
-                for match_string, match_tuple in trans.compiled_re.items():  # @UnusedVariable
-                    if match_tuple[0]!=None:
-                        if match_tuple[0].match(match_this):
-                            function = match_tuple[1]
-                            break
-            else: function=match_tuple[1]
-            if function:  return (function)(cvalue, argument_index, argformat, True)
-            raise ValueError("No supplied function matched or callable for " + self.bus_name + ", dbus to python key " + key_for_this_dbus_path + ", but none provided match string " + match_this + " ")
-
-        if trans.force_replacement_specified:
-            return trans.forced_replacement
-
-
-        introspection_this_level, introspection_next_level = _isolate_format(argformat)
-        if introspection_next_level: 
-            # Dbus expects a container. What sort?
-            if len(introspection_this_level) == 1:
-                introspection_container = list
-            else:
-                introspection_container = tuple if (introspection_this_level[1] == '(') else dict
-        else:
-            introspection_container = None
-
-        if isinstance(cvalue, (list, tuple)):
-            if trans.container:
-                container = trans.container
-            elif  trans.auto_container_active and enable_auto_container:
-                container = trans
-            else:
-                # We've been passed a tuple or list, introspection wants
-                # a tuple, we have no guidance about what to do with it,
-                # so, hope the caller knows what the needs are.
-                return cvalue
-            # apply the container guidance we have to the members of the container, make the tuple.
-            if introspection_container == list:
-                return list(self._one_ctop(container, x, introspection_next_level, argument_index, False,key_for_this_dbus_path) for x in cvalue)
-            elif introspection_container == tuple:
-                return tuple(self._one_ctop(container, x, introspection_next_level, argument_index, False,key_for_this_dbus_path) for x in cvalue)
-            
-        if isinstance(cvalue, dict):
-            if trans.container:
-                value_container = trans.container
-            elif  trans.auto_container_active and enable_auto_container:
-                value_container = trans
-            else:
-                value_container = None
-            if (value_container == None) and (trans.container_keys == False):
-                # if we have no guidance for this dictionary, and introspection expects one,
-                # then return what we have.
-                return cvalue
-            # otherwise, build a translated dictionary
-            return { self._one_ctop(trans.container_keys, k, introspection_next_level[0], argument_index, False,key_for_this_dbus_path) 
-                     if trans.container_keys else k : 
-                     self._one_ctop(value_container, v, introspection_next_level[1:], argument_index, False,key_for_this_dbus_path)
-                     if value_container else v 
-                     for k , v in cvalue.items()}
-            
+     
+        no_further_processing, ret = self.dataflow_both_dir_arg_processing(tro, trans, cvalue,
+                                            argument_index, argformat, enable_auto_container)
+        
+        if no_further_processing: return ret
 
         # If we get here, it's not a container type we know what to do with, so
         # check to see whether it's anything expected, if so, do it, if not, 
@@ -1135,7 +1256,7 @@ class PydbusCPythonTranslator(object):
         if trans.is_one_to_one_map:
             if cvalue == None: cvalue = 0
             if not isinstance(cvalue, int): 
-                raise ValueError("Int to string translation required an int from dbus, but got " + repr(cvalue) + " for dbus path " + self.bus_name + ", key " + key_for_this_dbus_path)
+                tro.complain("Int to string translation required an int from dbus, but got " + repr(cvalue))
             try:
                 return trans.map[cvalue]
             except:
@@ -1148,7 +1269,7 @@ class PydbusCPythonTranslator(object):
         if trans.is_bitfield:
             if cvalue == None: cvalue = 0
             if not isinstance(cvalue, int): 
-                raise ValueError("Int to bitfield translation required an int from dbus, but got " + repr(cvalue) + " for dbus path " + self.bus_name + ", key " + key_for_this_dbus_path)
+                tro.complain("Int to bitfield translation required an int from dbus, but got " + repr(cvalue))
             retdict = {}
             touched_bits = 0
             everything_else_label = None
@@ -1173,7 +1294,7 @@ class PydbusCPythonTranslator(object):
                 if len(retdict) != 1:
                     if trans.arg_format == 'prettydict': return retdict
                     if trans.arg_format != 'prettylist':
-                        raise ValueError("Asked for single result, but " + str(len(retdict)) + " were returned: " + str(retdict) + " for dbus path " + self.bus_name + ", key " + key_for_this_dbus_path)
+                        raise tro.complain("Asked for single result, but " + str(len(retdict)) + " were returned: " + str(retdict))
                 else:
                     for v in retdict.values():
                         return v
@@ -1182,7 +1303,7 @@ class PydbusCPythonTranslator(object):
             if trans.arg_format in ('shortlist', 'prettylist'):
                 retlist = []
                 for k, v in retdict.items():
-                    if isinstance(v,bool) and (v == True):
+                    if isinstance(v, bool) and (v == True):
                         retlist += [k]
                     else:
                         retlist += [[k, v]]
@@ -1211,12 +1332,12 @@ class PydbusCPythonTranslator(object):
                     }
 
     
-    def process_pyvar_bitfield(self,trans,pyvar,key_for_this_dbus_path,m=None):
+    def process_pyvar_bitfield(self, trans, pyvar, key_for_this_dbus_path, m=None):
         # If we've been passed an integer, pass it through as is.
         if pyvar == None: return 0  # None -> 0
 
         if isinstance(pyvar, bool):
-            if m==None:
+            if m == None:
                 m = trans.map.get('TRUE' if pyvar else 'FALSE', None)
             if m == None: return pyvar
             if m.treat_as_int == False: return m.onbits
@@ -1244,7 +1365,7 @@ class PydbusCPythonTranslator(object):
         if isinstance(pyvar, dict):
             v = 0
             for key, val in pyvar.items():
-                if isinstance(key,str): key = key.upper()
+                if isinstance(key, str): key = key.upper()
                 try:
                     m = trans.map[key]
                     v |= self.process_pyvar_bitfield(trans, val, key_for_this_dbus_path, m)
@@ -1255,7 +1376,7 @@ class PydbusCPythonTranslator(object):
         if isinstance(pyvar, (tuple, list)):
             v = 0
             for element in pyvar:
-                if isinstance(element, (tuple,list)):
+                if isinstance(element, (tuple, list)):
                     if len(element) < 1: continue
                     if len(element) == 1:
                         key = element[0]
@@ -1265,7 +1386,7 @@ class PydbusCPythonTranslator(object):
                 else:
                     key = element
                     val = 1
-                if isinstance(key,str): key = key.upper()
+                if isinstance(key, str): key = key.upper()
                 m = trans.map[key]
                 v |= self.process_pyvar_bitfield(trans, val, key_for_this_dbus_path, m)
             return v
@@ -1273,152 +1394,133 @@ class PydbusCPythonTranslator(object):
         
         
         
+    def dataflow_both_dir_arg_processing(self, tro, guidance, input_value, argument_index,
+                                         argformat, enable_auto_container):
+
+        if not isinstance(guidance, SingleArgumentOptimizedGuidance):
+            # If this isn't guidance we understand, return the variable unchanged.
+            return True, input_value
+
+        # Match functions, if any, take priority over anything else.
+        if guidance.match_to_function:
+            # We have a match function.  See whether the introspection exists directly
+            match_this = str(argument_index) + ":" + str(argformat)
+            match_tuple = guidance.compiled_re.get(match_this, None)           
+            function = None
+            if match_tuple == None:
+                for match_string, match_tuple in guidance.compiled_re.items():  # @UnusedVariable
+                    if match_tuple[0] != None:
+                        if match_tuple[0].match(match_this):
+                            function = match_tuple[1]
+                            break
+            else: function = match_tuple[1]
+            if function:  return True, (function)(input_value, argument_index, argformat, True)
+            tro.complain("No supplied matchable or callable function provided matches string " + match_this)
+
+        if guidance.force_replacement_specified:
+            return True, guidance.forced_replacement
         
+
+        if guidance.container:
+            container_value_guidance = guidance.container
+        elif  guidance.auto_container_active and enable_auto_container:
+            container_value_guidance = guidance
+        else:
+            container_value_guidance = None
         
+
+        introspection_this_level, introspection_next_level = _isolate_format(argformat)  # @UnusedVariable
+
+        if (introspection_this_level == None) or (introspection_this_level == ''):
+            if container_value_guidance:
+                tro.complain("No guidance specified for expected container content ")
+            # If not given guidance, but given a variable to process, there is no reason to change the given value here.
+            # It is possible this should be an error, but we'll leave that for higher level routines.
+            return True, input_value
+        elif introspection_this_level[0] == 'a':
+            if len(introspection_this_level) == 1:
+                tro.complain("The introspection string specified array of no type: " + argformat)
+            # We've been asked to process an array, but we've been given no guidance so just return what's been passed.
+            if container_value_guidance == None: return True, input_value
+            
+            if introspection_this_level[1] == '{':
+                return True, (tro.dir_specific_trans_function)(tro,container_value_guidance, input_value,
+                    container_content_introspection_format(introspection_this_level),
+                    0, False)    
+            
+            return True, list((tro.dir_specific_trans_function)(tro,container_value_guidance, x,
+                container_content_introspection_format(introspection_this_level),
+                0, False) for x in input_value)
+
+
+        elif introspection_this_level[0] == '(':
+            if container_value_guidance == None: 
+                # We've been asked to process a tuple, but we have no guidance
+                # about how or whether to translate it  so return what's been passed.
+                return True, input_value
+            rl = ()
+            for x in range(0,len(input_value)):
+                g = container_value_guidance.dbus_guidance[0].arguments.get(x,None)
+                if g==None:
+                    rl += (input_value[x],)
+                else:
+                    rl += ((tro.dir_specific_trans_function) \
+                    (tro,g, input_value[x], container_content_introspection_format(introspection_this_level),
+                     x, False),)
+            return True, rl      
+                    
+
+             
+        elif introspection_this_level[0] == '{':
+            if container_value_guidance == None: 
+                # We've been asked to process a dictionary, but we have no guidance about how
+                # or whether to translate it so return what's been passed.
+                return True, input_value
+            # otherwise, build a translated dictionary
+            keyformat = introspection_this_level[1]  # a{X
+            valueformat, dontcare = _isolate_format(introspection_this_level[2:].rstrip('}'))  # @UnusedVariable
+            return True, { (tro.dir_specific_trans_function)(tro,guidance.container_keys, k, keyformat, 0, False) 
+                     if guidance.container_keys else k : 
+                     (tro.dir_specific_trans_function)(tro,container_value_guidance, v, valueformat, 0, False)
+                     if container_value_guidance else v 
+                     for k , v in input_value.items()}
+            
+            tro.complain("Dbus requires a dictionary '" + argformat + "', but argument '" + str(input_value) + ' is not ')
+           
+        else:
+            if container_value_guidance != None:
+                tro.complain("Guidance specified for container content, but non-container passed")
+                 
+        # Let direction speciic processing routines handle it from here.
+        return False, None
     
-    def _one_ptoc(self, trans, pyvar, argformat='', argument_index=0, enable_auto_container=True,key_for_this_dbus_path='Unknown'):
+    
+    
+    
+    
+    def _one_ptoc(self, tro, trans, pyvar, argformat='', argument_index=0, enable_auto_container=True):
         '''Return a dbus friendly version of pythonic variable pyvar
         according to dbus spec argformat as per 
         https://developer.gnome.org/glib/stable/gvariant-format-strings.html
-        except translate v:x/y/z: as a variant of the first successful type x, y or z'''
+        All variants have been replaced with base values.'''
         # First, apply any python to dbus translation guidance
         # trans -> translation guidance
         # pyvar -> python version of the argument
         # argformat -> introspection string pyvar should be
         # argument_index -> None if doing arglist, otherwise 0..x
         
-        if not isinstance(trans, SingleArgumentOptimizedGuidance):
-            # If this isn't guidance we understand, return the variable unchanged.
-            return pyvar
+        no_further_processing, ret = self.dataflow_both_dir_arg_processing(tro, trans, pyvar,
+            argument_index, argformat, enable_auto_container)
         
-        # Here we process particular parsing options. 
+        if no_further_processing: return ret
         
-        # Match functions, if any, take priority over anything else.
-        if trans.match_to_function:
-            # We have a match function.  See whether the introspection 
-            # exists directly
-            match_this = str(argument_index) + ":" + str(argformat)
-            match_tuple = trans.compiled_re.get(argformat, None)
-            
-            function=None
-            if match_tuple == None:
-                for match_string, match_tuple in trans.compiled_re.items():  # @UnusedVariable
-                    if match_tuple[0]!=None:
-                        if match_tuple[0].match(match_this):
-                            function = match_tuple[1]
-                            break
-            else: function=match_tuple[1]
-            if function:  return (function)(pyvar, argument_index, argformat, True)
-            raise ValueError("No supplied function matched or callable for " + self.bus_name + ", dbus to python key " + key_for_this_dbus_path + ", but none provided match string " + match_this + " ")
-
-
-
-        if trans.force_replacement_specified:
-            return trans.forced_replacement
-
-
         # If processing reaches here, we need to determine the mix of specification capability
         # and the requirements of this particular python argument.
-        
-                                         
-        variant_parsing_required = (argformat != None) and (len(argformat) > 0) and (argformat[0] == 'v')
-        
-        if variant_parsing_required:
-            for introspection_attempt_list in argformat[2:].split(':'):
-                if len(introspection_attempt_list) < 1: continue
-                for introspection_attempt in introspection_attempt_list.split('/'):
-                    if len(introspection_attempt) < 1: continue
-                    try:
-                        not_variant_dbus_var = \
-                            self._one_ptoc(trans, pyvar, introspection_attempt, argument_index,
-                                           enable_auto_container,key_for_this_dbus_path)
-                        # If we get here, the translation from python to dbus worked.  Now let's
-                        # see if glib likes the result and the given introspection string.
-                        return Variant(introspection_attempt, not_variant_dbus_var)
-                    except:
-                        # Not so much.  
-                        pass
-            # We are given either no guidance or failed guidance about how to 
-            # parse pyvar into the variant required by dbus.  Use the default scheme
-            # which makes use of any variant the caller may have
-            # supplied.
-            return default_pyarg_conversion_to_variant(pyvar)
-                
+          
         # Here we know the requested format is not a variant.  
         # Set about matching what we expect with what we have.       
-        introspection_this_level, introspection_next_level = _isolate_format(argformat)
-        if introspection_next_level: 
-            # Dbus expects a container. What sort?
-            if len(introspection_this_level) == 1:
-                introspection_container = list
-            else:
-                introspection_container = tuple if (introspection_this_level[1] == '(') else dict
-        else:
-            introspection_container = None
-        
-        if introspection_container == tuple:
-            if isinstance(pyvar, (list, tuple)):
-                if trans.container:
-                    container = trans.container
-                elif  trans.auto_container_active and enable_auto_container:
-                    container = trans
-                else:
-                    # We've been passed a tuple or list, introspection wants
-                    # a tuple, we have no guidane about what to do with it,
-                    # so, hope the caller knows what the needs are.
-                    return pyvar if isinstance(pyvar, tuple) else tuple(pyvar)
-                # apply the container guidance we have to the members of the container, make the tuple.
-                return tuple(self._one_ptoc(container, x, introspection_next_level, argument_index, False, key_for_this_dbus_path) for x in pyvar)
-            # else:
-                # Introspection wants a tuple, and fortunately dbus doesn't care
-                # about the types in a tuple. What we have isn't currently a list or tuple.
-                # While the next version should have a 'permissive' option to return tuple(pyvar)... for now..
-                # return tuple(pyvar)
-            raise ValueError("Dbus requires a tuple '" + argformat + "', but argument '" + str(pyvar) + "' is not list or tuple for dbus path " + self.bus_name + ", key " + key_for_this_dbus_path)
-            
-        if introspection_container == list:
-            if isinstance(pyvar, (list, tuple)):
-                if trans.container:
-                    container = trans.container
-                elif  trans.auto_container_active and enable_auto_container:
-                    container = trans
-                else:
-                    # We've been passed a tuple or list, introspection wants
-                    # a tuple, we have no guidane about what to do with it,
-                    # so, hope the caller knows what the needs are.
-                    return pyvar if isinstance(pyvar, list) else list(pyvar)
-                # apply the container guidance we have to the members of the container, make the tuple.
-                return list(self._one_ptoc(container, x, introspection_next_level, argument_index, False,key_for_this_dbus_path) for x in pyvar)
-            # else:
-                # Introspection wants a list (dbus array), and unfortunately dbus cares
-                # all elements be the same types in an array. What we have isn't currently a list or tuple.
-                # While the next version should have a 'permissive' option to return tuple(pyvar) if all
-                # the members are the same type,... for now..
-                # return list(pyvar)
-            raise ValueError("Dbus requires an array '" + argformat + "', but argument '" + str(pyvar) + "' is not list or tuple for dbus path " + self.bus_name + ", key " + key_for_this_dbus_path)
-            
-        if introspection_container == dict:
-            if isinstance(pyvar, dict):
-                if trans.container:
-                    value_container = trans.container
-                elif  trans.auto_container_active and enable_auto_container:
-                    value_container = trans
-                else:
-                    value_container = None
-                if (value_container == None) and (trans.container_keys == False):
-                    # if we have no guidance for this dictionary, and introspection expects one,
-                    # then return what we have.
-                    return pyvar
-                # otherwise, build a translated dictionary
-                return { self._one_ptoc(trans.container_keys, k, introspection_next_level[0], argument_index, False,key_for_this_dbus_path) 
-                         if trans.container_keys else k : 
-                         self._one_ptoc(value_container, v, introspection_next_level[1:], argument_index, False,key_for_this_dbus_path)
-                         if value_container else v 
-                         for k , v in pyvar.items()}
-            
-            raise ValueError("Dbus requires a dictionary '" + argformat + "', but argument '" + str(pyvar) + "' is not for dbus path " + self.bus_name + ", key " + key_for_this_dbus_path)
                 
-        # If we get here, we know the introspection string does not expect a container type we know how to manage.
+        # If we get here, we know the introspection string does not expect a container_value_guidance type we know how to manage.
         # and not one contained in a variant.
         # So, if our guidance expects something in this spot, 
         # try to satisfy it or raise an exception.
@@ -1436,174 +1538,122 @@ class PydbusCPythonTranslator(object):
             try:
                 return int(m[1], 16)
             except:
-                raise ValueError("No value associated with " + repr(pyvar) + " for dbus path " + self.bus_name + ", key " + key_for_this_dbus_path)
+                tro.complain("No value associated with " + repr(pyvar))
     
-        
-                                         
+                        
         if trans.is_bitfield:
             # If we've been passed an integer, pass it through as is.
-            return self.process_pyvar_bitfield(trans, pyvar, key_for_this_dbus_path)
+            return self.process_pyvar_bitfield(trans, pyvar, tro.keyname)
+        
+        if (argformat == 's') and (not isinstance(pyvar, str)):
+            tro.complain("Introspection expected a string, but given " + repr(pyvar))
             
+        if (argformat == 'b') and (pyvar not in (0, 1)):            
+            tro.complain("Introspection expected a boolean, 0 or 1 but given " + repr(pyvar))
         # If we get here, whatever sort of variable this is isn't something we either want or know how to
         # translate.  Return it as is.
         return pyvar
 
     
-    def translate(self,
-                pydevobject,
-#               pydevobject is returned by pydbus.[SessionBus|SystemBus]().get(...) with optional ...[particular.device.path]
-                keyname,
-#               keyname is a string that's the name of either a dbus method, signal or property.
-                itemvalue,
-#               itemvalue is a tuple containing the argument(s) to be evaluated for translation.
-                offset,
-#               offset is 0 for a method, 1 for a signal, 2 for a property.
-                direction_is_from_dbus_to_python=True,
-#               direction_is_from_dbus_to_python =  True when processing arguments being
-#               returned by a method, signal or property.
-#               direction_is_from_dbus_to_python =  False when processing arguments being
-#               passed to a method, signal or property.
-                introspection=None,
-#               introspection = the introspection provided GLib.Variant format string, or nothing if we're
-#               to use defaults.
-                retained_pyarg=None,
-#               retained_pyarg is only populated on the return side of a method call (dbus to python). If the 
-#               outgoing call had at least one argument, this points to argument[0], otherwise none.
-#               If the guidance key { "_new_return_instance" : True } the same dictionary or object
-#               used to supply name/value pairs to the call will be populated by the return values
-#               using guidance names in the from call guidance. If the names match, the from dbus
-#               item will replace the to dbus item.
-                kwargs=None
-#               keyword arguments passed on the call side of methods.
-                ) :
-
-#   Recap:
-#   Each dbus path for which we have translation work has an 
-#   instance of this class.  This is the top of the translation tree.
+    def translate(self, *translate_args, **translate_kwargs):
+#       Recap:
+#       Each dbus path for which we have translation work has an 
+#       instance of this class.  This is the top of the translation tree.
 #
-#   PydbusCPythonTranslator/self = {
-#       { keyname : DataFlowGuidance }, ... }
+#       PydbusCPythonTranslator/self = {
+#           { keyname : DataFlowGuidance }, ... }
 #
-#   DataFlowGuidance spec = { 
-#       {  calltype_and_direction_key : ArgSpecGuidance },...}
+#       DataFlowGuidance spec = { 
+#           {  calltype_and_direction_key : ArgSpecGuidance },...}
 # 
-#   ArgSpecGuidance = {
-#       {  argument_position_number : SingleArgumentOptimizedGuidance }, ... }
+#       ArgSpecGuidance = {
+#           {  argument_position_number : SingleArgumentOptimizedGuidance }, ... }
 #
-#   SingleArgumentOptimizedGuidance =  Lowest level of the dictionary, 
-#       possibly top of the tree of this class if there are containers.
+#       SingleArgumentOptimizedGuidance =  Lowest level of the dictionary, 
+#           possibly top of the tree of this class if there are containers.
+#
 
-#       Here we step through all the classes making up this pydbus call,
-#       Composing a list of those matching translation dictionaries we have.
-        if isinstance(pydevobject, str):
-            pathlist = (pydevobject,)
-        else:
-            class_str = str(pydevobject.__class__)
-            if class_str.find('CompositeObject') >= 0:
-                pathlist = re.split("\\(|\\)", class_str)[1].split('+')
-            else:
-                pathlist_m = re.search("'DBUS\.(.*)\'", class_str)
-                if not pathlist_m: return itemvalue
-                pathlist = (pathlist_m[1],)
-               
+        tro = TranslationRequest(translate_args, translate_kwargs, self.bus_name,
+                                 self.dataflow_guidance, self._one_ctop, self._one_ptoc)
+        
+        if tro.translation_possible == False: return tro.callerargs
             
-        # If we find any matches, we'll replace the item as we go along.
-        # Now, hunt for reasons to translate return items.
-        translation_engaged = False
-        for dbus_pathname in pathlist: 
-            # pydev classes are often composite, search through all the classes
-            # part of this one, hunting for dbus path match to our translation key
-            if dbus_pathname != self.bus_name: continue
-            # We found a translation match for a dbus path.
+        # The arguments are ready to present to the translation routines.
+        # If dbus, then directly, if translated, then that.
             
-            # Are we to act on this key?
-            if keyname not in self.dataflow_guidance: continue
-            # We have  key and dbpus path.
-            
-            # load the dataflow spec from the key. 
-            dataflow = self.dataflow_guidance[keyname]
-            # We found all the possibilities for this key, is this
-            # to or from signal/method/dbus to be translated?
+        # if there are no variants to process, then pass through.
+        accumulated_complaints = []
+        got_one = False
+        for possible_introspection in variant_guidance_possibilities(tro.modified_introspection):
+            # possible_introspection is guaranteed to not have a / or a . init
+            if got_one: break
+            possible_introspection_single_varlist = [ (x, y) for (x, y) in extract_single_variable_from_introspection(possible_introspection) ]
+            try:
+                tro.reset_postcall_results()
 
-            arglist_guidance = \
-                dataflow.from_dbus_guidance[offset] if direction_is_from_dbus_to_python else \
-                dataflow.to_dbus_guidance[offset]
-            # select everything necessary to choose to/from
-            # and whether method, signal or property version of this
-            # keyname has translation work to do
-
-            if arglist_guidance == None: continue
-            translation_engaged = True
-            # We found a translation request for this dbus path and and key 
-            # and method, signal or property, and know wether the call is
-            # going to or coming from the dbus. 
-            # All that's lieft is to process the arguments.
-            
-            # Step one: Determine if there are variants in the argspec
-            # and if so, whether the translation spec provides guidance
-            # for it.  If so, rewrite the incoming introspection args
-            # to our custom v -> v:detail: format so the right spot
-            # in arglist processing gets the information.
-            modified_introspection = \
-                variant_introspection_rewrite(introspection,
-                arglist_guidance.overall_variant_expansion_list)
-            # now, self.modified_introspection is either empty or has all embedded 'v' items replaced
-            # with v:: or v:<further format guidance>:
-            # match the arguments, left to right, with corresponding GLib.Variant format item
-
-
-
-            # Arguments on the python side can be in the traditional ordered list,
-            # Or can take advantage of the argument naming feature, which allows
-            # argument passing as either one dictionary with names as keys or
-            # object with argument names as attribute names.            
-            if direction_is_from_dbus_to_python == False:
-                # We have python arguments. Do we need to unpack
-                # them from an object or dict to relieve the user
-                # from keeping track of article order?
-                pre_call_args = convert_arguments_python_to_dbus(arglist_guidance, itemvalue, kwargs)
-            else:
-                # Dbus needs no 'on the way in' translation, the argument list is 
-                # already in lisr format.
-                pre_call_args = itemvalue 
-                
-            
-            # The arguments are ready to present to the translation routines.
-            # If dbus, then directly, if translated, then that.
-            if arglist_guidance.all_arguments_in_one_call:
-                if  0 in arglist_guidance.arguments:
-                    post_call_args = (self._one_ctop  if direction_is_from_dbus_to_python else self._one_ptoc) \
-                        (arglist_guidance.arguments[0], pre_call_args, modified_introspection, 0,True,keyname)
-            else:
-                # make the default return list the same as the passed list.
-                post_call_args = []
-                for t in pre_call_args: 
-                    post_call_args += [t]
-                for i in range(0, len(pre_call_args)):
-                    this_arg_format , remaining_format = _isolate_format(modified_introspection)
-                    modified_introspection = remaining_format
-                    if i not in arglist_guidance.arguments: continue
-                    post_call_args[i] = (self._one_ctop  if direction_is_from_dbus_to_python else self._one_ptoc) \
-                        (arglist_guidance.arguments[i], pre_call_args[i], this_arg_format, i,True,keyname)
+                if tro.arglist_guidance.all_arguments_in_one_call:
+                    if  0 in tro.arglist_guidance.arguments:
+                        tro.post_call_args = (tro.dir_specific_trans_function) \
+                            (tro, tro.arglist_guidance.arguments[0], tro.pre_call_args, possible_introspection, 0, True)
+                        precall_arg_index = len(possible_introspection_single_varlist)
+                        
+                        if tro.call_direction == 'fromDbusToPython':
+                            tro.post_call_arg_index = 1 if isinstance(tro.post_call_args,int) else len(tro.post_call_args)
+                        else:
+                            tro.post_call_arg_index = len(tro.pre_call_args) - 1
+                        got_one = True
+                    break  
+                   
+                for precall_arg_index in range(0, len(possible_introspection_single_varlist)):
+                    (single_var_position_introspection, within_variant) = possible_introspection_single_varlist[precall_arg_index]
+                    # print(single_var_position_introspection)
+                    if precall_arg_index >= len(tro.pre_call_args):
+                            tro.complain("Introspection requires more arguments than passed (" + str(len(tro.pre_call_args)) + "): " + \
+                                         possible_introspection)
+                        
+                    if precall_arg_index not in tro.arglist_guidance.arguments:
+                        tro.route_processed_argument_position([tro.pre_call_args[precall_arg_index]],
+                                                               single_var_position_introspection, within_variant)
+                    else:
+                        tro.route_processed_argument_position(
+                            [   (tro.dir_specific_trans_function) \
+                                   (tro, tro.arglist_guidance.arguments[precall_arg_index],
+                                    tro.pre_call_args[precall_arg_index],
+                                    single_var_position_introspection,
+                                    precall_arg_index, True)
+                            ],
+                            single_var_position_introspection,
+                            within_variant
+                            )
+                                
+                tro.flush_accumulated_variant_introspection()
+                got_one = True
                 break
-              
-            break
+            except Exception as e:
+                accumulated_complaints += [str(e)]
 
-        if not translation_engaged: return itemvalue
+        if not got_one and (len(accumulated_complaints) > 0):
+            raise ValueError(str(accumulated_complaints))
+            
+        if tro.post_call_arg_index + 1 != len(tro.pre_call_args):
+            tro.complain("Introspection requested " + str(tro.post_call_arg_index + 1) + \
+                          " argument positions, but passed " + \
+                          str(len(tro.pre_call_args)) + \
+                          " extras are: " + repr(tro.pre_call_args[tro.post_call_arg_index:]))
+
   
-        if direction_is_from_dbus_to_python:
+        if tro.call_direction == 'fromDbusToPython':
             # We have translated the argument list, now see if we need
             # to pack them to relieve the user from arg order management,
             # or send them back as an ordered tuple.
-            post_trans_args = convert_arguments_dbus_to_python(arglist_guidance, post_call_args, retained_pyarg)
+            tro.post_trans_args = convert_arguments_dbus_to_python(tro.arglist_guidance, tro.post_call_args, tro.retained_pyarg)
         else:
-            post_trans_args = post_call_args
+            tro.post_trans_args = tro.post_call_args
 
         try:
-            if offset == 0: return tuple(post_trans_args)
-            if len(post_trans_args)>1: return tuple(post_trans_args)
-            return post_trans_args[0]
+            if tro.calledby == 'method': return tuple(tro.post_trans_args)
+            if len(tro.post_trans_args) > 1: return tuple(tro.post_trans_args)
+            return tro.post_trans_args[0]
         except:
             pass
-        return post_trans_args
-    
+        return tro.post_trans_args

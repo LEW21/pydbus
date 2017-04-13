@@ -15,10 +15,13 @@ class ProxySignal(object):
 			
 			if self.translator:
 				params=self.translator.translate(
-				iface,
-				signal,
-				params,
-				2,True)
+				pydevobject=iface,
+				keyname=signal,
+				callerargs=params,
+				calledby='signal',
+				fromDbusToPython=True,
+				introspection=None,
+				retained_pyarg=None)
 			if not isinstance(params,tuple): params=(params,)
 			callback(*params)
 		self.translator = obj._bus._ProxyMixin__translator

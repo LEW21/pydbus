@@ -250,6 +250,7 @@ class Test(unittest.TestCase):
         self.assertEqual(g.onbits,0x22)
         self.assertEqual(g.offbits,0xf00)
         
+        
     def test_init_helper_guidance_validate_name_value_map(self):
         #c = pydbus.translator.PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_unittest_basic')
         guidance = pydbus.translator.SingleArgumentOptimizedGuidance({ 0 : "what0means",
@@ -268,6 +269,7 @@ class Test(unittest.TestCase):
         self.assertEqual(g,10)
         self.assertEqual(guidance.replace_unknowns,("string value",10))
         
+        
     def test_dbus_to_python_translations(self):
         c = pydbus.translator.PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_dbus_to_python')
 
@@ -277,7 +279,8 @@ class Test(unittest.TestCase):
         argspec = c.translate('pydbus.unittest','leave_me_alone',(1,4,100,100000),0,True,'uui',None,None)
         self.assertEqual(argspec[0],1)
         self.assertEqual(argspec[1],4)
-        argspec = c.translate('pydbus.unittest','testkey',(1,4,100,(1,2,3,"won't see me"),'no changes',4,4),0,True,'uiusi',None,None)
+        self.assertRaises(ValueError,c.translate,'pydbus.unittest','testkey',(1,4,100,(1,2,3,"won't see me"),'no changes',4,4),0,True,'uiussi',None,None)
+        argspec = c.translate('pydbus.unittest','testkey',(1,4,100,(1,2,3,"won't see me"),'no changes',4,4),0,True,'uiussii',None,None)
         self.assertEqual(argspec[0], 'value_should_be_one')
         self.assertEqual(argspec[1], 'Test Case Matching on 4')
         self.assertEqual(argspec[2], 'whatta number')
@@ -290,7 +293,7 @@ class Test(unittest.TestCase):
         self.assertTrue(argspec[6]['bit 2 on'])
         self.assertFalse(argspec[6]['bit 0 on'])
         
-        argspec = c.translate('pydbus.unittest','fromDbusNamedBitFormats',(1,0x14,100,'never see it','no changes'),1,True,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','fromDbusNamedBitFormats',(1,0x14,100,'never see it','no changes'),1,True,'uuiss',None,None)
         self.assertTrue(isinstance(argspec[0],list))
         self.assertTrue(['bit 0 on',True] in argspec[0])
         self.assertTrue(['bit 2 off',True] in argspec[0])
@@ -303,28 +306,28 @@ class Test(unittest.TestCase):
         self.assertTrue(len(argspec[1])==3)
         
         self.assertRaises(ValueError,c.translate,'pydbus.unittest','singletest',(1,),1,True,'uui',None,None)
-        argspec = c.translate('pydbus.unittest','singletest',(0,),1,True,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','singletest',(0,),1,True,'b',None,None)
         self.assertTrue(argspec,'bit 2 off')
         
-        argspec = c.translate('pydbus.unittest','prettydicttest',(5,),1,True,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','prettydicttest',(5,),1,True,'i',None,None)
         #print(str(argspec))
         self.assertTrue(isinstance(argspec,dict))
         self.assertEqual(argspec['the first three bits if not the fourth'],5)
         self.assertTrue(argspec['seek the number, Luke'])
         self.assertTrue(len(argspec)==2)
         
-        argspec = c.translate('pydbus.unittest','prettydicttest',(0x10,),1,True,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','prettydicttest',(0x10,),1,True,'u',None,None)
         #print(str(argspec))
         self.assertTrue(argspec==True)
         
-        argspec = c.translate('pydbus.unittest','prettylisttest',(3,),1,True,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','prettylisttest',(3,),1,True,'u',None,None)
         #print(str(argspec))
         self.assertTrue(isinstance(argspec,list))
         self.assertTrue(['the first three bits if not the fourth',3] in argspec)
         self.assertTrue('seek the number, Luke' in argspec)
         self.assertTrue(len(argspec)==2)
         
-        argspec = c.translate('pydbus.unittest','prettylisttest',(0x10,),1,True,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','prettylisttest',(0x10,),1,True,'i',None,None)
         #print(str(argspec))
         self.assertTrue(argspec==True)
 
@@ -332,13 +335,38 @@ class Test(unittest.TestCase):
         #print(str(argspec))
         self.assertTrue(argspec[0]==(0x11,0,'i',True))
 
-        argspec = c.translate('pydbus.unittest','simplematchfunction',(0x10,),0,True,'goodluckwiththat',None,None)
+        self.assertRaises(ValueError,c.translate,'pydbus.unittest','simplematchfunction',(0x10,),0,True,'goodluckwiththat',None,None)
+        argspec = c.translate('pydbus.unittest','simplematchfunction',(0x10,),0,True,'i',None,None)
         #print(str(argspec))
-        self.assertTrue(argspec[0]==0x12)
+        self.assertEqual(argspec[0],(0x11,0,'i',True))
 
-        argspec = c.translate('pydbus.unittest','allargsin1matchfunction',(0x10,0x20),0,True,'ii',None,None)
+        argspec = c.translate('pydbus.unittest','allargsin1matchfunction',(0x10,0x20),0,True,'i',None,None)
         #print(str(argspec))
         self.assertTrue(argspec==0x30)
+        
+
+    def test_variant_guidance_possibilities(self):
+        self.assertEqual(('u',),tuple(pydbus.translator.variant_guidance_possibilities('u')))
+        self.assertEqual(('ss',),tuple(pydbus.translator.variant_guidance_possibilities('ss')))
+        self.assertEqual(('v:u:',),tuple(pydbus.translator.variant_guidance_possibilities('v:u:')))
+        self.assertEqual(('sv:i:',),tuple(pydbus.translator.variant_guidance_possibilities('sv:i:')))
+        self.assertEqual(('sv:i:','sv:s:'),tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:')))
+        self.assertEqual(('sv:i:au','sv:s:au'),tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:au')))
+        self.assertEqual(('sv:i:auv::','sv:s:auv::'),tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:auv::')))
+        self.assertEqual(('sv:i:auv:i:','sv:s:auv:i:'),tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:auv:i:')))
+        self.assertEqual(('sv:i:auv:i:','sv:i:auv:u:','sv:s:auv:i:','sv:s:auv:u:'),tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:auv:i/u:')))
+        self.assertEqual(('sv:iss:au','sv:sss:au'),tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s.ss:au')))
+
+    def test_variant_introspection_rewrite(self):
+        self.assertEqual('u',pydbus.translator.variant_introspection_rewrite('u', []))
+        self.assertEqual('au',pydbus.translator.variant_introspection_rewrite('au', []))
+        self.assertEqual('auv:i:',pydbus.translator.variant_introspection_rewrite('auv', ['i']))
+        self.assertEqual('auv:i:s',pydbus.translator.variant_introspection_rewrite('auvs', ['i']))
+        # So the arglist in the above case is [unsigned int,unsigned int..],int,string
+        self.assertEqual('auv:i/b:s',pydbus.translator.variant_introspection_rewrite('auvs', ['i/b']))
+        self.assertEqual('auv:i/b:sv::',pydbus.translator.variant_introspection_rewrite('auvsv', ['i/b']))
+        self.assertEqual('auv:i/b:sv:as:',pydbus.translator.variant_introspection_rewrite('auvsv', ['i/b','as']))
+        self.assertEqual('auv:i/b.ss:sv::',pydbus.translator.variant_introspection_rewrite('auvsv', ['i/b.ss']))
 
     def test_python_to_dbus_translations(self):
         c = pydbus.translator.PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_python_to_dbus')
@@ -359,7 +387,7 @@ class Test(unittest.TestCase):
             (1,2,3,"won't see me"),
             'no changes',
             ('bit 1 off','bit 2 on','bit 0 on'),
-            {'bit 1 off' : True,'bit 2 on':True, 'bit 0 on' :True}),0,False,'uiusi',None,None)
+            {'bit 1 off' : True,'bit 2 on':True, 'bit 0 on' :True}),0,False,'uiussii',None,None)
         self.assertEqual(argspec[0], 1)
         self.assertEqual(argspec[1], 4)
         self.assertEqual(argspec[2], 30)
@@ -374,21 +402,21 @@ class Test(unittest.TestCase):
              100, #oass ints along as they come
              'never see it',
              'no changes'
-             ),0,False,'uui',None,None)
+             ),0,False,'uuiss',None,None)
         self.assertEqual(argspec[0],1)
         self.assertEqual(argspec[1],0x910)
         self.assertEqual(argspec[2],100)
         
         self.assertRaises(ValueError,c.translate,'pydbus.unittest','singletest',('should fail',6),0,False,'uui',None,None)
-        argspec = c.translate('pydbus.unittest','singletest','bit 0 ON',0,False,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','singletest','bit 0 ON',0,False,'u',None,None)
         self.assertTrue(argspec,1)
         
-        argspec = c.translate('pydbus.unittest','prettydicttest',{ 'the first three bits if not the fourth':5, 'solo True, seldom seen' : True},0,False,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','prettydicttest',{ 'the first three bits if not the fourth':5, 'solo True, seldom seen' : True},0,False,'i',None,None)
         #print(str(argspec))
         self.assertEqual(argspec[0],5+16)
         self.assertTrue(len(argspec)==1)
         
-        argspec = c.translate('pydbus.unittest','prettylisttest',(('solo True, seldom seen',('the first three bits if not the fifth',3),),),0,False,'uui',None,None)
+        argspec = c.translate('pydbus.unittest','prettylisttest',(('solo True, seldom seen',('the first three bits if not the fifth',3),),),0,False,'i',None,None)
      
         #print(str(argspec))
         self.assertEqual(argspec[0],0x13)      
@@ -397,11 +425,11 @@ class Test(unittest.TestCase):
         #print(str(argspec))
         self.assertTrue(argspec[0]==5)        
 
-        argspec = c.translate('pydbus.unittest','allargsin1matchfunction',("The answer should be seven","Hi Mom"),0,False,'ii',None,None)
+        argspec = c.translate('pydbus.unittest','allargsin1matchfunction',("The answer should be seven","Hi Mom"),0,False,'i',None,None)
         #print(str(argspec))
         self.assertTrue(argspec[0]==7)
         
-        argspec = c.translate('pydbus.unittest','pytodbusvariants',('label for 0',('a',1),2,['some','strings']),0,False,'v',None,None)
+        argspec = c.translate('pydbus.unittest','pytodbusvariants',(('label for 0',1,2,'two','strings'),['some','more','strings']),0,False,'vv',None,None)
         print(str(argspec))
 
 if __name__ == "__main__":

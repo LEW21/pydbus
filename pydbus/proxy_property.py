@@ -23,10 +23,13 @@ class ProxyProperty(object):
 			xlater=instance._bus._ProxyMixin__translator
 			v=instance._object["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)
 			return xlater.translate(
-				instance,
-				self.__name__,
-				v if isinstance(v,tuple) else (v,),
-				3,True)
+				pydevobject=instance,
+				keyname=self.__name__,
+				callerargs=v if isinstance(v,tuple) else (v,),
+				calledby='property',
+				fromDbusToPython=True,
+				introspection=None,
+				retained_pyarg=None)
 		else:
 			return instance._object["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)
 
@@ -36,10 +39,13 @@ class ProxyProperty(object):
 
 		if instance._bus._ProxyMixin__translator:
 			value=instance._bus._ProxyMixin__translator.translate(
-				instance,
-				self.__name__,
-				value if isinstance(value,tuple) else (value,),
-				3,False)
+				pydevobject=instance,
+				keyname=self.__name__,
+				callerargs=value if isinstance(value,tuple) else (value,),
+				calledby='property',
+				fromDbusToPython=False,
+				introspection=self._type,
+				retained_pyarg=None)
 		
 		instance._object["org.freedesktop.DBus.Properties"].Set(self._iface_name, self.__name__, GLib.Variant(self._type, value))
 

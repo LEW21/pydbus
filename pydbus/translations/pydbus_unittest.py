@@ -160,7 +160,7 @@ pydbus_dbus_to_python = { 'testkey' :
                                     {
                                     "_match_to_function" : True,
                                     "_all_arguments" : True,
-                                    "0:ii" : add_them,
+                                    "0:i" : add_them, #In functions, the introspection has to match the function result.
                                     },
                                 }
                             },
@@ -288,7 +288,7 @@ pydbus_python_to_dbus = { 'testkey' :
                                     {
                                     "_match_to_function" : True,
                                     "_all_arguments" : True,
-                                    "0:ii" : count_words_from_both_args,
+                                    "0:i" : count_words_from_both_args,
                                     },
                                 }
                             },
@@ -296,13 +296,17 @@ pydbus_python_to_dbus = { 'testkey' :
                             { 'method_py_to_dbus' :
                                 {  0 :
                                     {
-                                    "_variant_expansion" : 'iii/uu,ss',
-                                    0 : 'label for 0',
-                                    1 : 'label for 1',
+                                    "_variant_expansion" : '(uu/(iii.ss)',
+                                    "_container" : {
+                                            0 : {
+                                                    0 : 'label for 0',
+                                                    1 : 'label for 1',
+                                                }
+                                        },
                                     },
-                                   1 :
-                                    {
-                                    "_variant_expansion" : 'as',
+                                   1 : 
+                                   { "_variant_expansion" : 'as',
+                                    #No translation for this field (which will be either a u or i
                                     },
                                 }
                             }

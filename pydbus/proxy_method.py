@@ -76,10 +76,13 @@ class ProxyMethod(object):
 			retained_args = args
 			if (self._iface_name != "org.freedesktop.DBus.Properties") and (len(args)>0) :
 				args= instance._bus._ProxyMixin__translator.translate(
-					instance._object,
-					self.__name__,
-					args,
-					0,False,self._sinargs,kwargs)
+					pydevobject=instance._object,
+					keyname=self.__name__,
+					callerargs=args,
+					calledby='method',
+					fromDbusToPython=False,
+					introspection=self._sinargs,
+					retained_pyarg=None)
 				
 			ret = instance._bus.con.call_sync(
 				instance._bus_name, 
@@ -93,10 +96,13 @@ class ProxyMethod(object):
 				None).unpack()
 			if len(self._outargs)>0:
 				ret=instance._bus._ProxyMixin__translator.translate(
-					instance._object,
-					self.__name__,
-					ret if isinstance(ret,tuple) else (ret,),
-					1,True,self._soutargs,retained_args,kwargs)
+					pydevobject=instance._object,
+					keyname=self.__name__,
+					callerargs=ret if isinstance(ret,tuple) else (ret,),
+					calledby='method',
+					fromDbusToPython=True,
+					introspection=self._soutargs,
+					retained_pyarg=retained_args)
 				if not isinstance(ret,tuple): ret = (ret,)
 		else:
 			ret = instance._bus.con.call_sync(
