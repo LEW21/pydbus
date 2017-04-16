@@ -23,6 +23,10 @@ from gi.repository.GLib import (Variant)  # ,VariantBuilder,VariantType)
 from importlib import import_module
 from ipaddress import (IPv4Address, IPv6Address, IPv4Network)
 import re
+from traceback import format_stack
+from textwrap import wrap
+from sys import stderr
+
 
 
 class TranslationRequest(object):
@@ -130,12 +134,17 @@ class TranslationRequest(object):
 ######## The translation object setup is complete.  Proceed with the translation.
 
     def complain(self, prefix):
-        raise ValueError(prefix + " for dbus path " + self.dbus_pathname + " key " + self.keyname + " called for a " + self.calledby + " direction " + self.call_direction)
+        info = '\n'.join(wrap(prefix + " for dbus path " + self.dbus_pathname + " key " + self.keyname + " called for a " + self.calledby + " direction " + self.call_direction))
+        raise ValueError(info)
     
     def flush_accumulated_variant_introspection(self):
         if len(self.accumulated_variant_results) > 0:
-            print(self.accumulated_variant_introspection + " " + str(self.accumulated_variant_results) + '\n')
-            self.post_call_args += [Variant(self.accumulated_variant_introspection, *self.accumulated_variant_results)]
+            #print(self.accumulated_variant_introspection + " " + str(self.accumulated_variant_results) + '\n')
+            try:
+                self.post_call_args += [Variant(self.accumulated_variant_introspection, *self.accumulated_variant_results)]
+            except Exception as e:
+                self.complain("Introspection expected was "+ self.accumulated_variant_introspection + \
+                              " but arguments were "+ str(self.accumulated_variant_results) + '. Error: ' + str(e))
             self.accumulated_variant_results = []
             self.accumulated_variant_introspection = ''
             self.post_call_arg_index += 1
@@ -190,10 +199,10 @@ def _isolate_format(args):
     return (next_arg, remainder)
 
 def container_content_introspection_format(a_something):
-    if a_something[0] == 'a': 
+    if a_something[0:2] == 'a{':
+        container_of_what = a_something[2:].rstrip('}')
+    elif a_something[0] == 'a': 
         container_of_what, dontcare = _isolate_format(a_something[1:])  # @UnusedVariable
-    elif a_something[0] == '{':
-        container_of_what = a_something[1:].rstrip('}')
     elif a_something[0] == '(':
         container_of_what = a_something[1:].rstrip(')')
     else:
@@ -257,13 +266,13 @@ class DataFlowGuidance(object):
                 list_of_direction_specific_guidance[i] = arglist
                 self.dbus_side_argument_list_size = 0
                 for arg_position_index, arg_specific_translation_spec in self.original_guidance_list[i].items():
-                    if isinstance(arg_position_index, int): 
+                    if not isinstance(arg_position_index , (dict,tuple,list)): 
                         got_one_arg = True
                         arg_guidance = SingleArgumentOptimizedGuidance(arg_specific_translation_spec,
                                         arg_position_index, from_python_to_dbus, self.key_for_this_dbus_path)
                         arglist.arguments[arg_position_index] = arg_guidance
                         arglist.overall_variant_expansion_list += arg_guidance.local_variant_expansion_list
-                        if self.dbus_side_argument_list_size < arg_position_index:
+                        if self.dbus_side_argument_list_size < len(arglist.arguments):
                             self.dbus_side_argument_list_size = arg_position_index
                         if arg_guidance.all_arguments: arglist.all_arguments_in_one_call = True
 
@@ -1398,8 +1407,8 @@ class PydbusCPythonTranslator(object):
                                          argformat, enable_auto_container):
 
         if not isinstance(guidance, SingleArgumentOptimizedGuidance):
-            # If this isn't guidance we understand, return the variable unchanged.
-            return True, input_value
+            # If this isn't guidance we understand, exit this now.
+            return False, None
 
         # Match functions, if any, take priority over anything else.
         if guidance.match_to_function:
@@ -1426,10 +1435,11 @@ class PydbusCPythonTranslator(object):
         elif  guidance.auto_container_active and enable_auto_container:
             container_value_guidance = guidance
         else:
-            container_value_guidance = None
+            container_value_guidance = False
         
 
         introspection_this_level, introspection_next_level = _isolate_format(argformat)  # @UnusedVariable
+
 
         if (introspection_this_level == None) or (introspection_this_level == ''):
             if container_value_guidance:
@@ -1437,61 +1447,85 @@ class PydbusCPythonTranslator(object):
             # If not given guidance, but given a variable to process, there is no reason to change the given value here.
             # It is possible this should be an error, but we'll leave that for higher level routines.
             return True, input_value
-        elif introspection_this_level[0] == 'a':
+        
+        if introspection_this_level[0] in 'a({':
             if len(introspection_this_level) == 1:
-                tro.complain("The introspection string specified array of no type: " + argformat)
-            # We've been asked to process an array, but we've been given no guidance so just return what's been passed.
-            if container_value_guidance == None: return True, input_value
-            
-            if introspection_this_level[1] == '{':
-                return True, (tro.dir_specific_trans_function)(tro,container_value_guidance, input_value,
-                    container_content_introspection_format(introspection_this_level),
-                    0, False)    
-            
-            return True, list((tro.dir_specific_trans_function)(tro,container_value_guidance, x,
-                container_content_introspection_format(introspection_this_level),
-                0, False) for x in input_value)
+                tro.complain("The introspection string specified a container of no type: " + argformat)
+            if introspection_this_level[0]=='{':
+                introspection_this_level = 'a'+introspection_this_level
+                
+            if  introspection_this_level[0:2]=='a{':
+# We have a number of key,value pairs to translate.  There is no order to them. The task is to 
+# identify the guidance spec to use. These are the desried capabilities:
+# 1.  Apply a single argument position guidance to all the keys, or don't translate any of them
+# 2.  Apply a single argument position guidance to all the values, or don't translate any of them
+# 3.  Choose a guidance for the value as dictionary lookup from the python side of any key translation.
 
-
-        elif introspection_this_level[0] == '(':
-            if container_value_guidance == None: 
-                # We've been asked to process a tuple, but we have no guidance
-                # about how or whether to translate it  so return what's been passed.
-                return True, input_value
-            rl = ()
-            for x in range(0,len(input_value)):
-                g = container_value_guidance.dbus_guidance[0].arguments.get(x,None)
-                if g==None:
-                    rl += (input_value[x],)
+                if (guidance.container_keys == False) and (container_value_guidance==False):
+                    return True,input_value
+                #We have to iterate through the dictionary.                
+                if guidance.container_keys == False:
+                    f_keys = lambda k : k
                 else:
-                    rl += ((tro.dir_specific_trans_function) \
-                    (tro,g, input_value[x], container_content_introspection_format(introspection_this_level),
-                     x, False),)
-            return True, rl      
-                    
+                    default_key_guidance = guidance.container_keys.dbus_guidance[0].arguments.get("_default_guidance",None)
+                    if default_key_guidance and (len(guidance.container_keys.dbus_guidance[0].arguments)==1):
+                        f_keys = lambda k : (tro.dir_specific_trans_function) \
+                            (tro,default_key_guidance, 
+                             k, container_content_introspection_format(introspection_this_level)[0],
+                             0, False) 
+                    else:
+                        f_keys = lambda k : (tro.dir_specific_trans_function) \
+                            (tro,guidance.container_keys.dbus_guidance[0].arguments.get(k,default_key_guidance), 
+                             k, container_content_introspection_format(introspection_this_level)[0],
+                             0, False) 
+                        
+                if container_value_guidance == False:
+                    f_values = lambda k,v : v
+                else:
+                    default_value_guidance = container_value_guidance.dbus_guidance[0].arguments.get("_default_guidance",None)
+                    if default_value_guidance and (len(container_value_guidance.dbus_guidance[0].arguments)==1):
+                        f_values = lambda k,v : (tro.dir_specific_trans_function) \
+                            (tro,default_value_guidance, 
+                            v, container_content_introspection_format(introspection_this_level)[1:],
+                            0, False) 
+                    else:
+                        f_values = lambda k,v : (tro.dir_specific_trans_function) \
+                            (tro,container_value_guidance.dbus_guidance[0].arguments.get(k,default_value_guidance), 
+                            v, container_content_introspection_format(introspection_this_level)[1:],
+                            0, False) 
+                        
+                return True,{ f_keys(k) : f_values(k,v) for k,v in input_value.items() }
 
-             
-        elif introspection_this_level[0] == '{':
-            if container_value_guidance == None: 
-                # We've been asked to process a dictionary, but we have no guidance about how
-                # or whether to translate it so return what's been passed.
-                return True, input_value
-            # otherwise, build a translated dictionary
-            keyformat = introspection_this_level[1]  # a{X
-            valueformat, dontcare = _isolate_format(introspection_this_level[2:].rstrip('}'))  # @UnusedVariable
-            return True, { (tro.dir_specific_trans_function)(tro,guidance.container_keys, k, keyformat, 0, False) 
-                     if guidance.container_keys else k : 
-                     (tro.dir_specific_trans_function)(tro,container_value_guidance, v, valueformat, 0, False)
-                     if container_value_guidance else v 
-                     for k , v in input_value.items()}
             
-            tro.complain("Dbus requires a dictionary '" + argformat + "', but argument '" + str(input_value) + ' is not ')
+            elif introspection_this_level[0]=='(': 
+                #container_type = tuple
+                rl=()
+                sub_introspection = container_content_introspection_format(introspection_this_level)
+                if container_value_guidance==False:
+                    f_arg_guidance = lambda x : (None, x)
+                else:
+                    default = container_value_guidance.dbus_guidance[0].arguments.get("_default_guidance",None)
+                    f_arg_guidance = lambda idx : (container_value_guidance.dbus_guidance[0].arguments.get(idx,
+                        default), idx)
+            elif introspection_this_level[0]=='a': 
+                #container_type = list
+                rl = []
+                sub_introspection = container_content_introspection_format(introspection_this_level)
+                f_arg_guidance = lambda idx : (guidance, 0)
+            else:
+                tro.complain("The introspection string specified a container of unknown type: " + argformat)
+            
+            for x in range(0,len(input_value)):
+                g,idx = (f_arg_guidance)(x)
+                rl += ((tro.dir_specific_trans_function) \
+                (tro,g, input_value[x],sub_introspection,idx, False),)
+            return True, rl      
            
         else:
-            if container_value_guidance != None:
+            if container_value_guidance != False:
                 tro.complain("Guidance specified for container content, but non-container passed")
                  
-        # Let direction speciic processing routines handle it from here.
+        # We have guidance, but it isn't a container.
         return False, None
     
     
@@ -1508,6 +1542,9 @@ class PydbusCPythonTranslator(object):
         # pyvar -> python version of the argument
         # argformat -> introspection string pyvar should be
         # argument_index -> None if doing arglist, otherwise 0..x
+        
+        # Validate the variable type for content for which we don't have
+        # translation routines.
         
         no_further_processing, ret = self.dataflow_both_dir_arg_processing(tro, trans, pyvar,
             argument_index, argformat, enable_auto_container)
@@ -1527,28 +1564,35 @@ class PydbusCPythonTranslator(object):
         # if we have no translation guidance for whatever this is
         # just return it untranslated.
         
+        if trans:
         
-        if trans.is_one_to_one_map:
-            if isinstance(pyvar, int): return pyvar
-            try:
-                return trans.map[pyvar.upper()]
-            except:
-                pass
-            m = re.match("UNKNOWN_(.*)", pyvar, re.IGNORECASE)  # @UndefinedVariable
-            try:
-                return int(m[1], 16)
-            except:
-                tro.complain("No value associated with " + repr(pyvar))
+            if trans.is_one_to_one_map:
+                if isinstance(pyvar, int): return pyvar
+                try:
+                    return trans.map[pyvar.upper()]
+                except:
+                    pass
+                m = re.match("UNKNOWN_(.*)", pyvar, re.IGNORECASE)  # @UndefinedVariable
+                try:
+                    return int(m[1], 16)
+                except:
+                    if trans.replace_unknowns:
+                        return trans.replace_unknowns[1]
+                    tro.complain("No value associated with " + repr(pyvar))
+        
+                            
+            if trans.is_bitfield:
+                # If we've been passed an integer, pass it through as is.
+                return self.process_pyvar_bitfield(trans, pyvar, tro.keyname)
+        try:
+            this_format = argformat[argument_index]
+        except:
+            tro.complain("Expected introspection but none given for "+ repr(pyvar))     
     
-                        
-        if trans.is_bitfield:
-            # If we've been passed an integer, pass it through as is.
-            return self.process_pyvar_bitfield(trans, pyvar, tro.keyname)
-        
-        if (argformat == 's') and (not isinstance(pyvar, str)):
+        if (this_format == 's') and (not isinstance(pyvar, str)):
             tro.complain("Introspection expected a string, but given " + repr(pyvar))
             
-        if (argformat == 'b') and (pyvar not in (0, 1)):            
+        if (this_format == 'b') and (pyvar not in (0, 1)):            
             tro.complain("Introspection expected a boolean, 0 or 1 but given " + repr(pyvar))
         # If we get here, whatever sort of variable this is isn't something we either want or know how to
         # translate.  Return it as is.
@@ -1625,15 +1669,25 @@ class PydbusCPythonTranslator(object):
                             single_var_position_introspection,
                             within_variant
                             )
+                        if within_variant=='new variant': within_variant=True
                                 
-                tro.flush_accumulated_variant_introspection()
+                    tro.flush_accumulated_variant_introspection()
                 got_one = True
                 break
-            except Exception as e:
-                accumulated_complaints += [str(e)]
+            except ValueError as v:
+                accumulated_complaints += [str(v)]
+                stack = format_stack()
+                last_complaint_stack = ''.join(stack[0:-2]) 
 
         if not got_one and (len(accumulated_complaints) > 0):
-            raise ValueError(str(accumulated_complaints))
+            info=''
+            for i in range(0,len(accumulated_complaints)-1):
+                info += '\nRejected parse attempt ' + str(i) 
+                info += ':\n'+accumulated_complaints[i]
+            info += '\nParse Exception Stack: \n'+last_complaint_stack
+            info += '\nPydbus Parse Exception:\n'+accumulated_complaints[len(accumulated_complaints)-1]
+            if 'assertRaises' not in info: print(info,file=stderr)
+            raise ValueError('Pydbus Translation Execption:\n')
             
         if tro.post_call_arg_index + 1 != len(tro.pre_call_args):
             tro.complain("Introspection requested " + str(tro.post_call_arg_index + 1) + \

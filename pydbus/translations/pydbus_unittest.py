@@ -307,8 +307,90 @@ pydbus_python_to_dbus = { 'testkey' :
                                    1 : 
                                    { "_variant_expansion" : 'as',
                                     #No translation for this field (which will be either a u or i
+                                     #   "_default_guidance"
                                     },
                                 }
-                            }
-                        } #end of key specs
+                            },
+                         'pytodbusvariants2' : 
+                            { 'method_py_to_dbus' :
+                                {  0 :
+                                    {
+                                    "_variant_expansion" : '(uu/(iii.ss)',
+                                    "_container" : {
+                                            0 : {
+                                                    0 : 'label for 0',
+                                                    1 : 'label for 1',
+                                                }
+                                        },
+                                    },
+                                   1 : 
+                                   { "_variant_expansion" : 'ai',
+                                        10 : 'label for 10',
+                                        '_replace_unknowns' : ('whatta number',-101)
+                                    },
+                                   2 : 
+                                   { "_variant_expansion" : '(iss)',
+                                     "_container" : {
+                                            0 : { 
+                                                    10 : 'label for 10',
+                                                    '_replace_unknowns' : ('whatta number',-101)
+                                             }
+                                        }
+                                    },
+                                }
+                            },
+                        'dictionary_test' : {
+                            'method_py_to_dbus' : {  
+                                0 : {
+                                    "_container" : {
+                                        0 :  {
+                                            0 : 'label for 0',
+                                            1 : 'label for 1',
+                                        },
+                                    },
+                                },
+                                1 : {
+                                    "_container" : {
+                                        0 :  {
+                                            0 : 'label for 0',
+                                            1 : 'label for 1', 
+                                        },
+                                        "_default_guidance" : {
+                                            30 : 'label for 30',
+                                            20 : 'label for 20',
+                                            '_replace_unknowns' : ('whatta number',-101)
+                                        },
+                                    }
+                                 },
+                            },
+                        },
+                        'dictionary_keys' : {
+                            'method_py_to_dbus' : {  
+                                0 : {
+                                    "_container_keys" : {
+                                        "_default_guidance" :  {
+                                            0 : 'label for 0',
+                                            1 : 'label for 1',
+                                        },
+                                    }
+                                },
+                                1 : {
+                                    "_container_keys" : {
+                                        "_default_guidance" :  {
+                                            0 : 'label for 0',
+                                            1 : 'label for 1',
+                                        },
+                                    },
+                                    "_container" : {
+                                        "_default_guidance" :  {
+                                            2 : 'is 2',
+                                            1 : 'is 1', 
+                                        },
+                                    },
+                                },
+                            },
+                        }
+                    }
+                
+
 

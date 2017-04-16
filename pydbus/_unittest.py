@@ -5,7 +5,7 @@ Created on Mar 25, 2017
 @copyright: 2017 Quiet Fountain LLC
 '''
 import unittest
-
+from gi.repository.GLib import (Variant)  # ,VariantBuilder,VariantType)
 import pydbus
 
 
@@ -430,8 +430,37 @@ class Test(unittest.TestCase):
         self.assertTrue(argspec[0]==7)
         
         argspec = c.translate('pydbus.unittest','pytodbusvariants',(('label for 0',1,2,'two','strings'),['some','more','strings']),0,False,'vv',None,None)
-        print(str(argspec))
+        self.assertEqual(argspec[0],Variant('(iiiss)', (0, 1, 2, 'two', 'strings')))
+        self.assertEqual(argspec[1],Variant('as', ['some','more','strings']))
 
+        argspec = c.translate('pydbus.unittest','pytodbusvariants2',(('label for 0',1,2,'two','strings'),
+                                                                     ['label for 10','who','knows'],
+                                                                     ('label for 10','who','knows'),
+                                                                     ),0,False,'vvv',None,None)
+        self.assertEqual(argspec[0],
+            Variant('(iiiss)', (0, 1, 2, 'two', 'strings')))
+        self.assertEqual(argspec[1],
+            Variant('ai', [10, -101, -101])) 
+        self.assertEqual(argspec[2],
+            Variant('(iss)', (10, 'who', 'knows'),))
+        self.assertTrue(len(argspec)==3)
+        
+        argspec = c.translate('pydbus.unittest','dictionary_test',
+                              ({ 0 : 'label for 1',  1 : 10},
+                               { 0 : 'label for 1',  20 : 'label for 20',99:99, 42: "who knows", 100 : "label for 1"}),
+                              0,False,'a{ii}a{ii}',None,None)
+
+        self.assertEqual(argspec,({ 0 : 1 , 1: 10},
+                                  {0:1,20:20,99:99,42:-101,100:-101}))
+
+        argspec = c.translate('pydbus.unittest','dictionary_keys',({ 'label for 1' : 'is 1',  2 : 'is 2'},
+                                                                   { 'label for 1' : 'is 1',  2 : 'is 2'},
+                                                                   ),0,False,'a{is}a{ii}',None,None)
+        #print(str(argspec))
+        self.assertEqual(argspec[0],{ 1 : 'is 1' , 2: 'is 2'})
+        self.assertEqual(argspec[1],{ 1 : 1 , 2: 2})
+
+        
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
