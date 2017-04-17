@@ -4,10 +4,14 @@ Created on Mar 25, 2017
 @author: Harry G. Coin
 @copyright: 2017 Quiet Fountain LLC
 '''
-import unittest
 from gi.repository.GLib import (Variant)  # ,VariantBuilder,VariantType)
+import unittest
+
 import pydbus
 
+
+class BlankObject(object):
+    pass
 
 class Test(unittest.TestCase):
 
@@ -459,6 +463,55 @@ class Test(unittest.TestCase):
         #print(str(argspec))
         self.assertEqual(argspec[0],{ 1 : 'is 1' , 2: 'is 2'})
         self.assertEqual(argspec[1],{ 1 : 1 , 2: 2})
+
+        t = BlankObject()
+        t.arg0 = 'zero'
+        t.arg1 = 'one'
+        t.arg2 = 2
+        argspec = c.translate('pydbus.unittest','named_arguments',t,0,False,'ssi',None,None)
+        self.assertEqual(argspec,('zero','one',2))
+        
+        d= { 'arg0' : 'zero', 'arg1':'one', 'arg2' : 2}
+        argspec = c.translate('pydbus.unittest','named_arguments2',d,0,False,'ssi',None,None)
+        self.assertEqual(argspec,('zero','one',2))
+        #Now test both of those dbus to python.
+        #print(str(argspec))
+        
+    def test_dbus_to_python_variable_naming(self):
+        c = pydbus.translator.PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_dbus_to_python')
+        argspec = c.translate('pydbus.unittest','d_to_p_named_args',(1,4,'one hundred'),0,True,'uus',None,None)
+        self.assertEqual(argspec.arg0,1)
+        self.assertEqual(argspec.arg1,4)
+        self.assertEqual(argspec.arg2,'one hundred')
+
+        argspec = c.translate('pydbus.unittest','d_to_p_dict_args',(1,4,'one hundred'),0,True,'uus',None,None)
+        self.assertEqual(argspec['arg0'],1)
+        self.assertEqual(argspec['arg1'],4)
+        self.assertEqual(argspec['arg2'],'one hundred')
+
+        d = { 'still' : 'here'}
+        argspec = c.translate('pydbus.unittest','d_to_p_dict_args',(1,4,'one hundred'),0,True,'uus',d,None)
+        self.assertEqual(argspec['arg0'],1)
+        self.assertEqual(argspec['arg1'],4)
+        self.assertEqual(argspec['arg2'],'one hundred')
+        self.assertEqual(len(argspec),3)
+
+        d = { 'still' : 'here'}
+        argspec = c.translate('pydbus.unittest','d_to_p_dict_args2',(1,4,'one hundred'),0,True,'uus',d,None)
+        self.assertEqual(argspec['arg0'],1)
+        self.assertEqual(argspec['arg1'],4)
+        self.assertEqual(argspec['arg2'],'one hundred')
+        self.assertEqual(argspec['still'],'here')
+        self.assertEqual(len(argspec),4)
+        
+        b= BlankObject()
+        b.arg0='441'
+        b.newguy = '2'
+        argspec = c.translate('pydbus.unittest','d_to_p_named_args3',(1,4,'one hundred'),0,True,'uus',b,None)
+        self.assertEqual(argspec.arg0,1)
+        self.assertEqual(argspec.arg1,4)
+        self.assertEqual(argspec.arg2,'one hundred')
+        self.assertEqual(argspec.newguy,'2')
 
         
 if __name__ == "__main__":

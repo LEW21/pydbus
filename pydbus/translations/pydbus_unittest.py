@@ -164,7 +164,48 @@ pydbus_dbus_to_python = { 'testkey' :
                                     },
                                 }
                             },
-
+                         'd_to_p_named_args' :
+                            { 'method_dbus_to_py': 
+                                { 0: 
+                                    { '_attributename': "arg0"},
+                                 1: 
+                                    { '_attributename': "arg1"},
+                                 2: 
+                                    { '_attributename': "arg2"},
+                                }
+                            },
+                         'd_to_p_dict_args' :
+                            { 'method_dbus_to_py': 
+                                { 0: 
+                                    { '_dictkey': "arg0"},
+                                 1: 
+                                    { '_dictkey': "arg1"},
+                                 2: 
+                                    { '_dictkey': "arg2"},
+                                }
+                            },
+                         'd_to_p_dict_args2' :
+                            { 'method_dbus_to_py': 
+                                { 0: 
+                                    { '_dictkey': "arg0"},
+                                 1: 
+                                    { '_dictkey': "arg1"},
+                                 2: 
+                                    { '_dictkey': "arg2",
+                                      '_new_return_instance' : True},
+                                }
+                            },
+                         'd_to_p_named_args3' :
+                            { 'method_dbus_to_py': 
+                                { 0: 
+                                    { '_attributename': "arg0"},
+                                 1: 
+                                    { '_attributename': "arg1",'_new_return_instance' : True},
+                                 2: 
+                                    { '_attributename': "arg2"},
+                                }
+                            },
+                         
                         } #end of key specs
 
 
@@ -389,7 +430,22 @@ pydbus_python_to_dbus = { 'testkey' :
                                     },
                                 },
                             },
+                        },
+                        'named_arguments' : {
+                            'method_py_to_dbus' : {  
+                                0: { "_attributename" : 'arg0'},
+                                1: { "_attributename" : 'arg1'},
+                                2: { "_attributename" : 'arg2'},
+                            }
+                        },
+                        'named_arguments2' : {
+                            'method_py_to_dbus' : {  
+                                0: { "_dictkey" : 'arg0'},
+                                1: { "_dictkey" : 'arg1'},
+                                2: { "_dictkey" : 'arg2'},
+                            }
                         }
+                         
                     }
                 
 

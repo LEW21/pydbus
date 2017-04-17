@@ -22,35 +22,35 @@ https://github.com/hcoin/pydbus/wiki
 from gi.repository.GLib import (Variant)  # ,VariantBuilder,VariantType)
 from importlib import import_module
 from ipaddress import (IPv4Address, IPv6Address, IPv4Network)
-import re
-from traceback import format_stack
-from textwrap import wrap
 from sys import stderr
+from textwrap import wrap
+from traceback import format_stack
+import re
 
 
 
 class TranslationRequest(object):
     '''Everything specific to each translation request is held here.'''
     def __init__(self, tkargs, tkwargs, bus_name, dataflow_guidance, ctop, ptoc):
-        self.pydevobject = tkwargs.get('pydevobject',tkargs[0])
+        self.pydevobject = tkwargs.get('pydevobject', tkargs[0])
 #            pydevobject is returned by pydbus.[SessionBus|SystemBus]().get(...) with optional ...[particular.device.path]
-        self.keyname = tkwargs.get('keyname',tkargs[1])
+        self.keyname = tkwargs.get('keyname', tkargs[1])
 #            keyname is a string that's the name of either a dbus method, signal or property.
-        self.callerargs = tkwargs.get('callerargs',tkargs[2])
-        if not isinstance(self.callerargs,(list,tuple)): 
-            self.callerargs=(self.callerargs,)
+        self.callerargs = tkwargs.get('callerargs', tkargs[2])
+        if not isinstance(self.callerargs, (list, tuple)): 
+            self.callerargs = (self.callerargs,)
             
 #            a tuple containing the argument(s) to be evaluated for translation.
-        self.calledby = tkwargs.get('calledby',('method','signal','property')[tkargs[3]])
-        self.calledby_index = ('method','signal','property').index(self.calledby)
+        self.calledby = tkwargs.get('calledby', ('method', 'signal', 'property')[tkargs[3]])
+        self.calledby_index = ('method', 'signal', 'property').index(self.calledby)
 #            index into offset2calledby: 0 for a method, 1 for a signal, 2 for a property.
-        self.call_direction = "fromDbusToPython" if tkwargs.get('fromDbusToPython',tkargs[4]) else "fromPythonToDbus"
+        self.call_direction = "fromDbusToPython" if tkwargs.get('fromDbusToPython', tkargs[4]) else "fromPythonToDbus"
 #            fromDbusToPython when processing arguments being returned by a method, signal or property.
 #            fromPythonToDbus when processing arguments being passed to a method, signal or property.
-        self.introspection = tkwargs.get('introspection',tkargs[5])
+        self.introspection = tkwargs.get('introspection', tkargs[5])
 #            introspection = the introspection provided GLib.Variant format string, or None if we're
 #            to use defaults.
-        self.retained_pyarg = tkwargs.get('retained_pyarg',tkargs[6])
+        self.retained_pyarg = tkwargs.get('retained_pyarg', tkargs[6])
 #             retained_pyarg is only populated on the return side of a method call (dbus to python). If the 
 #             outgoing call had at least one argument, this points to argument[0], otherwise none.
 #             If the guidance key { "_new_return_instance" : True } the same dictionary or object
@@ -58,7 +58,7 @@ class TranslationRequest(object):
 #             using guidance names in the from call guidance. If the names match, the from dbus
 #             item will replace the to dbus item.
         self.kwargs = tkwargs
-        self.dir_specific_trans_function = ctop  if self.call_direction == 'fromDbusToPython' else ptoc
+        self.dir_specific_trans_function = (ctop  if self.call_direction == 'fromDbusToPython' else ptoc)
 #             Function to manage python to dbus or dbus to python translation specifics
 
  
@@ -105,7 +105,7 @@ class TranslationRequest(object):
 #       argument passing as either one dictionary with names as keys or
 #       object with argument names as attribute names.
 
-        if self.call_direction == 'fromDbusToPython':      
+        if self.call_direction == 'fromPythonToDbus':      
             # We have python arguments. Do we need to unpack
             # them from an object or dict to relieve the user
             # from keeping track of article order?
@@ -139,12 +139,12 @@ class TranslationRequest(object):
     
     def flush_accumulated_variant_introspection(self):
         if len(self.accumulated_variant_results) > 0:
-            #print(self.accumulated_variant_introspection + " " + str(self.accumulated_variant_results) + '\n')
+            # print(self.accumulated_variant_introspection + " " + str(self.accumulated_variant_results) + '\n')
             try:
                 self.post_call_args += [Variant(self.accumulated_variant_introspection, *self.accumulated_variant_results)]
             except Exception as e:
-                self.complain("Introspection expected was "+ self.accumulated_variant_introspection + \
-                              " but arguments were "+ str(self.accumulated_variant_results) + '. Error: ' + str(e))
+                self.complain("Introspection expected was " + self.accumulated_variant_introspection + \
+                              " but arguments were " + str(self.accumulated_variant_results) + '. Error: ' + str(e))
             self.accumulated_variant_results = []
             self.accumulated_variant_introspection = ''
             self.post_call_arg_index += 1
@@ -264,16 +264,17 @@ class DataFlowGuidance(object):
                 got_one_arg = False
                 arglist = ArgSpecGuidance()
                 list_of_direction_specific_guidance[i] = arglist
-                self.dbus_side_argument_list_size = 0
+                arglist.dbus_side_argument_list_size = 0
                 for arg_position_index, arg_specific_translation_spec in self.original_guidance_list[i].items():
-                    if not isinstance(arg_position_index , (dict,tuple,list)): 
+                    if not isinstance(arg_position_index , (dict, tuple, list)): 
                         got_one_arg = True
                         arg_guidance = SingleArgumentOptimizedGuidance(arg_specific_translation_spec,
                                         arg_position_index, from_python_to_dbus, self.key_for_this_dbus_path)
                         arglist.arguments[arg_position_index] = arg_guidance
                         arglist.overall_variant_expansion_list += arg_guidance.local_variant_expansion_list
-                        if self.dbus_side_argument_list_size < len(arglist.arguments):
-                            self.dbus_side_argument_list_size = arg_position_index
+                        if isinstance(arg_position_index, int):
+                            if arglist.dbus_side_argument_list_size < arg_position_index + 1:
+                                arglist.dbus_side_argument_list_size = arg_position_index + 1
                         if arg_guidance.all_arguments: arglist.all_arguments_in_one_call = True
 
                         # This one is a little special in that we have a usage dependent
@@ -373,12 +374,12 @@ class SingleArgumentOptimizedGuidance(object):
                     "_match_to_function", "_all_arguments", "_variant_expansion",
                     "_replace_unknowns", "_forced_replacement", "_default", "_new_return_instance",
                     "_arg_format")
+        self.new_return_instance = None  # We require the guidance to specify a non-default.
         for s in special_names:
             # trim the leading _ we put there to avoid conflicting with user argument names,
             # then create attributes in our optimized spec for all possible flags at
             # this level.
             setattr(self, s[1:], arg.get(s, False))
-        self.new_return_instance = None  # We require the guidance to specify a non-default.
         self.force_replacement_specified = "_forced_replacement" in arg 
             
         if self.replace_unknowns:
@@ -420,17 +421,17 @@ class SingleArgumentOptimizedGuidance(object):
         
         if self.container:
             sublist = DataFlowGuidance(keyname)
-            sublist.init_helper_validate_arglistspec([self.container],direction_is_from_python_to_dbus)
-            self.container =sublist
+            sublist.init_helper_validate_arglistspec([self.container], direction_is_from_python_to_dbus)
+            self.container = sublist
             # SingleArgumentOptimizedGuidance(self.container, arg_position_index, direction_is_from_python_to_dbus)
 
         if self.container_keys:
             sublist = DataFlowGuidance(keyname)
-            sublist.init_helper_validate_arglistspec([self.container_keys],direction_is_from_python_to_dbus)
+            sublist.init_helper_validate_arglistspec([self.container_keys], direction_is_from_python_to_dbus)
             
             self.container_keys = sublist 
             
-            #SingleArgumentOptimizedGuidance(self.container_keys, arg_position_index, direction_is_from_python_to_dbus)
+            # SingleArgumentOptimizedGuidance(self.container_keys, arg_position_index, direction_is_from_python_to_dbus)
         # That's all the pre-processing we can do on spec parts that affect all the arguments. 
         # get the keys and values in k,v or v,k format expected owing to the
         # direction of this usage.
@@ -1009,9 +1010,9 @@ def variant_introspection_rewrite(introspection, translation_guidance):
 def convert_arguments_python_to_dbus(arglist_guidance, python_args, python_kwargs):                
     if arglist_guidance.python_side_named_args_as_dict:
         # we have a dictionary of arguments, turn it into a list for dbus
-        dbus_args = [ arglist_guidance[i].default for i in range(0, arglist_guidance.dbus_side_argument_list_size) ]
+        dbus_args = [ arglist_guidance.arguments[i].default for i in range(0, arglist_guidance.dbus_side_argument_list_size) ]
         # default unspecified variables.
-        for arg_name, arg_value in (python_args if python_kwargs == None else python_kwargs):
+        for arg_name, arg_value in (python_args[0].items() if len(python_kwargs) == 0 else python_kwargs.items()):
             # If passed a number where a name is supposed to go, use it as a position.
             if isinstance(arg_name, int):
                 dbus_args[arg_name] = arg_value
@@ -1019,7 +1020,9 @@ def convert_arguments_python_to_dbus(arglist_guidance, python_args, python_kwarg
                 dbus_args[ arglist_guidance.arg_position_from_name[ arg_name ] ] = arg_value     
     elif arglist_guidance.python_side_named_args_as_object_attributes:
         # we have an object with attributes as arguments
-        dbus_args = [ arglist_guidance[i].default for i in range(0, arglist_guidance.dbus_side_argument_list_size)]
+        python_args = python_args[0]
+        # print(repr(python_args.__dict__))
+        dbus_args = [arglist_guidance.arguments[i].default for i in range(0, arglist_guidance.dbus_side_argument_list_size)]
         # defaults are set
         for attribute_name, attribute_position in arglist_guidance.arg_position_from_name.items():
             # process attributes into positions
@@ -1034,34 +1037,40 @@ def convert_arguments_python_to_dbus(arglist_guidance, python_args, python_kwarg
     return dbus_args
 
 
-def convert_arguments_dbus_to_python(arglist_guidance, post_call_args, retained_pyarg):
-    if arglist_guidance.python_side_named_args_as_dict:
+def convert_arguments_dbus_to_python(tro : TranslationRequest):
+    if tro.arglist_guidance.python_side_named_args_as_dict:
         # the spec calls for arguments as a dictionary
-        if (arglist_guidance.new_return_instance == True) and isinstance(retained_pyarg, dict):
-            post_trans_args = retained_pyarg
+        if (tro.arglist_guidance.new_return_instance == True) and isinstance(tro.retained_pyarg, dict):
+            post_trans_args = tro.retained_pyarg
         else: post_trans_args = {}
-        for attribute_name, attribute_position in arglist_guidance.arg_position_from_name.items():
-            if attribute_position >= 0 and attribute_position < len(post_call_args):
-                post_trans_args[attribute_name] = post_call_args[attribute_position]
-            else:
-                post_trans_args[attribute_name] = arglist_guidance.arguments[attribute_position].default
-    elif arglist_guidance.python_side_named_args_as_object_attributes:
+
+        for arg_position in range(0, len(tro.post_call_args)):
+            try:
+                post_trans_args[tro.arglist_guidance.arg_name_from_position[arg_position]] = tro.post_call_args[arg_position]
+            except:
+                post_trans_args[tro.arglist_guidance.arg_name_from_position[arg_position]] = \
+                        tro.arglist_guidance.arguments[arg_position].default
+        
+    
+    elif tro.arglist_guidance.python_side_named_args_as_object_attributes:
         # the spec calls for arguments as attributes
-        if (arglist_guidance.new_return_instance == True) and (retained_pyarg != None):
-            post_trans_args = retained_pyarg
+        if (tro.arglist_guidance.new_return_instance == True) and (tro.retained_pyarg != None):
+            post_trans_args = tro.retained_pyarg
             try:
                 setattr(post_trans_args, '__IS_THIS_THING_SETTABLE__?', True)
                 delattr(post_trans_args, '__IS_THIS_THING_SETTABLE__?')
             except:
                 post_trans_args = BlankClass()
         else: post_trans_args = BlankClass()
-        for arg in arglist_guidance.arguments:
-            if arg.arg_position_index >= 0 and arg.arg_position_index < len(post_call_args):
-                setattr(post_trans_args, arg.attribute, post_call_args[arg.arg_position_index])
-            else:
-                setattr(post_trans_args, arg.attribute, arg.default)
+        for arg_position in range(0, len(tro.post_call_args)):
+            try:
+                setattr(post_trans_args, tro.arglist_guidance.arg_name_from_position[arg_position], tro.post_call_args[arg_position])
+            except:
+                setattr(post_trans_args,
+                        tro.arglist_guidance.arg_name_from_position[arg_position],
+                        tro.arglist_guidance.arguments[arg_position].default)
     else : 
-        post_trans_args = post_call_args  # -- the arguments are already in the correct order.
+        post_trans_args = tro.post_call_args  # -- the arguments are already in the correct order.
 
     return (post_trans_args)
 
@@ -1451,74 +1460,74 @@ class PydbusCPythonTranslator(object):
         if introspection_this_level[0] in 'a({':
             if len(introspection_this_level) == 1:
                 tro.complain("The introspection string specified a container of no type: " + argformat)
-            if introspection_this_level[0]=='{':
-                introspection_this_level = 'a'+introspection_this_level
+            if introspection_this_level[0] == '{':
+                introspection_this_level = 'a' + introspection_this_level
                 
-            if  introspection_this_level[0:2]=='a{':
+            if  introspection_this_level[0:2] == 'a{':
 # We have a number of key,value pairs to translate.  There is no order to them. The task is to 
 # identify the guidance spec to use. These are the desried capabilities:
 # 1.  Apply a single argument position guidance to all the keys, or don't translate any of them
 # 2.  Apply a single argument position guidance to all the values, or don't translate any of them
 # 3.  Choose a guidance for the value as dictionary lookup from the python side of any key translation.
 
-                if (guidance.container_keys == False) and (container_value_guidance==False):
-                    return True,input_value
-                #We have to iterate through the dictionary.                
+                if (guidance.container_keys == False) and (container_value_guidance == False):
+                    return True, input_value
+                # We have to iterate through the dictionary.                
                 if guidance.container_keys == False:
                     f_keys = lambda k : k
                 else:
-                    default_key_guidance = guidance.container_keys.dbus_guidance[0].arguments.get("_default_guidance",None)
-                    if default_key_guidance and (len(guidance.container_keys.dbus_guidance[0].arguments)==1):
+                    default_key_guidance = guidance.container_keys.dbus_guidance[0].arguments.get("_default_guidance", None)
+                    if default_key_guidance and (len(guidance.container_keys.dbus_guidance[0].arguments) == 1):
                         f_keys = lambda k : (tro.dir_specific_trans_function) \
-                            (tro,default_key_guidance, 
+                            (tro, default_key_guidance,
                              k, container_content_introspection_format(introspection_this_level)[0],
                              0, False) 
                     else:
                         f_keys = lambda k : (tro.dir_specific_trans_function) \
-                            (tro,guidance.container_keys.dbus_guidance[0].arguments.get(k,default_key_guidance), 
+                            (tro, guidance.container_keys.dbus_guidance[0].arguments.get(k, default_key_guidance),
                              k, container_content_introspection_format(introspection_this_level)[0],
                              0, False) 
                         
                 if container_value_guidance == False:
-                    f_values = lambda k,v : v
+                    f_values = lambda k, v : v
                 else:
-                    default_value_guidance = container_value_guidance.dbus_guidance[0].arguments.get("_default_guidance",None)
-                    if default_value_guidance and (len(container_value_guidance.dbus_guidance[0].arguments)==1):
-                        f_values = lambda k,v : (tro.dir_specific_trans_function) \
-                            (tro,default_value_guidance, 
+                    default_value_guidance = container_value_guidance.dbus_guidance[0].arguments.get("_default_guidance", None)
+                    if default_value_guidance and (len(container_value_guidance.dbus_guidance[0].arguments) == 1):
+                        f_values = lambda k, v : (tro.dir_specific_trans_function) \
+                            (tro, default_value_guidance,
                             v, container_content_introspection_format(introspection_this_level)[1:],
                             0, False) 
                     else:
-                        f_values = lambda k,v : (tro.dir_specific_trans_function) \
-                            (tro,container_value_guidance.dbus_guidance[0].arguments.get(k,default_value_guidance), 
+                        f_values = lambda k, v : (tro.dir_specific_trans_function) \
+                            (tro, container_value_guidance.dbus_guidance[0].arguments.get(k, default_value_guidance),
                             v, container_content_introspection_format(introspection_this_level)[1:],
                             0, False) 
                         
-                return True,{ f_keys(k) : f_values(k,v) for k,v in input_value.items() }
+                return True, { f_keys(k) : f_values(k, v) for k, v in input_value.items() }
 
             
-            elif introspection_this_level[0]=='(': 
-                #container_type = tuple
-                rl=()
+            elif introspection_this_level[0] == '(': 
+                # container_type = tuple
+                rl = ()
                 sub_introspection = container_content_introspection_format(introspection_this_level)
-                if container_value_guidance==False:
+                if container_value_guidance == False:
                     f_arg_guidance = lambda x : (None, x)
                 else:
-                    default = container_value_guidance.dbus_guidance[0].arguments.get("_default_guidance",None)
+                    default = container_value_guidance.dbus_guidance[0].arguments.get("_default_guidance", None)
                     f_arg_guidance = lambda idx : (container_value_guidance.dbus_guidance[0].arguments.get(idx,
                         default), idx)
-            elif introspection_this_level[0]=='a': 
-                #container_type = list
+            elif introspection_this_level[0] == 'a': 
+                # container_type = list
                 rl = []
                 sub_introspection = container_content_introspection_format(introspection_this_level)
                 f_arg_guidance = lambda idx : (guidance, 0)
             else:
                 tro.complain("The introspection string specified a container of unknown type: " + argformat)
             
-            for x in range(0,len(input_value)):
-                g,idx = (f_arg_guidance)(x)
+            for x in range(0, len(input_value)):
+                g, idx = (f_arg_guidance)(x)
                 rl += ((tro.dir_specific_trans_function) \
-                (tro,g, input_value[x],sub_introspection,idx, False),)
+                (tro, g, input_value[x], sub_introspection, idx, False),)
             return True, rl      
            
         else:
@@ -1584,15 +1593,15 @@ class PydbusCPythonTranslator(object):
             if trans.is_bitfield:
                 # If we've been passed an integer, pass it through as is.
                 return self.process_pyvar_bitfield(trans, pyvar, tro.keyname)
-        try:
-            this_format = argformat[argument_index]
-        except:
-            tro.complain("Expected introspection but none given for "+ repr(pyvar))     
+        # try:
+        #    this_format = argformat[argument_index]
+        # except:
+        #    tro.complain("Expected introspection but none given for "+ repr(pyvar))     
     
-        if (this_format == 's') and (not isinstance(pyvar, str)):
+        if (argformat == 's') and (not isinstance(pyvar, str)):
             tro.complain("Introspection expected a string, but given " + repr(pyvar))
             
-        if (this_format == 'b') and (pyvar not in (0, 1)):            
+        if (argformat == 'b') and (pyvar not in (0, 1)):            
             tro.complain("Introspection expected a boolean, 0 or 1 but given " + repr(pyvar))
         # If we get here, whatever sort of variable this is isn't something we either want or know how to
         # translate.  Return it as is.
@@ -1642,7 +1651,7 @@ class PydbusCPythonTranslator(object):
                         precall_arg_index = len(possible_introspection_single_varlist)
                         
                         if tro.call_direction == 'fromDbusToPython':
-                            tro.post_call_arg_index = 1 if isinstance(tro.post_call_args,int) else len(tro.post_call_args)
+                            tro.post_call_arg_index = 1 if isinstance(tro.post_call_args, int) else len(tro.post_call_args)
                         else:
                             tro.post_call_arg_index = len(tro.pre_call_args) - 1
                         got_one = True
@@ -1669,7 +1678,7 @@ class PydbusCPythonTranslator(object):
                             single_var_position_introspection,
                             within_variant
                             )
-                        if within_variant=='new variant': within_variant=True
+                        if within_variant == 'new variant': within_variant = True
                                 
                     tro.flush_accumulated_variant_introspection()
                 got_one = True
@@ -1680,13 +1689,13 @@ class PydbusCPythonTranslator(object):
                 last_complaint_stack = ''.join(stack[0:-2]) 
 
         if not got_one and (len(accumulated_complaints) > 0):
-            info=''
-            for i in range(0,len(accumulated_complaints)-1):
+            info = ''
+            for i in range(0, len(accumulated_complaints) - 1):
                 info += '\nRejected parse attempt ' + str(i) 
-                info += ':\n'+accumulated_complaints[i]
-            info += '\nParse Exception Stack: \n'+last_complaint_stack
-            info += '\nPydbus Parse Exception:\n'+accumulated_complaints[len(accumulated_complaints)-1]
-            if 'assertRaises' not in info: print(info,file=stderr)
+                info += ':\n' + accumulated_complaints[i]
+            info += '\nParse Exception Stack: \n' + last_complaint_stack
+            info += '\nPydbus Parse Exception:\n' + accumulated_complaints[len(accumulated_complaints) - 1]
+            if 'assertRaises' not in info: print(info, file=stderr)
             raise ValueError('Pydbus Translation Execption:\n')
             
         if tro.post_call_arg_index + 1 != len(tro.pre_call_args):
@@ -1700,7 +1709,11 @@ class PydbusCPythonTranslator(object):
             # We have translated the argument list, now see if we need
             # to pack them to relieve the user from arg order management,
             # or send them back as an ordered tuple.
-            tro.post_trans_args = convert_arguments_dbus_to_python(tro.arglist_guidance, tro.post_call_args, tro.retained_pyarg)
+            tro.post_trans_args = convert_arguments_dbus_to_python(tro)
+            if tro.arglist_guidance.python_side_named_args_as_dict or \
+               tro.arglist_guidance.python_side_named_args_as_object_attributes:
+                return tro.post_trans_args    
+
         else:
             tro.post_trans_args = tro.post_call_args
 
