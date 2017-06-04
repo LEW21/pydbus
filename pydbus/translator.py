@@ -22,11 +22,10 @@ https://github.com/hcoin/pydbus/wiki
 from gi.repository.GLib import (Variant)  # ,VariantBuilder,VariantType)
 from importlib import import_module
 from ipaddress import (IPv4Address, IPv6Address, IPv4Network)
+import re
 from sys import stderr
 from textwrap import wrap
 from traceback import format_stack
-import re
-
 
 
 class TranslationRequest(object):

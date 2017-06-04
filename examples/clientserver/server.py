@@ -6,7 +6,9 @@
 # runs until the Quit() method is called via DBUS
 
 from gi.repository import GLib
+
 from pydbus import SessionBus
+
 
 loop = GLib.MainLoop()
 

@@ -1,5 +1,6 @@
 from .generic import bound_signal
 
+
 class ProxySignal(object):
 	def __init__(self, iface_name, signal):
 		self._iface_name = iface_name
@@ -14,7 +15,7 @@ class ProxySignal(object):
 		def signal_fired(sender, obj, iface, signal, params):
 			
 			if self.translator:
-				params=self.translator.translate(
+				params = self.translator.translate(
 				pydevobject=iface,
 				keyname=signal,
 				callerargs=params,
@@ -22,7 +23,7 @@ class ProxySignal(object):
 				fromDbusToPython=True,
 				introspection=None,
 				retained_pyarg=None)
-			if not isinstance(params,tuple): params=(params,)
+			if not isinstance(params, tuple): params = (params,)
 			callback(*params)
 		self.translator = obj._bus._ProxyMixin__translator
 		return obj._bus.subscribe(sender=obj._bus_name, obj=obj._path, iface=self._iface_name, signal=self.__name__, signal_fired=signal_fired)

@@ -1,7 +1,8 @@
-from gi.repository import GLib
 from xml.etree import ElementTree as ET
-from .auto_names import *  #@UnusedWildImport
 
+from gi.repository import GLib
+
+from .auto_names import *  # @UnusedWildImport
 from .proxy_method import ProxyMethod
 from .proxy_property import ProxyProperty
 from .proxy_signal import ProxySignal, OnSignal
@@ -36,7 +37,7 @@ class ProxyMixin(object):
 		"""
 		# Python 2 sux
 		for kwarg in kwargs:
-			if kwarg not in ("timeout","translation_spec"):
+			if kwarg not in ("timeout", "translation_spec"):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
 		translation_spec = kwargs.get("translation_spec", None)
@@ -45,9 +46,9 @@ class ProxyMixin(object):
 		object_path = auto_object_path(bus_name, object_path)
 
 		if translation_spec == None:
-			self.__translator=None
+			self.__translator = None
 		else:
-			self.__translator = PydbusCPythonTranslator(translation_spec,bus_name)
+			self.__translator = PydbusCPythonTranslator(translation_spec, bus_name)
 
 		ret = self.con.call_sync(
 			bus_name, object_path,

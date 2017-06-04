@@ -1,5 +1,7 @@
 from gi.repository import Gio
+
 from .exitable import ExitableWithAliases
+
 
 class Subscription(ExitableWithAliases("unsubscribe", "disconnect")):
 	Flags = Gio.DBusSignalFlags

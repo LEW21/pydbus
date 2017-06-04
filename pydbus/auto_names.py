@@ -1,8 +1,9 @@
 from gi.repository import Gio
 
+
 def auto_bus_name(bus_name):
 	if bus_name[0] == ".":
-		#Default namespace
+		# Default namespace
 		bus_name = "org.freedesktop" + bus_name
 
 	if not Gio.dbus_is_name(bus_name):

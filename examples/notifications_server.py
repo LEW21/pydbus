@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 from gi.repository import GLib
+
 from pydbus import SessionBus
 from pydbus.generic import signal
+
 
 class Notifications(object):
 	"""
@@ -50,7 +52,7 @@ class Notifications(object):
 		print("Notification: {} {} {} {} {} {} {} {}".format(app_name, replaces_id, app_icon, summary, body, actions, hints, timeout))
 		return 4 # chosen by fair dice roll. guaranteed to be random.
 
-	def CloseNotification(self, id):
+	def CloseNotification(self, iid):
 		pass
 
 	def GetCapabilities(self):

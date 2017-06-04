@@ -14,29 +14,29 @@ file clutter.
 
 '''
 
-pydbus_unittest_noentries =  {
+pydbus_unittest_noentries = {
     }
 
 
 pydbus_unittest_basic = { 'testkey' : {'method_py_to_dbus' : 'argname'} }
 
 
-def add_one(the_arg,the_arg_index,the_introspection_format,is_python_to_dbus):
-    return (the_arg+1,the_arg_index,the_introspection_format,is_python_to_dbus)
+def add_one(the_arg, the_arg_index, the_introspection_format, is_python_to_dbus):
+    return (the_arg + 1, the_arg_index, the_introspection_format, is_python_to_dbus)
 
-def add_two(the_arg,the_arg_index,the_introspection_format,is_python_to_dbus):
-    return the_arg+2
+def add_two(the_arg, the_arg_index, the_introspection_format, is_python_to_dbus):
+    return the_arg + 2
 
-def add_them(the_arg,the_arg_index,the_introspection_format,is_python_to_dbus):
-    #print(str(the_arg))
+def add_them(the_arg, the_arg_index, the_introspection_format, is_python_to_dbus):
+    # print(str(the_arg))
     return the_arg[0] + the_arg[1]
 
-def count_words(the_arg,the_arg_index,the_introspection_format,is_python_to_dbus):
-    #print(str(the_arg))
+def count_words(the_arg, the_arg_index, the_introspection_format, is_python_to_dbus):
+    # print(str(the_arg))
     return len(the_arg.split())
 
-def count_words_from_both_args(the_arg,the_arg_index,the_introspection_format,is_python_to_dbus):
-    #print(str(the_arg))
+def count_words_from_both_args(the_arg, the_arg_index, the_introspection_format, is_python_to_dbus):
+    # print(str(the_arg))
     return [len(the_arg[0].split()) + len(the_arg[1].split())]
 
 # Here we test the one to one mapping of integers to strings
@@ -59,7 +59,7 @@ pydbus_dbus_to_python = { 'testkey' :
                                   2  :
                                     {
                                     '_from_python_to_dbus' : True ,
-                                    '_replace_unknowns' : ('whatta number',-101),
+                                    '_replace_unknowns' : ('whatta number', -101),
                                     'value should be thirty' : 30 ,
                                     'Test Case Matching on 40' : 40 
                                     },
@@ -72,7 +72,7 @@ pydbus_dbus_to_python = { 'testkey' :
                                       "_is_bitfield" : True,
                                       1 : 'bit 0 on',
                                       4 : 'bit 2 on',
-                                      (1,0) : 'bit 1 off',
+                                      (1, 0) : 'bit 1 off',
                                     },
                                   6  : 
                                     {
@@ -81,10 +81,10 @@ pydbus_dbus_to_python = { 'testkey' :
                                       '_show_all_names': True,
                                       'bit 0 on' : 1,
                                       'bit 2 on' : 4,
-                                      'bit 1 off' : (1,0),
-                                     }, #end of arg spec
-                                } #end of arg list spec
-                            }, #end of direction spec
+                                      'bit 1 off' : (1, 0),
+                                     },  # end of arg spec
+                                }  # end of arg list spec
+                            },  # end of direction spec
                            # next key
                         'fromDbusNamedBitFormats' :
                             { 'signal_dbus_to_py' :
@@ -92,7 +92,7 @@ pydbus_dbus_to_python = { 'testkey' :
                                     {
                                     "_is_bitfield" : True,
                                     1 : 'bit 0 on',
-                                    (2,0) : 'bit 2 off',
+                                    (2, 0) : 'bit 2 off',
                                     2  : 'bit 2 on',
                                     "_arg_format" : 'list'
                                     },
@@ -100,57 +100,57 @@ pydbus_dbus_to_python = { 'testkey' :
                                     {
                                     "_is_bitfield" : True,
                                     1 : 'bit 0 on',
-                                    (2,0) : 'bit 2 off',
+                                    (2, 0) : 'bit 2 off',
                                     2  : 'bit 2 on',
                                     0xf0 : '#zero_to_sixteen',
-                                    0x30 : ( 'left two of nibble2 are zero','left two of nibble2 is one','left two of  nibble2 is 2'), #leaving 3 out on purpose.
+                                    0x30 : ('left two of nibble2 are zero', 'left two of nibble2 is one', 'left two of  nibble2 is 2'),  # leaving 3 out on purpose.
                                     "_arg_format" : 'shortlist'
-                                    },  #end of arg 1 spec
-                                } # end of arg specs
-                            }, # end of direction specs
+                                    },  # end of arg 1 spec
+                                }  # end of arg specs
+                            },  # end of direction specs
                         'singletest':
                             { 'signal_dbus_to_py' :
                                 {  0 :
                                     {
                                     "_is_bitfield" : True,
                                     1 : 'bit 0 on',
-                                    (2,0) : 'bit 2 off',
+                                    (2, 0) : 'bit 2 off',
                                     2  : 'bit 2 on',
                                     "_arg_format" : 'single'
-                                    },  #end of arg 1 spec
-                                } #end of arg specs
-                             }, # end of direction specs
+                                    },  # end of arg 1 spec
+                                }  # end of arg specs
+                             },  # end of direction specs
                         'prettydicttest':
                             { 'signal_dbus_to_py' :
                                 {  0 :
                                     {
                                     "_is_bitfield" : True,
-                                    (0x10,7) : '#the first three bits if not the fourth',
+                                    (0x10, 7) : '#the first three bits if not the fourth',
                                     0x10 : 'solo True, never seen',
-                                    (0x10,0) : 'seek the number, Luke',
+                                    (0x10, 0) : 'seek the number, Luke',
                                     "_arg_format" : 'prettydict'
-                                    },  #end of arg 1 spec
-                                } #end of arg specs
-                             }, # end of direction specs
+                                    },  # end of arg 1 spec
+                                }  # end of arg specs
+                             },  # end of direction specs
                         'prettylisttest':
                             { 'signal_dbus_to_py' :
                                 {  0 :
                                     {
                                     "_is_bitfield" : True,
-                                    (0x10,7) : '#the first three bits if not the fourth',
+                                    (0x10, 7) : '#the first three bits if not the fourth',
                                     0x10 : 'solo True, never seen',
-                                    (0x10,0) : 'seek the number, Luke',
+                                    (0x10, 0) : 'seek the number, Luke',
                                     "_arg_format" : 'prettylist'
-                                    },  #end of arg 1 spec
-                                } #end of arg specs
-                             }, # end of direction specs
+                                    },  # end of arg 1 spec
+                                }  # end of arg specs
+                             },  # end of direction specs
                          'simplematchfunction' :
                             { 'method_dbus_to_py' :
                                 {  0 :
                                     {
                                     "_match_to_function" : True,
                                     "0:i" : add_one,
-                                    ".*" : ('pydbus.translations.pydbus_unittest','add_two')
+                                    ".*" : ('pydbus.translations.pydbus_unittest', 'add_two')
                                     },
                                 }
                             },
@@ -160,7 +160,7 @@ pydbus_dbus_to_python = { 'testkey' :
                                     {
                                     "_match_to_function" : True,
                                     "_all_arguments" : True,
-                                    "0:i" : add_them, #In functions, the introspection has to match the function result.
+                                    "0:i" : add_them,  # In functions, the introspection has to match the function result.
                                     },
                                 }
                             },
@@ -200,13 +200,13 @@ pydbus_dbus_to_python = { 'testkey' :
                                 { 0: 
                                     { '_attributename': "arg0"},
                                  1: 
-                                    { '_attributename': "arg1",'_new_return_instance' : True},
+                                    { '_attributename': "arg1", '_new_return_instance' : True},
                                  2: 
                                     { '_attributename': "arg2"},
                                 }
                             },
                          
-                        } #end of key specs
+                        }  # end of key specs
 
 
 
@@ -228,7 +228,7 @@ pydbus_python_to_dbus = { 'testkey' :
                                   2  :
                                     {
                                     '_from_python_to_dbus' : True ,
-                                    '_replace_unknowns' : ('whatta number',-101),
+                                    '_replace_unknowns' : ('whatta number', -101),
                                     'value should be thirty' : 30 ,
                                     'Test Case Matching on 40' : 40 
                                     },
@@ -241,7 +241,7 @@ pydbus_python_to_dbus = { 'testkey' :
                                       "_is_bitfield" : True,
                                       1 : 'bit 0 on',
                                       4 : 'bit 2 on',
-                                      (1,0) : 'bit 1 off',
+                                      (1, 0) : 'bit 1 off',
                                     },
                                   6  : 
                                     {
@@ -250,10 +250,10 @@ pydbus_python_to_dbus = { 'testkey' :
                                       '_show_all_names': True,
                                       'bit 0 on' : 1,
                                       'bit 2 on' : 4,
-                                      'bit 1 off' : (1,0),
-                                     }, #end of arg spec
-                                } #end of arg list spec
-                            }, #end of direction spec
+                                      'bit 1 off' : (1, 0),
+                                     },  # end of arg spec
+                                }  # end of arg list spec
+                            },  # end of direction spec
                            # next key
                         'fromDbusNamedBitFormats' :
                             { 'method_py_to_dbus' :
@@ -261,7 +261,7 @@ pydbus_python_to_dbus = { 'testkey' :
                                     {
                                     "_is_bitfield" : True,
                                     1 : 'bit 0 on',
-                                    (2,0) : 'bit 2 off',
+                                    (2, 0) : 'bit 2 off',
                                     2  : 'bit 2 on',
                                     "_arg_format" : 'list'
                                     },
@@ -269,57 +269,57 @@ pydbus_python_to_dbus = { 'testkey' :
                                     {
                                     "_is_bitfield" : True,
                                     1 : 'bit 0 on',
-                                    (2,0) : 'bit 2 off',
+                                    (2, 0) : 'bit 2 off',
                                     2  : 'bit 2 on',
                                     0xf00 : '#zero_to_sixteen',
-                                    0x30 : ( 'left two of nibble2 are zero','left two of nibble2 is one','left two of  nibble2 is 2'), #leaving 3 out on purpose.
+                                    0x30 : ('left two of nibble2 are zero', 'left two of nibble2 is one', 'left two of  nibble2 is 2'),  # leaving 3 out on purpose.
                                     "_arg_format" : 'shortlist'
-                                    },  #end of arg 1 spec
-                                } # end of arg specs
-                            }, # end of direction specs
+                                    },  # end of arg 1 spec
+                                }  # end of arg specs
+                            },  # end of direction specs
                         'singletest':
                             { 'method_py_to_dbus' :
                                 {  0 :
                                     {
                                     "_is_bitfield" : True,
                                     1 : 'bit 0 on',
-                                    (2,0) : 'bit 2 off',
+                                    (2, 0) : 'bit 2 off',
                                     2  : 'bit 2 on',
                                     "_arg_format" : 'single'
-                                    },  #end of arg 1 spec
-                                } #end of arg specs
-                             }, # end of direction specs
+                                    },  # end of arg 1 spec
+                                }  # end of arg specs
+                             },  # end of direction specs
                         'prettydicttest':
                             { 'method_py_to_dbus' :
                                 {  0 :
                                     {
                                     "_is_bitfield" : True,
-                                    (0x10,7) : '#the first three bits if not the fourth',
+                                    (0x10, 7) : '#the first three bits if not the fourth',
                                     0x10 : 'solo True, seldom seen',
-                                    (0x10,0) : 'seek the number, Luke',
+                                    (0x10, 0) : 'seek the number, Luke',
                                     "_arg_format" : 'prettydict'
-                                    },  #end of arg 1 spec
-                                } #end of arg specs
-                             }, # end of direction specs
+                                    },  # end of arg 1 spec
+                                }  # end of arg specs
+                             },  # end of direction specs
                         'prettylisttest':
                             { 'method_py_to_dbus' :
                                 {  0 :
                                     {
                                     "_is_bitfield" : True,
-                                    (0x20,7) : '#the first three bits if not the fifth',
+                                    (0x20, 7) : '#the first three bits if not the fifth',
                                     0x10 : 'solo True, seldom seen',
-                                    (0x10,0) : 'seek the number, Luke',
+                                    (0x10, 0) : 'seek the number, Luke',
                                     "_arg_format" : 'prettylist'
-                                    },  #end of arg 1 spec
-                                } #end of arg specs
-                             }, # end of direction specs
+                                    },  # end of arg 1 spec
+                                }  # end of arg specs
+                             },  # end of direction specs
                          'simplematchfunction' :
                             { 'method_py_to_dbus' :
                                 {  0 :
                                     {
                                     "_match_to_function" : True,
                                     "0:i" : count_words,
-                                    ".*" : ('pydbus.translations.pydbus_unittest','add_two')
+                                    ".*" : ('pydbus.translations.pydbus_unittest', 'add_two')
                                     },
                                 }
                             },
@@ -333,7 +333,7 @@ pydbus_python_to_dbus = { 'testkey' :
                                     },
                                 }
                             },
-                         'pytodbusvariants' :  #test introspection will be ivvsv
+                         'pytodbusvariants' :  # test introspection will be ivvsv
                             { 'method_py_to_dbus' :
                                 {  0 :
                                     {
@@ -347,7 +347,7 @@ pydbus_python_to_dbus = { 'testkey' :
                                     },
                                    1 : 
                                    { "_variant_expansion" : 'as',
-                                    #No translation for this field (which will be either a u or i
+                                    # No translation for this field (which will be either a u or i
                                      #   "_default_guidance"
                                     },
                                 }
@@ -367,14 +367,14 @@ pydbus_python_to_dbus = { 'testkey' :
                                    1 : 
                                    { "_variant_expansion" : 'ai',
                                         10 : 'label for 10',
-                                        '_replace_unknowns' : ('whatta number',-101)
+                                        '_replace_unknowns' : ('whatta number', -101)
                                     },
                                    2 : 
                                    { "_variant_expansion" : '(iss)',
                                      "_container" : {
                                             0 : { 
                                                     10 : 'label for 10',
-                                                    '_replace_unknowns' : ('whatta number',-101)
+                                                    '_replace_unknowns' : ('whatta number', -101)
                                              }
                                         }
                                     },
@@ -394,12 +394,12 @@ pydbus_python_to_dbus = { 'testkey' :
                                     "_container" : {
                                         0 :  {
                                             0 : 'label for 0',
-                                            1 : 'label for 1', 
+                                            1 : 'label for 1',
                                         },
                                         "_default_guidance" : {
                                             30 : 'label for 30',
                                             20 : 'label for 20',
-                                            '_replace_unknowns' : ('whatta number',-101)
+                                            '_replace_unknowns' : ('whatta number', -101)
                                         },
                                     }
                                  },
@@ -425,7 +425,7 @@ pydbus_python_to_dbus = { 'testkey' :
                                     "_container" : {
                                         "_default_guidance" :  {
                                             2 : 'is 2',
-                                            1 : 'is 1', 
+                                            1 : 'is 1',
                                         },
                                     },
                                 },
@@ -450,3 +450,13 @@ pydbus_python_to_dbus = { 'testkey' :
                 
 
 
+pydbus_unittest = { 'NoArgsStringReply' : 
+        { 'method_dbus_to_py' :
+            { 
+                0 : { 0 : "first string"}
+            }
+        }
+    }
+
+
+    

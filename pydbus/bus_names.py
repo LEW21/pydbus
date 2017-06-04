@@ -1,6 +1,9 @@
-from gi.repository import Gio
-from .exitable import ExitableWithAliases
 import warnings
+
+from gi.repository import Gio
+
+from .exitable import ExitableWithAliases
+
 
 class NameOwner(ExitableWithAliases("unown")):
 	Flags = Gio.BusNameOwnerFlags
@@ -54,7 +57,7 @@ class OwnMixin(object):
 		warnings.warn("own_name() is deprecated, use request_name() instead.", DeprecationWarning)
 
 		name_aquired_handler = (lambda con, name: name_aquired()) if name_aquired is not None else None
-		name_lost_handler    = (lambda con, name: name_lost())    if name_lost    is not None else None
+		name_lost_handler = (lambda con, name: name_lost())    if name_lost    is not None else None
 		return NameOwner(self.con, name, flags, name_aquired_handler, name_lost_handler)
 
 class WatchMixin(object):

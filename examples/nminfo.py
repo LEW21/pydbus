@@ -4,11 +4,14 @@ Created on Feb 1, 2017
 @author: administrator
 '''
 
-import pydbus
 import ipaddress
-from pydbus.translations.networkmanager import PydbusNetworkManagerSpec,NM_DBUS_INTERFACE,NM_DBUS_PATH_SETTINGS
 
-SysDbus=pydbus.SystemBus()
+#import pydbus
+from pydbus.translations.org_freedesktop_NetworkManager import PydbusNetworkManagerSpec, NM_DBUS_INTERFACE, NM_DBUS_PATH_SETTINGS
+from pydbus import SystemBus
+
+
+SysDbus=SystemBus()
 
 def nm_get(path):
     return SysDbus.get(NM_DBUS_INTERFACE,path,translation_spec=PydbusNetworkManagerSpec)

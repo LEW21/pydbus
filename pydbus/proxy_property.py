@@ -1,5 +1,6 @@
 from gi.repository import GLib
 
+
 class ProxyProperty(object):
 	def __init__(self, iface_name, iface_property):
 		self._iface_name = iface_name
@@ -20,12 +21,12 @@ class ProxyProperty(object):
 			raise AttributeError("unreadable attribute")
 		
 		if instance._bus._ProxyMixin__translator:
-			xlater=instance._bus._ProxyMixin__translator
-			v=instance._object["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)
+			xlater = instance._bus._ProxyMixin__translator
+			v = instance._object["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)
 			return xlater.translate(
 				pydevobject=instance,
 				keyname=self.__name__,
-				callerargs=v if isinstance(v,tuple) else (v,),
+				callerargs=v if isinstance(v, tuple) else (v,),
 				calledby='property',
 				fromDbusToPython=True,
 				introspection=None,
@@ -38,10 +39,10 @@ class ProxyProperty(object):
 			raise AttributeError("can't set attribute")
 
 		if instance._bus._ProxyMixin__translator:
-			value=instance._bus._ProxyMixin__translator.translate(
+			value = instance._bus._ProxyMixin__translator.translate(
 				pydevobject=instance,
 				keyname=self.__name__,
-				callerargs=value if isinstance(value,tuple) else (value,),
+				callerargs=value if isinstance(value, tuple) else (value,),
 				calledby='property',
 				fromDbusToPython=False,
 				introspection=self._type,

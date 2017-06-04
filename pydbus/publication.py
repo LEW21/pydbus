@@ -1,11 +1,12 @@
-#from gi.repository import Gio
-from .exitable import ExitableWithAliases
+# from gi.repository import Gio
 from .auto_names import *  # @UnusedWildImport
+from .exitable import ExitableWithAliases
+
 
 class Publication(ExitableWithAliases("unpublish")):
 	__slots__ = ()
 
-	def __init__(self, bus, bus_name, *objects, **kwargs): # allow_replacement=True, replace=False
+	def __init__(self, bus, bus_name, *objects, **kwargs):  # allow_replacement=True, replace=False
 		# Python 2 sux
 		for kwarg in kwargs:
 			if kwarg not in ("allow_replacement", "replace",):

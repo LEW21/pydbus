@@ -1,5 +1,6 @@
 import inspect
 
+
 class Exitable(object):
 	__slots__ = ("_at_exit_cbs")
 
@@ -14,7 +15,7 @@ class Exitable(object):
 	def __enter__(self):
 		return self
 
-	def __exit__(self, exc_type = None, exc_value = None, traceback = None):
+	def __exit__(self, exc_type=None, exc_value=None, traceback=None):
 		if self._exited:
 			return
 

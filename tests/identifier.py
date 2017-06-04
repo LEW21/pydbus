@@ -1,6 +1,9 @@
 from __future__ import print_function
-from pydbus.identifier import filter_identifier
+
 import sys
+
+from pydbus.identifier import filter_identifier
+
 
 tests = [
 	("abc", "abc"),
@@ -11,9 +14,9 @@ tests = [
 ]
 
 ret = 0
-for input, output in tests:
-	if not filter_identifier(input) == output:
-		print("ERROR: filter(" + input + ") returned: " + filter_identifier(input), file=sys.stderr)
+for inp, output in tests:
+	if not filter_identifier(inp) == output:
+		print("ERROR: filter(" + inp + ") returned: " + filter_identifier(input), file=sys.stderr)
 		ret = 1
 
 sys.exit(ret)

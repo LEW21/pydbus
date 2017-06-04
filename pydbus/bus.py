@@ -1,10 +1,13 @@
 from gi.repository import Gio
-from .proxy import ProxyMixin
-from .request_name import RequestNameMixin
+
+
 from .bus_names import OwnMixin, WatchMixin
-from .subscription import SubscriptionMixin
-from .registration import RegistrationMixin
+from .proxy import ProxyMixin
 from .publication import PublicationMixin
+from .registration import RegistrationMixin
+from .request_name import RequestNameMixin
+from .subscription import SubscriptionMixin
+
 
 def pydbus_property(self):
 	try:

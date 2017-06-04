@@ -1,5 +1,7 @@
-from gi.repository import GLib
 from collections import namedtuple
+
+from gi.repository import GLib
+
 
 AuthorizationResult = namedtuple("AuthorizationResult", "is_authorized is_challenge details")
 

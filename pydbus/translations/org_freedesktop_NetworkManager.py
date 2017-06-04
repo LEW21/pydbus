@@ -74,10 +74,10 @@ NM_DBUS_INTERFACE_DEVICE_GRE = NM_DBUS_INTERFACE_DEVICE + ".Gre"
 NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL = NM_DBUS_INTERFACE_DEVICE + ".IPTunnel"
 NM_DBUS_INTERFACE_DEVICE_STATISTICS = NM_DBUS_INTERFACE_DEVICE + ".Statistics"
 
-NM_DBUS_INTERFACE_SETTINGS = NM_DBUS_INTERFACE +".Settings"
+NM_DBUS_INTERFACE_SETTINGS = NM_DBUS_INTERFACE + ".Settings"
 NM_DBUS_PATH_SETTINGS = NM_DBUS_PATH + "/Settings"
 
-NM_DBUS_INTERFACE_SETTINGS_CONNECTION = NM_DBUS_INTERFACE_SETTINGS+".Connection"
+NM_DBUS_INTERFACE_SETTINGS_CONNECTION = NM_DBUS_INTERFACE_SETTINGS + ".Connection"
 NM_DBUS_PATH_SETTINGS_CONNECTION = NM_DBUS_PATH_SETTINGS + "/Connection"
 
 NM_DBUS_INTERFACE_SETTINGS_CONNECTION_SECRETS = NM_DBUS_INTERFACE_SETTINGS_CONNECTION + ".Secrets"
@@ -86,7 +86,7 @@ NM_DBUS_INTERFACE_AGENT_MANAGER = NM_DBUS_INTERFACE + ".AgentManager"
 NM_DBUS_PATH_AGENT_MANAGER = NM_DBUS_PATH + "/AgentManager"
 
 NM_DBUS_INTERFACE_SECRET_AGENT = NM_DBUS_INTERFACE + ".SecretAgent"
-NM_DBUS_PATH_SECRET_AGENT = NM_DBUS_PATH+"/SecretAgent"
+NM_DBUS_PATH_SECRET_AGENT = NM_DBUS_PATH + "/SecretAgent"
 
 NM_DBUS_INTERFACE_DNS_MANAGER = NM_DBUS_INTERFACE + ".DnsManager"
 NM_DBUS_PATH_DNS_MANAGER = NM_DBUS_PATH + "/DnsManager"
@@ -113,10 +113,10 @@ NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE = "nearest-customer-bridge"
 NM_DBUS_PATH_VPN = NM_DBUS_PATH + "/VPN/Manager"
 NM_DBUS_INTERFACE_VPN = NM_DBUS_INTERFACE + "VPN.Manager"
 
-NM_DBUS_PATH_VPN_CONNECTION = NM_DBUS_PATH+"/VPN/Connection"
+NM_DBUS_PATH_VPN_CONNECTION = NM_DBUS_PATH + "/VPN/Connection"
 NM_DBUS_INTERFACE_VPN_CONNECTION = NM_DBUS_INTERFACE + ".VPN.Connection"
 
-NM_VPN_DBUS_PLUGIN_PATH = NM_DBUS_PATH+"/VPN/Plugin"
+NM_VPN_DBUS_PLUGIN_PATH = NM_DBUS_PATH + "/VPN/Plugin"
 NM_VPN_DBUS_PLUGIN_INTERFACE = NM_DBUS_INTERFACE + ".VPN.Plugin"
 
 # VPN Errors
@@ -125,42 +125,42 @@ NM_DBUS_NO_VPN_CONNECTIONS = NM_DBUS_INTERFACE + ".VPNConnections.NoVPNConnectio
 NM_DBUS_INVALID_VPN_CONNECTION = NM_DBUS_INTERFACE + ".VPNConnections.InvalidVPNConnection"
 
 
-#End of General Definitions
+# End of General Definitions
 
-#Dictionaries follow translating from the C version like " typedef enum { myvar_alpha=0, myvar_bravo=1, myvar_charlie=2 } myvar "
-#to the python version myvar = { 'alpha' : 0, 'bravo' : 1, 'charlie' : 2 }
-#Note the string as capitalizated here will be what is returned to the python caller when the associated 
-#value is returned by the dbus partner.  However, when passing arguments to the dbus caller, the strings
-#are NOT case sensitive.  In the above example, 1 will return 'bravo', but if used to pass arguments
-#to a dbus partner, 'BRAVO' 'Bravo' or 'bravo' will be translated to 1.
-#Because of namespace collisions in C and related, it was necessary to prepend 'myvar_' to each element.
-#As python has no such restriction, and since it's better for printing, I advise stripping the
-#redunant prefix.  'myvar_alpha' in C becomes 'alpha' in the example above.  
+# Dictionaries follow translating from the C version like " typedef enum { myvar_alpha=0, myvar_bravo=1, myvar_charlie=2 } myvar "
+# to the python version myvar = { 'alpha' : 0, 'bravo' : 1, 'charlie' : 2 }
+# Note the string as capitalizated here will be what is returned to the python caller when the associated 
+# value is returned by the dbus partner.  However, when passing arguments to the dbus caller, the strings
+# are NOT case sensitive.  In the above example, 1 will return 'bravo', but if used to pass arguments
+# to a dbus partner, 'BRAVO' 'Bravo' or 'bravo' will be translated to 1.
+# Because of namespace collisions in C and related, it was necessary to prepend 'myvar_' to each element.
+# As python has no such restriction, and since it's better for printing, I advise stripping the
+# redunant prefix.  'myvar_alpha' in C becomes 'alpha' in the example above.  
 
-#The example above is appropriate when each value returned by a dbus partner has but one meaning.
-#It is common in C and related programming for reasons of efficiency to package a collection of
-#boolean variables associated by a common theme into a single integer with each boolean value
-#assigned a unique bit position (power of 2) in the integer. In such cases, it's also common
-#to associate a 0 overall value, meaning 'all variables/flags 0', with its own name. This is done
-#instead of creating several 'freestanding' boolean variables to preserve the common meaning
-#associated among the variables.  In these cases, include in the dictionary _is_bitfield : True.
-#For example: " typedef enum { myvar_all_quiet=0, myvar_is_running=1, myvar_has_audience=2, myvar_doors_open=4 } myvar #flags "
-#as
-#myvar = { 'all_quiet':0, 'is_running':1, 'has_audience':2, 'doors_open':4, '_is_bitfield':True }"
-#Note the definitions below MUST completely describe the universe of legal values and associated meanings.
-#for the managed variables.  Variables that are not amenable to this should not be included in the 
-#translation specification.
-#Values passed either in or out that do not have entries will generate an exception.
-#It may be later versions will ease the above restriction.
+# The example above is appropriate when each value returned by a dbus partner has but one meaning.
+# It is common in C and related programming for reasons of efficiency to package a collection of
+# boolean variables associated by a common theme into a single integer with each boolean value
+# assigned a unique bit position (power of 2) in the integer. In such cases, it's also common
+# to associate a 0 overall value, meaning 'all variables/flags 0', with its own name. This is done
+# instead of creating several 'freestanding' boolean variables to preserve the common meaning
+# associated among the variables.  In these cases, include in the dictionary _is_bitfield : True.
+# For example: " typedef enum { myvar_all_quiet=0, myvar_is_running=1, myvar_has_audience=2, myvar_doors_open=4 } myvar #flags "
+# as
+# myvar = { 'all_quiet':0, 'is_running':1, 'has_audience':2, 'doors_open':4, '_is_bitfield':True }"
+# Note the definitions below MUST completely describe the universe of legal values and associated meanings.
+# for the managed variables.  Variables that are not amenable to this should not be included in the 
+# translation specification.
+# Values passed either in or out that do not have entries will generate an exception.
+# It may be later versions will ease the above restriction.
 
-#The most common case is for each single dictionary below to completely describe how to translate
-#a property, as there is but one argument in and out and it has the same meaning each way.
-#But in the case of methods, it may be the number of arguments input to a method has some that are translated
-#and some that are not, for example as the second of four arguments when only one is translated
-#create a definition like  myvar_method_in = (None,myvar,None,None). And in like fashion if a method
-#returns a tuple, and say, the middle two of them are to be translated while, say the outer 2 are not,
-#create myvar_method_out = (None,myvar,myothervar,None,None)
-#These will be used in the next section. 
+# The most common case is for each single dictionary below to completely describe how to translate
+# a property, as there is but one argument in and out and it has the same meaning each way.
+# But in the case of methods, it may be the number of arguments input to a method has some that are translated
+# and some that are not, for example as the second of four arguments when only one is translated
+# create a definition like  myvar_method_in = (None,myvar,None,None). And in like fashion if a method
+# returns a tuple, and say, the middle two of them are to be translated while, say the outer 2 are not,
+# create myvar_method_out = (None,myvar,myothervar,None,None)
+# These will be used in the next section. 
  
 NMCapability = {
      "TEAM" : 1
@@ -521,12 +521,12 @@ NMReload = {  # Network Manager Reload methods
             }
 
 
-#End of the individual translation element definitions.
+# End of the individual translation element definitions.
 
-#In this last section, we create the overall translation variable which
-#will be passed in to the tranlastion routines when translation services
-#are desired. The general format is:
-#TranslationSpecificationName = {
+# In this last section, we create the overall translation variable which
+# will be passed in to the tranlastion routines when translation services
+# are desired. The general format is:
+# TranslationSpecificationName = {
 #  "for.example.org.freedesktop.path.to.your.interface" :
 #     {
 #       "Method or Signal or Property Name" :  #If the same name is given for 2+ uses, only put in one entry.
@@ -569,8 +569,8 @@ PydbusNetworkManagerSpec = {
         },
     NM_DBUS_INTERFACE_SETTINGS:
         {
-        "AddConnection": ({'_is_variant': 'a{sa{sv}}'},None,None,None),
-        "AddConnectionUnsaved": ({'_is_variant': 'a{sa{sv}}'},None,None,None),
+        "AddConnection": ({'_is_variant': 'a{sa{sv}}'}, None, None, None),
+        "AddConnectionUnsaved": ({'_is_variant': 'a{sa{sv}}'}, None, None, None),
         },
    NM_DBUS_INTERFACE_DEVICE:
         {
@@ -641,7 +641,7 @@ PydbusNetworkManagerSpec = {
         }
     }
 
-#Then, using the above example, for instance:
+# Then, using the above example, for instance:
 #    from tests.nmdefines import PydbusNetworkManagerSpec,NM_DBUS_INTERFACE,NM_DBUS_INTERFACE_DEVICE
 #    from pydbus.bus import SystemBus
 #    bus=SystemBus()    nm=bus.get(NM_DBUS_INTERFACE,'Devices/0',translation_spec=PydbusNetworkManagerSpec)
@@ -653,6 +653,6 @@ PydbusNetworkManagerSpec = {
 #    print(nm.CheckpointCreate(None,10,'NONE'))
 # when run returns, on one particular system:
 #
-#('NM_SUPPORTED', 'CARRIER_DETECT', 'IS_SOFTWARE'), GENERIC
-#FULL , FULL
-#/org/freedesktop/NetworkManager/Checkpoint/6
+# ('NM_SUPPORTED', 'CARRIER_DETECT', 'IS_SOFTWARE'), GENERIC
+# FULL , FULL
+# /org/freedesktop/NetworkManager/Checkpoint/6

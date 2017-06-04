@@ -1,13 +1,15 @@
 from gi.repository import GLib
+
 from .generic import bound_method
 from .identifier import filter_identifier
 from .timeout import timeout_to_glib
 
+
 try:
-	from inspect import Signature, Parameter #@UnusedImport
+	from inspect import Signature, Parameter  # @UnusedImport
 	put_signature_in_doc = False
 except:
-	from ._inspect3 import Signature, Parameter  #@Reimport
+	from ._inspect3 import Signature, Parameter  # @Reimport
 	put_signature_in_doc = True
 
 class DBUSSignature(Signature):
@@ -33,9 +35,9 @@ class ProxyMethod(object):
 		self.__name__ = method.attrib["name"]
 		self.__qualname__ = self._iface_name + "." + self.__name__
 
-		self._inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib.get("direction", "in") == "in"]
+		self._inargs = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib.get("direction", "in") == "in"]
 		self._outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib.get("direction", "in") == "out"]
-		self._sinargs  = "(" + "".join(x[1] for x in self._inargs) + ")"
+		self._sinargs = "(" + "".join(x[1] for x in self._inargs) + ")"
 		self._soutargs = "(" + "".join(self._outargs) + ")"
 
 		self_param = Parameter("self", Parameter.POSITIONAL_ONLY)
@@ -64,18 +66,18 @@ class ProxyMethod(object):
 			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
 
 		# Python 2 sux
-		if instance._bus._ProxyMixin__translator==None:
+		if instance._bus._ProxyMixin__translator == None:
 			for kwarg in kwargs:
-				if kwarg not in ("_pydbus_timeout","timeout"):
+				if kwarg not in ("_pydbus_timeout", "timeout"):
 					raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
-			timeout = kwargs.get("timeout", kwargs.get("_pydbus_timeout"),None)
+			timeout = kwargs.get("timeout", kwargs.get("_pydbus_timeout", None))
 		else:
 			timeout = kwargs.get("_pydbus_timeout")
 
 		if instance._bus._ProxyMixin__translator:
 			retained_args = args
-			if (self._iface_name != "org.freedesktop.DBus.Properties") and (len(args)>0) :
-				args= instance._bus._ProxyMixin__translator.translate(
+			if (self._iface_name != "org.freedesktop.DBus.Properties") and (len(args) > 0) :
+				args = instance._bus._ProxyMixin__translator.translate(
 					pydevobject=instance._object,
 					keyname=self.__name__,
 					callerargs=args,
@@ -85,7 +87,7 @@ class ProxyMethod(object):
 					retained_pyarg=None)
 				
 			ret = instance._bus.con.call_sync(
-				instance._bus_name, 
+				instance._bus_name,
 				instance._path,
 				self._iface_name,
 				self.__name__,
@@ -94,16 +96,16 @@ class ProxyMethod(object):
 				0,
 				timeout_to_glib(timeout),
 				None).unpack()
-			if len(self._outargs)>0:
-				ret=instance._bus._ProxyMixin__translator.translate(
+			if len(self._outargs) > 0:
+				ret = instance._bus._ProxyMixin__translator.translate(
 					pydevobject=instance._object,
 					keyname=self.__name__,
-					callerargs=ret if isinstance(ret,tuple) else (ret,),
+					callerargs=ret if isinstance(ret, tuple) else (ret,),
 					calledby='method',
 					fromDbusToPython=True,
 					introspection=self._soutargs,
 					retained_pyarg=retained_args)
-				if not isinstance(ret,tuple): ret = (ret,)
+				if not isinstance(ret, tuple): ret = (ret,)
 		else:
 			ret = instance._bus.con.call_sync(
 				instance._bus_name, instance._path,

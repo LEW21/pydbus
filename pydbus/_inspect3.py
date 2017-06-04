@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from inspect import getargspec
 
+
 class _empty:
 	pass
 
@@ -25,4 +26,4 @@ class Parameter:
 
 def signature(f):
 	parameters = [Parameter(arg, Parameter.POSITIONAL_OR_KEYWORD) for arg in getargspec(f).args]
-	return Signature(parameters = parameters)
+	return Signature(parameters=parameters)
