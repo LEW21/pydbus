@@ -6,7 +6,7 @@ from time import sleep
 from gi.repository import GLib
 
 from pydbus import SessionBus
-
+#Is there a gnome music anymore?
 
 loop = GLib.MainLoop()
 
