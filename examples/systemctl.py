@@ -1,4 +1,7 @@
+import sys
+
 from pydbus import SystemBus
+
 
 bus = SystemBus()
 
@@ -9,7 +12,6 @@ manager = systemd[".Manager"]
 #manager = systemd["org.freedesktop.systemd1.Manager"]
 #manager = systemd # works but may break if systemd adds another interface
 
-import sys
 
 try:
 	if len(sys.argv) < 2:

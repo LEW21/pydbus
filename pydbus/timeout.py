@@ -1,5 +1,6 @@
 from gi.repository import GLib, GObject
 
+
 def timeout_to_glib(timeout):
 	if timeout is None:
 		try:

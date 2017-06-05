@@ -1,7 +1,10 @@
-from pydbus import SessionBus
-from gi.repository import GLib
-from threading import Thread
 import sys
+from threading import Thread
+
+from gi.repository import GLib
+
+from pydbus import SessionBus
+
 
 done = 0
 loop = GLib.MainLoop()

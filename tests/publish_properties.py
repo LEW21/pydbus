@@ -1,7 +1,10 @@
-from pydbus import SessionBus, Variant
-from gi.repository import GLib
-from threading import Thread
 import sys
+from threading import Thread
+
+from gi.repository import GLib
+
+from pydbus import SessionBus, Variant
+
 
 done = 0
 loop = GLib.MainLoop()
@@ -62,7 +65,7 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 		print("ERROR: Timeout.")
 		sys.exit(1)
 
-	GLib.timeout_add_seconds(2, handle_timeout)
+	GLib.timeout_add_seconds(20, handle_timeout)
 
 	t1.start()
 

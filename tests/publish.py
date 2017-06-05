@@ -1,7 +1,10 @@
-from pydbus import SessionBus
-from gi.repository import GLib
-from threading import Thread
 import sys
+from threading import Thread
+
+from gi.repository import GLib
+
+from pydbus import SessionBus
+
 
 done = 0
 loop = GLib.MainLoop()
@@ -18,8 +21,8 @@ class TestObject(object):
 	</interface>
 </node>
 	'''
-	def __init__(self, id):
-		self.id = id
+	def __init__(self, iid):
+		self.id = iid
 
 	def HelloWorld(self, a, b):
 		res = self.id + ": " + a + str(b)

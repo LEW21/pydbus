@@ -1,11 +1,14 @@
-from gi.repository import GLib
 from xml.etree import ElementTree as ET
-from .auto_names import *
 
+from gi.repository import GLib
+
+from .auto_names import *  # @UnusedWildImport
 from .proxy_method import ProxyMethod
 from .proxy_property import ProxyProperty
 from .proxy_signal import ProxySignal, OnSignal
 from .timeout import timeout_to_glib
+from .translator import PydbusCPythonTranslator
+
 
 class ProxyMixin(object):
 	__slots__ = ()
@@ -34,12 +37,18 @@ class ProxyMixin(object):
 		"""
 		# Python 2 sux
 		for kwarg in kwargs:
-			if kwarg not in ("timeout",):
+			if kwarg not in ("timeout", "translation_spec"):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
+		translation_spec = kwargs.get("translation_spec", None)
 
 		bus_name = auto_bus_name(bus_name)
 		object_path = auto_object_path(bus_name, object_path)
+
+		if translation_spec == None:
+			self.__translator = None
+		else:
+			self.__translator = PydbusCPythonTranslator(translation_spec, bus_name)
 
 		ret = self.con.call_sync(
 			bus_name, object_path,
@@ -59,11 +68,11 @@ class ProxyMixin(object):
 		return CompositeInterface(introspection)(self, bus_name, object_path)
 
 class ProxyObject(object):
-	def __init__(self, bus, bus_name, path, object=None):
+	def __init__(self, bus, bus_name, path, obj=None):
 		self._bus = bus
 		self._bus_name = bus_name
 		self._path = path
-		self._object = object if object else self
+		self._object = obj if obj else self
 
 def Interface(iface):
 

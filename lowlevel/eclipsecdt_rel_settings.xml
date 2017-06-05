@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cdtprojectproperties>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.IncludePaths">
+<language name="C++ Source File">
+<includepath>/usr/include</includepath>
+<includepath>/usr/include/glib-2.0</includepath>
+<includepath>/usr/include/glibmm-2.4</includepath>
+<includepath>/usr/lib64/glib-2.0/include</includepath>
+<includepath>/usr/lib64/glibmm-2.4/include</includepath>
+<includepath>/usr/include/python3.4m</includepath>
+<includepath>/usr/include/pygobject-3.0</includepath>
+
+</language>
+<language name="C Source File">
+
+</language>
+<language name="Object File">
+
+</language>
+<language name="Assembly Source File">
+
+</language>
+</section>
+<section name="org.eclipse.cdt.internal.ui.wizards.settingswizards.Macros">
+<language name="C++ Source File">
+<macro>
+<name>WORDSIZE</name><value>64</value>
+</macro>
+
+</language>
+<language name="C Source File">
+<macro>
+<name>WORDSIZE</name><value>64</value>
+</macro>
+
+</language>
+<language name="Object File">
+
+</language>
+<language name="Assembly Source File">
+
+</language>
+</section>
+</cdtprojectproperties>

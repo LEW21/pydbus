@@ -1,8 +1,12 @@
 from __future__ import print_function
-from pydbus import SessionBus
-from gi.repository import GLib
+
 import subprocess
 from time import sleep
+
+from gi.repository import GLib
+
+from pydbus import SessionBus
+
 
 loop = GLib.MainLoop()
 
