@@ -1,6 +1,7 @@
 FROM centos:7
 RUN yum makecache fast
-RUN yum upgrade
+RUN yum -y update
+RUN yum -y upgrade
 
 RUN yum install -y dbus python3-gi python3-pip psmisc dbus-x11 pygobject3 pygobject3-devel python34-devel
 RUN python3 --version
