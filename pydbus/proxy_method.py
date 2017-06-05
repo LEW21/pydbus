@@ -3,6 +3,8 @@ from gi.repository import GLib
 from .generic import bound_method
 from .identifier import filter_identifier
 from .timeout import timeout_to_glib
+from .translator import	container_content_introspection_format	
+
 
 
 try:
@@ -103,9 +105,10 @@ class ProxyMethod(object):
 					callerargs=ret if isinstance(ret, tuple) else (ret,),
 					calledby='method',
 					fromDbusToPython=True,
-					introspection=self._soutargs,
+					introspection=container_content_introspection_format(self._soutargs),
 					retained_pyarg=retained_args)
 				if not isinstance(ret, tuple): ret = (ret,)
+				
 		else:
 			ret = instance._bus.con.call_sync(
 				instance._bus_name, instance._path,

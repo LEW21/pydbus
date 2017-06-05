@@ -5,6 +5,13 @@ from gi.repository import GLib
 from pydbus import SessionBus
 from pydbus.generic import signal
 
+'''  commands to exercise this:
+dbus-send --session --type=method_call  --print-reply --dest=org.freedesktop.Notifications /org/freedesktop/Notifications org.freedesktop.Notifications.GetServerInformation
+
+gdbus call --session  --dest org.freedesktop.Notifications --object-path /org/freedesktop/Notifications --method org.freedesktop.Notifications.Notify 'myapp' 4 "icon" "summary" "body"  "[ 'app1', 'app2' ]"  "{ 'hint1':<'hintinfo'> }" 3
+
+dbus-send --session --type=method_call  --print-reply --dest=org.freedesktop.Notifications /org/freedesktop/Notifications org.freedesktop.Notifications.GetCapabilities
+'''
 
 class Notifications(object):
 	"""

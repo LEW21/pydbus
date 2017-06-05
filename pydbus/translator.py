@@ -31,6 +31,10 @@ from traceback import format_stack
 class TranslationRequest(object):
     '''Everything specific to each translation request is held here.'''
     def __init__(self, tkargs, tkwargs, bus_name, dataflow_guidance, ctop, ptoc):
+        if len(tkargs)==0: tkargs=[None,None,None,0,None,None,None]
+        if len(tkargs) <7:
+            tkargs=list(tkargs)
+            for i in range(len(tkargs),7): tkargs+= [0] if i==3 else [None]
         self.pydevobject = tkwargs.get('pydevobject', tkargs[0])
 #            pydevobject is returned by pydbus.[SessionBus|SystemBus]().get(...) with optional ...[particular.device.path]
         self.keyname = tkwargs.get('keyname', tkargs[1])
@@ -1185,7 +1189,7 @@ class PydbusCPythonTranslator(object):
                 raise ValueError("Built-in translation library module pydbus.translations." + self._underscored_bus_name + " missing translation dictionary " + self._underscored_bus_name)
 
         if not isinstance(self.original_guidance, dict):
-            raise ValueError("The translation specification object must be a dictionary, not a " + type(self.spec))
+            raise ValueError("The translation specification object must be a dictionary, not a " + str(type(self.original_guidance)))
         
         self.dataflow_guidance = {}
         if len(self.original_guidance) == 0:
@@ -1523,6 +1527,7 @@ class PydbusCPythonTranslator(object):
             else:
                 tro.complain("The introspection string specified a container of unknown type: " + argformat)
             
+            #if not isinstance(input_value,(list,tuple,dict)): input_value=(input_value,)
             for x in range(0, len(input_value)):
                 g, idx = (f_arg_guidance)(x)
                 rl += ((tro.dir_specific_trans_function) \

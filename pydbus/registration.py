@@ -44,7 +44,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 				# s_name = signal.name
 				def EmitSignal(iface, signal):
 					return lambda *args: self.SignalEmitted(iface.name, signal.name, GLib.Variant("(" + "".join(s.signature for s in signal.args) + ")", args))
-				self._at_exit(getattr(object, signal.name).connect(EmitSignal(iface, signal)).__exit__)
+				self._at_exit(getattr(self.object, signal.name).connect(EmitSignal(iface, signal)).__exit__)
 
 		if "org.freedesktop.DBus.Properties" not in (iface.name for iface in interfaces):
 			try:
@@ -52,7 +52,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 					changed = {key: GLib.Variant(self.readable_properties[iface + "." + key], val) for key, val in changed.items()}
 					args = GLib.Variant("(sa{sv}as)", (iface, changed, invalidated))
 					self.SignalEmitted("org.freedesktop.DBus.Properties", "PropertiesChanged", args)
-				self._at_exit(object.PropertiesChanged.connect(onPropertiesChanged).__exit__)
+				self._at_exit(self.object.PropertiesChanged.connect(onPropertiesChanged).__exit__)
 			except AttributeError:
 				pass
 

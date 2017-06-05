@@ -451,12 +451,14 @@ pydbus_python_to_dbus = { 'testkey' :
 
 
 pydbus_unittest = { 'NoArgsStringReply' : 
-        { 'method_dbus_to_py' :
-            { 
-                0 : { 0 : "first string"}
-            }
-        }
-    }
-
+                    { 'method_dbus_to_py' :
+                        { 
+                            0 : { 
+                                    0: "first string"
+                                },
+                            },
+                        },
+                    }
+                
 
     

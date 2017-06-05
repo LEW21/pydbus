@@ -528,12 +528,14 @@ class Test(unittest.TestCase):
             test_server.Quit()
         except:
             server_process.terminate()
+            raise
 
+        server_process = mp.Process(target=pydbus_server)
         try:
             server_process.start()
             sleep(5)
             sb = pydbus.SessionBus()
-            test_server = sb.get('pydbus.unittest',translate=True)
+            test_server = sb.get('pydbus.unittest',translation_spec=True)
             r = test_server.NoArgsStringReply()
             self.assertEqual(r,"first string","Translation Active") 
             r = test_server.AddTwo(2)
@@ -541,6 +543,7 @@ class Test(unittest.TestCase):
             test_server.Quit()
         except:
             server_process.terminate()
+            raise
 
 
 class PyDbusUnitTestService(object):
