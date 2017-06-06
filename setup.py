@@ -8,7 +8,8 @@ module1 = Extension('extensions.PatchPreGlib246',
                     include_dirs = ['/usr/include/pygobject-3.0',
 								'/usr/local/include',
 								'/usr/include/glib-2.0',
-								'/lib' + ('64' if sys.maxsize > 2**32 else '') + '/glib-2.0/include'])
+								'/lib' + ('64' if sys.maxsize > 2**32 else '') + '/glib-2.0/include',
+                                '/usr/lib' + ('x86_64' if sys.maxsize > 2**32 else 'i386')+ "-linux-gnu/glib-2.0/include"])
 
 with open('README.rst') as f:
 	readme = f.read()
@@ -39,7 +40,8 @@ setup(
 		'Programming Language :: Python :: 3',
 		'Programming Language :: Python :: 3.3',
 		'Programming Language :: Python :: 3.4',
-		#'Programming Language :: Python :: 3.5',
+		'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
 		# last v2 pydbus v0.70 'Programming Language :: Python :: 2',
 		# 'Programming Language :: Python :: 2.7'
 	]
