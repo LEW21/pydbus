@@ -1,7 +1,7 @@
 FROM ubuntu:14.04
 RUN apt-get update
 
-RUN apt-get install -y dbus python3-gi python3-pip psmisc python3-dev dbus-x11  pygobject3-devel
+RUN apt-get install -y dbus python3-gi python3-pip psmisc python3-dev dbus-x11 python3-gi-dev python3-dev
 RUN python3 --version
 RUN pip3 install greenlet
 
