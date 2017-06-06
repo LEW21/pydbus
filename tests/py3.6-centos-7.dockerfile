@@ -8,6 +8,7 @@ RUN yum upgrade
 
 RUN yum install -y dbus psmisc dbus-x11 pygobject3 python36u pygobject3-devel python36-pip python36u-devel
 RUN python3.6 --version
+RUN pip3.6 install --upgrade pip
 RUN pip3.6 install greenlet
 RUN pip3.6 install pygobject
 
