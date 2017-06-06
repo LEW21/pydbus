@@ -1,9 +1,11 @@
 pydbus
 ======
-.. image:: https://travis-ci.org/LEW21/pydbus.svg?branch=master
-    :target: https://travis-ci.org/LEW21/pydbus
+.. image:: https://travis-ci.org/hcoin/pydbus.svg?branch=master
+    :target: https://travis-ci.org/hcoin/pydbus
 .. image:: https://badge.fury.io/py/pydbus.svg
     :target: https://badge.fury.io/py/pydbus
+.. image:: https://travis-ci.org/hcoin/pydbus.svg?branch=master
+    :target: https://travis-ci.org/hcoin/pydbus
 
 tl,dr: When accessing a dbus path, if you enable a dictionary for these
 routines that describes anything special about it, all the dbus-specific issues
@@ -17,9 +19,9 @@ Changelog: https://github.com/hcoin/pydbus
 
 Requirements
 ------------
-* Python 2.7+ - but works best on 3.4+ (help system is nicer there)
+* Python 3.4+
 * PyGI_ (not packaged on pypi, you need to install it from your distribution's repository - it's usually called python-gi, python-gobject or pygobject)
-* GLib_ 2.46+ and girepository_ 1.46+ (Ubuntu 16.04+) - for object publication support
+* GLib_ and girepository_  for object publication support
 
 .. _PyGI: https://wiki.gnome.org/Projects/PyGObject
 .. _GLib: https://developer.gnome.org/glib/
@@ -119,10 +121,12 @@ View object's API
 More examples & documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
 The Tutorial_ contains more examples and docs.
 
 .. _Tutorial: https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst
-.. _Tutorial: https://github.com/LEW21/pydbus/blob/master/doc/autotranslator_tutorial.rst
+.. _Dbus <-> python translation use intro: https://github.com/hcoin/pydbus/blob/master/doc/autotranslator_tutorial.rst
+.. _Full Dbus <-> python translation system / spec:  https://github.com/hcoin/pydbus/wiki
 
 Copyright Information
 ---------------------
