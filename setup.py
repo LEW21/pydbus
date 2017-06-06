@@ -9,7 +9,7 @@ module1 = Extension('extensions.PatchPreGlib246',
 								'/usr/local/include',
 								'/usr/include/glib-2.0',
 								'/lib' + ('64' if sys.maxsize > 2**32 else '') + '/glib-2.0/include',
-                                '/usr/lib' + ('x86_64' if sys.maxsize > 2**32 else 'i386')+ "-linux-gnu/glib-2.0/include"])
+                                '/usr/lib/' + ('x86_64' if sys.maxsize > 2**32 else 'i386')+ "-linux-gnu/glib-2.0/include"])
 
 with open('README.rst') as f:
 	readme = f.read()
