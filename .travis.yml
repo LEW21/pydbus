@@ -4,6 +4,9 @@ env:
   - distribution: centos
     version: 7
     python: 3.4
+  - distribution: centos
+    version: 7
+    python: 3.6
   - distribution: ubuntu
     version: 16.04
     python: 3.5
