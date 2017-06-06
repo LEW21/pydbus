@@ -2,6 +2,7 @@
 set -e
 
 TESTS_DIR=$(dirname "$0")
+SRC_DIR=$TESTS_DIR/../pydbus
 eval `dbus-launch --sh-syntax`
 
 trap 'kill -TERM $DBUS_SESSION_BUS_PID' EXIT
@@ -16,3 +17,4 @@ then
 	"$PYTHON" $TESTS_DIR/publish_properties.py
 	"$PYTHON" $TESTS_DIR/publish_multiface.py
 fi
+"$PYTHON"  -m $SRC_DIR/_unittest

@@ -4,9 +4,9 @@ RUN rpm -Uvh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-
 RUN yum -y update
 RUN yum -y upgrade
 
-RUN yum install -y dbus python3-gi python3-pip psmisc dbus-x11 pygobject3 pygobject3-devel python34 python34-devel python34-pip gobject-introspection gobject-introspection-devel  python3-gobject.base  python3-gobject.base-devel
-RUN ls /bin/python*
+RUN yum install -y dbus psmisc dbus-x11 pygobject3 python34 python34-devel pygobject3-devel python34-pip
 RUN python3.4 --version
+RUN pip3.4 install pygobject
 RUN pip3.4 install greenlet
 
 ADD . /root/
