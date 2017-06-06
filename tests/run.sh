@@ -2,7 +2,7 @@
 set -e
 
 TESTS_DIR=$(dirname "$0")
-SRC_DIR=$TESTS_DIR/../pydbus
+SRC_DIR=$(readlink "$TESTS_DIR/../pydbus")
 eval `dbus-launch --sh-syntax`
 
 trap 'kill -TERM $DBUS_SESSION_BUS_PID' EXIT
