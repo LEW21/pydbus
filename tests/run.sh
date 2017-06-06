@@ -17,4 +17,5 @@ then
 	"$PYTHON" $TESTS_DIR/publish_properties.py
 	"$PYTHON" $TESTS_DIR/publish_multiface.py
 fi
+echo running unit tests
 "$PYTHON"  -m $SRC_DIR/_unittest
