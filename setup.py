@@ -20,7 +20,7 @@ setup(
 	description = "Pythonic DBus library",
 	long_description = readme,
 	author = "Linus Lewandowski, Harry Coin, et. al.",
-	author_email = "linus@lew21.net",
+	author_email = "hcoin@quietfountain.com",
 	url = "https://github.com/LEW21/pydbus",
 	keywords = "dbus",
 	license = "LGPLv2+",
