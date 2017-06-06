@@ -4,8 +4,7 @@ pydbus
     :target: https://travis-ci.org/hcoin/pydbus
 .. image:: https://badge.fury.io/py/pydbus.svg
     :target: https://badge.fury.io/py/pydbus
-.. image:: https://travis-ci.org/hcoin/pydbus.svg?branch=master
-    :target: https://travis-ci.org/hcoin/pydbus
+
 
 tl,dr: When accessing a dbus path, if you enable a dictionary for these
 routines that describes anything special about it, all the dbus-specific issues

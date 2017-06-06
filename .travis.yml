@@ -1,7 +1,7 @@
 sudo: required
 
 env:
-  - disribution: centos
+  - distribution: centos
     version: 7
     python: 3.4
   - distribution: ubuntu
