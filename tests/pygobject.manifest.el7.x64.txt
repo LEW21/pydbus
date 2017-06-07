@@ -1,4 +1,4 @@
-#x64 manifest for centos 7
+#x86_64 manifest for centos 7
 http://dl.fedoraproject.org/pub/fedora/linux/updates/23/x86_64/p/python3-gobject-base-3.18.2-1.fc23.x86_64.rpm
 http://dl.fedoraproject.org/pub/fedora/linux/releases/23/Everything/x86_64/os/Packages/g/gobject-introspection-1.46.0-1.fc23.x86_64.rpm
 http://dl.fedoraproject.org/pub/fedora/linux/releases/23/Everything/x86_64/os/Packages/g/gobject-introspection-devel-1.46.0-1.fc23.x86_64.rpm

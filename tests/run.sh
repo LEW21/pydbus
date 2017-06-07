@@ -18,4 +18,4 @@ then
 	"$PYTHON" $TESTS_DIR/publish_multiface.py
 fi
 echo running unit tests
-"$PYTHON"  -m $SRC_DIR/_unittest
+"$PYTHON"  -m $SRC_DIR/_unittest.py
