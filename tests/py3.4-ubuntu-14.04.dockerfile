@@ -7,6 +7,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install greenlet
 
 ADD . /root/
+RUN ls -lR .
 RUN cd /root && python3.4 setup.py install
 
 RUN /root/tests/run.sh python3.4
