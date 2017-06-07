@@ -2,7 +2,7 @@
 set -e
 set -x
 TESTS_DIR=$(dirname "$0")
-SRC_DIR=`/bin/readlink -f "$TESTS_DIR/../pydbus"`
+SRC_DIR=`/bin/readlink -f "$TESTS_DIR/.."`
 eval `dbus-launch --sh-syntax`
 
 trap 'kill -TERM $DBUS_SESSION_BUS_PID' EXIT
@@ -18,5 +18,5 @@ then
 	"$PYTHON" $TESTS_DIR/publish_multiface.py
 fi
 echo running unit tests
-ls -lR /root
-"$PYTHON"  -m $SRC_DIR/_unittest.py
+cd $SRC_DIR
+"$PYTHON"   pydbus._unittest.py

@@ -4,12 +4,14 @@ Created on Mar 25, 2017
 @author: Harry G. Coin
 @copyright: 2017 Quiet Fountain LLC
 '''
-from gi.repository.GLib import (Variant, MainLoop)  # ,VariantBuilder,VariantType)
-from time import sleep
-import unittest
 
+#import pydbus
+from gi.repository.GLib import (Variant, MainLoop)  # ,VariantBuilder,VariantType)
+
+#from pydbus.translator import (PydbusCPythonTranslator)
+from time import sleep
 import multiprocessing as mp
-import pydbus
+import unittest
 
 class BlankObject(object):
     pass
@@ -27,81 +29,85 @@ class Test(unittest.TestCase):
 
     def test_isolate_format(self):
         # Test everything other than variants
-        next_arg, remainder = pydbus.translator._isolate_format("should do nothing")
+        #print(str(dir( translator)))
+        from pydbus.translator import _isolate_format
+        next_arg, remainder = _isolate_format("should do nothing")
         self.assertTrue(next_arg == "s")
         self.assertTrue(remainder == 'hould do nothing')
 
-        next_arg, remainder = pydbus.translator._isolate_format("a{sa{si}}ua{si}")
+        next_arg, remainder = _isolate_format("a{sa{si}}ua{si}")
         self.assertTrue(next_arg == 'a{sa{si}}')
         self.assertTrue(remainder == 'ua{si}')
 
-        next_arg, remainder = pydbus.translator._isolate_format(remainder)
+        next_arg, remainder = _isolate_format(remainder)
         self.assertTrue(next_arg == 'u')
         self.assertTrue(remainder == 'a{si}')
         
-        next_arg, remainder = pydbus.translator._isolate_format(remainder)
+        next_arg, remainder = _isolate_format(remainder)
         self.assertTrue(next_arg == 'a{si}')
         self.assertTrue(remainder == None)
 
-        next_arg, remainder = pydbus.translator._isolate_format(remainder)
+        next_arg, remainder = _isolate_format(remainder)
         self.assertTrue(next_arg == None)
         self.assertTrue(remainder == None)
         
-        next_arg, remainder = pydbus.translator._isolate_format('u(s)')
+        next_arg, remainder = _isolate_format('u(s)')
         self.assertTrue(next_arg == 'u')
         self.assertTrue(remainder == '(s)')
 
-        next_arg, remainder = pydbus.translator._isolate_format(remainder)
+        next_arg, remainder = _isolate_format(remainder)
         self.assertTrue(next_arg == '(s)')
         self.assertTrue(remainder == None)
 
-        next_arg, remainder = pydbus.translator._isolate_format('s{su}')
+        next_arg, remainder = _isolate_format('s{su}')
         self.assertTrue(next_arg == 's')
         self.assertTrue(remainder == '{su}')
 
-        next_arg, remainder = pydbus.translator._isolate_format(remainder)
+        next_arg, remainder = _isolate_format(remainder)
         self.assertTrue(next_arg == '{su}')
         self.assertTrue(remainder == None)
 
-        next_arg, remainder = pydbus.translator._isolate_format(remainder)
+        next_arg, remainder = _isolate_format(remainder)
         self.assertTrue(next_arg == None)
         self.assertTrue(remainder == None)
         
         # Test variants
-        next_arg, remainder = pydbus.translator._isolate_format('sv::u')
+        next_arg, remainder = _isolate_format('sv::u')
         self.assertTrue(next_arg == 's')
         self.assertTrue(remainder == 'v::u')
 
-        next_arg, remainder = pydbus.translator._isolate_format(remainder)
+        next_arg, remainder = _isolate_format(remainder)
         self.assertTrue(next_arg == 'v::')
         self.assertTrue(remainder == 'u')
         
-        next_arg, remainder = pydbus.translator._isolate_format('sv:a{s}:u')
+        next_arg, remainder = _isolate_format('sv:a{s}:u')
         self.assertTrue(next_arg == 's')
         self.assertTrue(remainder == 'v:a{s}:u')
 
-        next_arg, remainder = pydbus.translator._isolate_format(remainder)
+        next_arg, remainder = _isolate_format(remainder)
         self.assertTrue(next_arg == 'v:a{s}:')
         self.assertTrue(remainder == 'u')
         
     def test_module_loading_variations(self):
-        self.assertRaises(ImportError, pydbus.translator.PydbusCPythonTranslator, 'bad module', 'pydbus.unittest')
-#        self.assertRaises(ModuleNotFoundError,pydbus.translator.PydbusCPythonTranslator,'bad module','pydbus.unittest')
-        self.assertRaises(ValueError, pydbus.translator.PydbusCPythonTranslator, 'pydbus.translations.pydbus_unittest', 'pydbus.unittest.badbus')
-        self.assertRaises(ValueError, pydbus.translator.PydbusCPythonTranslator, 'pydbus.translations.pydbus_unittest', 'pydbus.unittest.noentries')
-        self.assertRaises(ValueError, pydbus.translator.PydbusCPythonTranslator, True, 'pydbus.unittest.nothere')
-        self.assertRaises(ValueError, pydbus.translator.PydbusCPythonTranslator, {}, 'pydbus.unittest.noentries')
+        from pydbus.translator import PydbusCPythonTranslator
+        self.assertRaises(ImportError, PydbusCPythonTranslator, 'bad module', 'pydbus.unittest')
+#        self.assertRaises(ModuleNotFoundError,PydbusCPythonTranslator,'bad module','pydbus.unittest')
+        self.assertRaises(ValueError, PydbusCPythonTranslator, 'pydbus.translations.pydbus_unittest', 'pydbus.unittest.badbus')
+        self.assertRaises(ValueError, PydbusCPythonTranslator, 'pydbus.translations.pydbus_unittest', 'pydbus.unittest.noentries')
+        self.assertRaises(ValueError, PydbusCPythonTranslator, True, 'pydbus.unittest.nothere')
+        self.assertRaises(ValueError, PydbusCPythonTranslator, {}, 'pydbus.unittest.noentries')
         # Pass a valid but basic dictionary directly.  Should have no error.
-        pydbus.translator.PydbusCPythonTranslator({ 'some_key' : {'method_py_to_dbus' : 'argname'}}, 'pydbus.unittest.noentries')
+        PydbusCPythonTranslator({ 'some_key' : {'method_py_to_dbus' : 'argname'}}, 'pydbus.unittest.noentries')
         # pass a valid but basic dictionary with dict name dervied from a module name. Should have no error
-        pydbus.translator.PydbusCPythonTranslator(True, 'pydbus.unittest', unit_test_dictname='pydbus_unittest_basic')
+        PydbusCPythonTranslator(True, 'pydbus.unittest', unit_test_dictname='pydbus_unittest_basic')
         
-        # self.trans = pydbus.translator.PydbusCPythonTranslator(True,'pydbus.unittest.noentries')
-        # self.trans = pydbus.translator.PydbusCPythonTranslator('pydbus.unittest','pydbus.unittest.wontfindit')
+        # self.trans = PydbusCPythonTranslator(True,'pydbus.unittest.noentries')
+        # self.trans = PydbusCPythonTranslator('pydbus.unittest','pydbus.unittest.wontfindit')
         
     def test_bitfield_entry(self):
-        # c = pydbus.translator.PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_unittest_basic')
-        c = pydbus.translator.SingleArgumentOptimizedGuidance({ '_is_bitfield' : True,
+        # c = PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_unittest_basic')
+        from pydbus.translator import SingleArgumentOptimizedGuidance
+        c = SingleArgumentOptimizedGuidance({ '_is_bitfield' : True,
                                                      0 : 'all bits zero',  # should be forced to (-1,0)
                                                     '#everything_else' : True
                                                     },
@@ -154,10 +160,11 @@ class Test(unittest.TestCase):
         self.assertRaises(ValueError, c._bitfield_entry, 0xf00, 0x0f4, 'fieldname', True, 32)
         
     def test_init_helper_guidance_validate_bitfield(self):
-        # c = pydbus.translator.PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_unittest_basic')
+        # c = PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_unittest_basic')
         # check out bitfield specs from python, to dbus
         # First, simplest case: onbits -> label
-        guidance = pydbus.translator.SingleArgumentOptimizedGuidance({ '_is_bitfield' : True,
+        from pydbus.translator import SingleArgumentOptimizedGuidance
+        guidance = SingleArgumentOptimizedGuidance({ '_is_bitfield' : True,
                                                      (-1, 0) : "All bits zero",
 # NOTICE: 'All bits zero' is NOT the same thing as
 # (1,0) which requires the 1 bit to be off no matter the other on bits.                                                      
@@ -219,7 +226,7 @@ class Test(unittest.TestCase):
 
         # Next, check for the correct 'mini int' both as a value and
         # converted to bitmasks associated with labels.
-        guidance = pydbus.translator.SingleArgumentOptimizedGuidance({ '_is_bitfield' : True,
+        guidance = SingleArgumentOptimizedGuidance({ '_is_bitfield' : True,
                                                      (0xf00, 0x22) : ('zero', '1->2', '2->20', '3->22'),
                                                      (0xf000, 0x200) : '#MiniIntZeroOrOne',
                                                     },
@@ -254,8 +261,9 @@ class Test(unittest.TestCase):
         
         
     def test_init_helper_guidance_validate_name_value_map(self):
-        # c = pydbus.translator.PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_unittest_basic')
-        guidance = pydbus.translator.SingleArgumentOptimizedGuidance({ 0 : "what0means",
+        # c = PydbusCPythonTranslator(True,'pydbus.unittest',unit_test_dictname='pydbus_unittest_basic')
+        from pydbus.translator import SingleArgumentOptimizedGuidance 
+        guidance = SingleArgumentOptimizedGuidance({ 0 : "what0means",
                                                     10 : "what10means",
                                                     '_replace_unknowns' : ("string value", 10)
                                                     },
@@ -273,7 +281,8 @@ class Test(unittest.TestCase):
         
         
     def test_dbus_to_python_translations(self):
-        c = pydbus.translator.PydbusCPythonTranslator(True, 'pydbus.unittest', unit_test_dictname='pydbus_dbus_to_python')
+        from pydbus.translator import PydbusCPythonTranslator
+        c = PydbusCPythonTranslator(True, 'pydbus.unittest', unit_test_dictname='pydbus_dbus_to_python')
 
         argspec = c.translate('who.knows.what', 'testkey', (1, 4, 100, 'never see it', 'no changes'), 0, True, 'uui', None, None)
         self.assertEqual(argspec[0], 1)
@@ -348,30 +357,33 @@ class Test(unittest.TestCase):
         
 
     def test_variant_guidance_possibilities(self):
-        self.assertEqual(('u',), tuple(pydbus.translator.variant_guidance_possibilities('u')))
-        self.assertEqual(('ss',), tuple(pydbus.translator.variant_guidance_possibilities('ss')))
-        self.assertEqual(('v:u:',), tuple(pydbus.translator.variant_guidance_possibilities('v:u:')))
-        self.assertEqual(('sv:i:',), tuple(pydbus.translator.variant_guidance_possibilities('sv:i:')))
-        self.assertEqual(('sv:i:', 'sv:s:'), tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:')))
-        self.assertEqual(('sv:i:au', 'sv:s:au'), tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:au')))
-        self.assertEqual(('sv:i:auv::', 'sv:s:auv::'), tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:auv::')))
-        self.assertEqual(('sv:i:auv:i:', 'sv:s:auv:i:'), tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:auv:i:')))
-        self.assertEqual(('sv:i:auv:i:', 'sv:i:auv:u:', 'sv:s:auv:i:', 'sv:s:auv:u:'), tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s:auv:i/u:')))
-        self.assertEqual(('sv:iss:au', 'sv:sss:au'), tuple(pydbus.translator.variant_guidance_possibilities('sv:i/s.ss:au')))
+        from pydbus.translator import variant_guidance_possibilities
+        self.assertEqual(('u',), tuple(variant_guidance_possibilities('u')))
+        self.assertEqual(('ss',), tuple(variant_guidance_possibilities('ss')))
+        self.assertEqual(('v:u:',), tuple(variant_guidance_possibilities('v:u:')))
+        self.assertEqual(('sv:i:',), tuple(variant_guidance_possibilities('sv:i:')))
+        self.assertEqual(('sv:i:', 'sv:s:'), tuple(variant_guidance_possibilities('sv:i/s:')))
+        self.assertEqual(('sv:i:au', 'sv:s:au'), tuple(variant_guidance_possibilities('sv:i/s:au')))
+        self.assertEqual(('sv:i:auv::', 'sv:s:auv::'), tuple(variant_guidance_possibilities('sv:i/s:auv::')))
+        self.assertEqual(('sv:i:auv:i:', 'sv:s:auv:i:'), tuple(variant_guidance_possibilities('sv:i/s:auv:i:')))
+        self.assertEqual(('sv:i:auv:i:', 'sv:i:auv:u:', 'sv:s:auv:i:', 'sv:s:auv:u:'), tuple(variant_guidance_possibilities('sv:i/s:auv:i/u:')))
+        self.assertEqual(('sv:iss:au', 'sv:sss:au'), tuple(variant_guidance_possibilities('sv:i/s.ss:au')))
 
     def test_variant_introspection_rewrite(self):
-        self.assertEqual('u', pydbus.translator.variant_introspection_rewrite('u', []))
-        self.assertEqual('au', pydbus.translator.variant_introspection_rewrite('au', []))
-        self.assertEqual('auv:i:', pydbus.translator.variant_introspection_rewrite('auv', ['i']))
-        self.assertEqual('auv:i:s', pydbus.translator.variant_introspection_rewrite('auvs', ['i']))
+        from pydbus.translator import variant_introspection_rewrite
+        self.assertEqual('u', variant_introspection_rewrite('u', []))
+        self.assertEqual('au', variant_introspection_rewrite('au', []))
+        self.assertEqual('auv:i:', variant_introspection_rewrite('auv', ['i']))
+        self.assertEqual('auv:i:s', variant_introspection_rewrite('auvs', ['i']))
         # So the arglist in the above case is [unsigned int,unsigned int..],int,string
-        self.assertEqual('auv:i/b:s', pydbus.translator.variant_introspection_rewrite('auvs', ['i/b']))
-        self.assertEqual('auv:i/b:sv::', pydbus.translator.variant_introspection_rewrite('auvsv', ['i/b']))
-        self.assertEqual('auv:i/b:sv:as:', pydbus.translator.variant_introspection_rewrite('auvsv', ['i/b', 'as']))
-        self.assertEqual('auv:i/b.ss:sv::', pydbus.translator.variant_introspection_rewrite('auvsv', ['i/b.ss']))
+        self.assertEqual('auv:i/b:s', variant_introspection_rewrite('auvs', ['i/b']))
+        self.assertEqual('auv:i/b:sv::', variant_introspection_rewrite('auvsv', ['i/b']))
+        self.assertEqual('auv:i/b:sv:as:', variant_introspection_rewrite('auvsv', ['i/b', 'as']))
+        self.assertEqual('auv:i/b.ss:sv::', variant_introspection_rewrite('auvsv', ['i/b.ss']))
 
     def test_python_to_dbus_translations(self):
-        c = pydbus.translator.PydbusCPythonTranslator(True, 'pydbus.unittest', unit_test_dictname='pydbus_python_to_dbus')
+        from pydbus.translator import PydbusCPythonTranslator
+        c = PydbusCPythonTranslator(True, 'pydbus.unittest', unit_test_dictname='pydbus_python_to_dbus')
 
         argspec = c.translate('who.knows.what', 'testkey', (1, 4, 100, 'never see it', 'no changes'), 0, False, 'uui', None, None)
         self.assertEqual(argspec[0], 1)
@@ -476,7 +488,8 @@ class Test(unittest.TestCase):
         # print(str(argspec))
         
     def test_dbus_to_python_variable_naming(self):
-        c = pydbus.translator.PydbusCPythonTranslator(True, 'pydbus.unittest', unit_test_dictname='pydbus_dbus_to_python')
+        from pydbus.translator import PydbusCPythonTranslator
+        c = PydbusCPythonTranslator(True, 'pydbus.unittest', unit_test_dictname='pydbus_dbus_to_python')
         argspec = c.translate('pydbus.unittest', 'd_to_p_named_args', (1, 4, 'one hundred'), 0, True, 'uus', None, None)
         self.assertEqual(argspec.arg0, 1)
         self.assertEqual(argspec.arg1, 4)
@@ -514,12 +527,13 @@ class Test(unittest.TestCase):
 
 
     def test_user_facing_interface(self):
+        from pydbus import SessionBus
         mp.set_start_method('spawn')
         server_process = mp.Process(target=pydbus_server)
         try:
             server_process.start()
             sleep(5)
-            sb = pydbus.SessionBus()
+            sb = SessionBus()
             test_server = sb.get('pydbus.unittest')
             r = test_server.NoArgsStringReply()
             self.assertEqual(r,0,"Translation Inactive") 
@@ -534,7 +548,7 @@ class Test(unittest.TestCase):
         try:
             server_process.start()
             sleep(5)
-            sb = pydbus.SessionBus()
+            sb = SessionBus()
             test_server = sb.get('pydbus.unittest',translation_spec=True)
             r = test_server.NoArgsStringReply()
             self.assertEqual(r,"first string","Translation Active") 
@@ -577,10 +591,13 @@ class PyDbusUnitTestService(object):
         self.loop.quit()
 
 def pydbus_server():
+    from pydbus import SessionBus
     loop = MainLoop()
-    bus = pydbus.SessionBus()
+    bus = SessionBus()
     with bus.publish("pydbus.unittest", PyDbusUnitTestService(loop)):
         loop.run()
 
 if __name__ == "__main__":
-    unittest.main()
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test)
+    unittest.TextTestRunner().run(suite)
+
