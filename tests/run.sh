@@ -19,4 +19,4 @@ then
 fi
 echo running unit tests
 cd $SRC_DIR
-"$PYTHON"   pydbus._unittest.py
+"$PYTHON"  -m pydbus._unittest

@@ -56,6 +56,7 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 		except GLib.GError:
 			pass
 		assert(remote.GetAll("net.lew21.pydbus.tests.publish_properties") == {'Foobar': 'barfoo', 'Foo': 'foo'})
+		print("Just before quit.")
 		remote.Quit()
 
 	t1 = Thread(None, t1_func)

@@ -7,13 +7,13 @@ RUN yum -y update
 RUN yum upgrade
 
 RUN yum install -y dbus psmisc dbus-x11 python36u  python36-pip python36u-devel pygobject3 pygobject3-devel python3-gobject 
-RUN rpm -i /root/tests/pygobject.manifest.el7.x64.txt
 
 RUN python3.6 --version
 RUN pip3.6 install --upgrade pip
 RUN pip3.6 install greenlet
 
 ADD . /root/
+RUN rpm -i /root/tests/pygobject.manifest.el7.x64.txt
 RUN cd /root && python3.6 setup.py install
 
 RUN /root/tests/run.sh python3.6
