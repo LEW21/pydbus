@@ -18,4 +18,5 @@ then
 	"$PYTHON" $TESTS_DIR/publish_multiface.py
 fi
 echo running unit tests
+ls -lR /root
 "$PYTHON"  -m $SRC_DIR/_unittest.py
