@@ -11,12 +11,12 @@ PYTHON=${1:-python}
 
 "$PYTHON" $TESTS_DIR/context.py
 "$PYTHON" $TESTS_DIR/identifier.py
-if [ "$2" != "dontpublish" ]
-then
+#if [ "$2" != "dontpublish" ]
+#then
 	"$PYTHON" $TESTS_DIR/publish.py
 	"$PYTHON" $TESTS_DIR/publish_properties.py
 	"$PYTHON" $TESTS_DIR/publish_multiface.py
-fi
+#fi
 echo running unit tests
 cd $SRC_DIR
 "$PYTHON"  -m pydbus._unittest

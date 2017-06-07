@@ -6,7 +6,7 @@ RUN rpm -Uvh https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum -y update
 RUN yum upgrade
 
-RUN yum install -y dbus psmisc dbus-x11 python36u  python36-pip python36u-devel pygobject3 pygobject3-devel python3-gobject 
+RUN yum install -y dbus psmisc dbus-x11 python36u  python36-pip python36u-devel pygobject3 pygobject3-devel python3-gobject gobject-introspection-devel gobject-introspection
 
 RUN python3.6 --version
 RUN pip3.6 install --upgrade pip

@@ -30,7 +30,9 @@ class TestObject(object):
 bus = SessionBus()
 
 with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
+	print("1")
 	remote = bus.get("net.lew21.pydbus.tests.publish_properties")
+	print("2")
 	remote_iface = remote['net.lew21.pydbus.tests.publish_properties']
 
 	def t1_func():
@@ -59,7 +61,9 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 		print("Just before quit.")
 		remote.Quit()
 
+	print("3")
 	t1 = Thread(None, t1_func)
+	print("4")
 	t1.daemon = True
 
 	def handle_timeout():
@@ -67,9 +71,13 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 		sys.exit(1)
 
 	GLib.timeout_add_seconds(20, handle_timeout)
+	print("5")
 
 	t1.start()
+	print("6")
 
 	loop.run()
+	print("7")
 
 	t1.join()
+	print("8")
