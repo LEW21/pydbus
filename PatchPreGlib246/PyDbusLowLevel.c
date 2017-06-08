@@ -110,44 +110,108 @@ void cro_method_call(GDBusConnection *connection, const gchar *sender,
 	PyEval_SaveThread();
 }
 
+#ifdef Bad_Ideas_Whose_Time_Will_Never_Come
 GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
 		const gchar *object_path, const gchar *interface_name,
 		const gchar *property_name, GError **error, gpointer user_data) {
-	PyObject *arglist;
-	PyGObject *result;
+	//PyObject *arglist;
+	//PyGObject *result;
+	//struct dbus_connection_register_struct *reg_info;
+	//reg_info = (struct dbus_connection_register_struct *) user_data;
+
+	//arglist = Py_BuildValue("Ossss",
+	//pygobject_new(G_OBJECT(connection)), sender, object_path, interface_name,
+	//		property_name);
+	//result = (PyGObject *) PyObject_CallObject(reg_info->get_prop_closure,
+	//		arglist);
+	//Py_DECREF(arglist);
+	//if (pyg_gerror_exception_check(error) != 0)
+	//	return NULL;
+	//if (result == NULL) {
+	//	return NULL;
+	//}
+	//return (GVariant *) result->obj;
+
+	PyObject *arglist,*py_connection;
 	struct dbus_connection_register_struct *reg_info;
+	PyThreadState *PyTState;
+	GVariant *ret; PyObject *pyret;
+
 	reg_info = (struct dbus_connection_register_struct *) user_data;
+
+	PyTState = PyGILState_GetThisThreadState();
+	PyEval_RestoreThread(PyTState);
+
+	py_connection = pygobject_new(G_OBJECT(connection));
+	//py_parms = pyg_boxed_new(G_TYPE_VARIANT, g_variant_ref(parameters), FALSE, FALSE);
+	//py_invoke = pygobject_new(G_OBJECT(invocation));
+
 	arglist = Py_BuildValue("Ossss",
-	pygobject_new(G_OBJECT(connection)), sender, object_path, interface_name,
-			property_name);
-	result = (PyGObject *) PyObject_CallObject(reg_info->get_prop_closure,
-			arglist);
-	Py_DECREF(arglist);
-	if (pyg_gerror_exception_check(error) != 0)
-		return NULL;
-	if (result == NULL) {
-		return NULL;
+			py_connection,
+			sender, object_path, interface_name, property_name);
+
+	pyret = PyObject_CallObject(reg_info->get_prop_closure, arglist);
+	PyObject_Print(pyret,stdout,0);
+	printf(" -- result\n");
+
+	if ((pyg_gerror_exception_check(error) != 0) || (pyret == NULL)) {
+		ret= NULL;
+	} else {
+		ret = pyg_boxed_get(pyret,GVariant);
 	}
-	return (GVariant *) result->obj;
+	Py_DECREF(arglist);
+
+	PyEval_SaveThread();
+	return ret;
 }
+
+
 
 gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
 		const gchar *object_path, const gchar *interface_name,
 		const gchar *property_name, GVariant *value, GError **error,
 		gpointer user_data) {
-	PyObject *arglist;
+	//PyObject *arglist;
+	//struct dbus_connection_register_struct *reg_info;
+	//
+	//reg_info = (struct dbus_connection_register_struct *) user_data;
+	//
+	//arglist = Py_BuildValue("OssssO",
+	//pygobject_new(G_OBJECT(connection)), sender, object_path, interface_name,
+	//		property_name, value);
+	//PyObject_CallObject(reg_info->set_prop_closure, arglist);
+	//Py_DECREF(arglist);
+	//
+
+	PyObject *arglist,*py_parms,*py_connection;
 	struct dbus_connection_register_struct *reg_info;
+	PyThreadState *PyTState;
+	gboolean ret;
 
 	reg_info = (struct dbus_connection_register_struct *) user_data;
+
+	PyTState = PyGILState_GetThisThreadState();
+	PyEval_RestoreThread(PyTState);
+
+	py_connection = pygobject_new(G_OBJECT(connection));
+	py_parms = pyg_boxed_new(G_TYPE_VARIANT, g_variant_ref(value), FALSE, FALSE);
+	//py_invoke = pygobject_new(G_OBJECT(invocation));
+
 	arglist = Py_BuildValue("OssssO",
-	pygobject_new(G_OBJECT(connection)), sender, object_path, interface_name,
-			property_name, value);
+			py_connection,
+			sender, object_path, interface_name, property_name,
+			py_parms);
+
 	PyObject_CallObject(reg_info->set_prop_closure, arglist);
+	ret = pyg_gerror_exception_check(error);
 	Py_DECREF(arglist);
-	return pyg_gerror_exception_check(error);
+
+	PyEval_SaveThread();
+	return ret;
+
 }
 
-
+#endif
 
 PyObject * dbus_connection_register_object(PyObject *self, PyObject *args) {
 	int i;
@@ -167,8 +231,8 @@ PyObject * dbus_connection_register_object(PyObject *self, PyObject *args) {
 	reg_info->path = (char *) PyMem_Malloc(strlen(s) + 1);
 	strcpy(reg_info->path, s);
 	reg_info->vtable.method_call = cro_method_call;
-	reg_info->vtable.get_property = cro_get_property;
-	reg_info->vtable.set_property = cro_set_property;
+	reg_info->vtable.get_property = NULL; //cro_get_property;
+	reg_info->vtable.set_property = NULL; //cro_set_property;
 	Py_INCREF(reg_info->connection);
 	Py_INCREF(reg_info->interface);
 	Py_INCREF(reg_info->method_closure);
