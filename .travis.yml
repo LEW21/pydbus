@@ -1,6 +1,9 @@
 sudo: required
 
 env:
+  - distribution: debian
+    version: sid
+    python: 3
   - distribution: fedora
     version: rawhide
     python: 3
