@@ -3,8 +3,8 @@ set -e
 set -x
 TESTS_DIR=$(dirname "$0")
 SRC_DIR=`/bin/readlink -f "$TESTS_DIR/.."`
-eval `dbus-launch --sh-syntax`
-
+#eval `dbus-launch --sh-syntax`
+export $(dbus-launch)
 trap 'kill -TERM $DBUS_SESSION_BUS_PID' EXIT
 
 PYTHON=${1:-python}
