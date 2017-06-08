@@ -1,0 +1,9 @@
+#x86_64 manifest for centos 7 python 3.6
+https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Everything/x86_64/os/Packages/p/python3-gobject-3.22.0-3.fc26.x86_64.rpm
+https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Everything/x86_64/os/Packages/p/python3-gobject-base-3.22.0-3.fc26.x86_64.rpm
+https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Everything/x86_64/os/Packages/p/python3-cairo-1.10.0-20.fc26.x86_64.rpm
+https://kojipkgs.fedoraproject.org//packages/gobject-introspection/1.51.3/1.fc26/x86_64/gobject-introspection-1.51.3-1.fc26.x86_64.rpm
+https://kojipkgs.fedoraproject.org//packages/glib2/2.51.2/1.fc26/x86_64/glib2-2.51.2-1.fc26.x86_64.rpm
+https://kojipkgs.fedoraproject.org//packages/glib2/2.51.2/1.fc26/x86_64/glib2-devel-2.51.2-1.fc26.x86_64.rpm
+https://kojipkgs.fedoraproject.org//packages/gobject-introspection/1.51.3/1.fc26/x86_64/gobject-introspection-devel-1.51.3-1.fc26.x86_64.rpm
+
