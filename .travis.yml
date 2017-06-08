@@ -13,6 +13,9 @@ env:
   - distribution: ubuntu
     version: 14.04
     python: 3.4
+  - distribution: fedora
+    version: 22
+    python: 3.4
 #  - distribution: ubuntu
 #    version: 14.04
 #    python: 2.7
