@@ -6,7 +6,7 @@ RUN rpm -Uvh https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum -y update
 RUN yum -y upgrade
 
-RUN yum install -y dbus psmisc dbus-x11 python36u python36u-pip python36u-devel pygobject3 pygobject3-devel pkgconfig libpcre
+RUN yum install -y dbus psmisc dbus-x11 python36u python36u-pip python36u-devel pygobject3 pygobject3-devel pkgconfig pcre-devel
 RUN ln -sf /bin/python3.6 /usr/bin/python3
 RUN ln -sf /bin/python3.6 /bin/python3
 RUN python3.6 --version
