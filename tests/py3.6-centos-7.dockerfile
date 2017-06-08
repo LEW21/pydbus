@@ -6,7 +6,8 @@ RUN rpm -Uvh https://centos7.iuscommunity.org/ius-release.rpm
 RUN yum -y update
 RUN yum -y upgrade
 
-RUN yum install -y dbus psmisc dbus-x11 python36u python36u-pip python36u-devel pygobject3 pygobject3-devel 
+RUN yum install -y dbus psmisc dbus-x11 python36u python36u-pip python36u-devel pygobject3 pygobject3-devel pkgconfig
+RUN ln -sf /bin/python3.6 /bin/python3
 RUN python3.6 --version
 RUN pip3.6 install --upgrade pip
 RUN pip3.6 install greenlet
