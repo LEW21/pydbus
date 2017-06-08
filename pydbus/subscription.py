@@ -8,7 +8,7 @@ class Subscription(ExitableWithAliases("unsubscribe", "disconnect")):
 	__slots__ = ()
 
 	def __init__(self, con, sender, iface, member, obj, arg0, flags, callback):
-		sigid = con.signal_subscribe(sender, iface, member, obj, arg0, flags, callback)
+		sigid = con.signal_subscribe(sender, iface, member, obj, arg0, flags, callback,None)
 		self._at_exit(lambda: con.signal_unsubscribe(sigid))
 
 class SubscriptionMixin(object):
