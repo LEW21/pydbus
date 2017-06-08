@@ -2,7 +2,7 @@ sudo: required
 
 env:
   - distribution: debian
-    version: 4
+    version: etch
     python: 3
   - distribution: debian
     version: sid
