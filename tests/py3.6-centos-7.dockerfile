@@ -13,7 +13,7 @@ RUN pip3.6 install --upgrade pip
 RUN pip3.6 install greenlet
 
 ADD . /root/
-RUN rpm --upgrade /root/tests/pygobject.3.6.manifest.el7.x64.txt
+RUN rpm --upgrade /root/repos/3.6/*
 RUN cd /root && python3.6 setup.py install
 
 RUN /root/tests/run.sh python3.6
