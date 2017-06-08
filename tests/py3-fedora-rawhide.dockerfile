@@ -1,5 +1,5 @@
 FROM fedora:rawhide
-RUN dnf makecache fast
+RUN dnf makecache --timer
 
 
 RUN dnf -y update
