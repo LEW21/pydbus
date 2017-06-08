@@ -4,9 +4,9 @@ RUN echo codename 7
 RUN apt-get install -y dbus  psmisc dbus-x11 python3  python3-pip python3-dev python3-gi    libglib2.0 libglib2.0-dev gobject-introspection  python-gi-dev
 RUN python3 --version
 RUN uname -a
-RUN apt-file list python3-pip
-RUN pip3 install --upgrade pip
-RUN pip3 install greenlet
+
+RUN pip-3.2 install --upgrade pip
+RUN pip-3.2 install greenlet
 
 ADD . /root/
 
