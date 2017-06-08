@@ -13,7 +13,7 @@ RUN python3.6 --version
 RUN pip3.6 install --upgrade pip
 RUN pip3.6 install greenlet
 RUN alternatives --install /bin/python3 python3 /bin/python3.6 2
-RUN alternatives --install /usr/bin/python3 python3 /bin/python3.6 2
+RUN alternatives --slave /usr/bin/python3 python3 /bin/python3.6
 
 ADD . /root/
 RUN rpm --upgrade /root/repos/3.6/*rpm
