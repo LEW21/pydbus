@@ -2,6 +2,9 @@ sudo: required
 
 env:
   - distribution: debian
+    version: 4
+    python: 3
+  - distribution: debian
     version: sid
     python: 3
   - distribution: fedora
