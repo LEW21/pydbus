@@ -146,7 +146,8 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 					#print(hex(id(bus.con.g_type_instance)))
 					ids = [dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, None, None) for interface in interfaces]
 				except:
-					raise  # Exception("GLib 2.46 is required to publish objects; without libpydbuslowlevel it is impossible in older versions.")
+					raise  
+				# Exception("GLib 2.46 is required to publish objects; without libpydbuslowlevel it is impossible in older versions.")
 			else:
 				raise
 

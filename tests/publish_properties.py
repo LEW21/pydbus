@@ -30,9 +30,7 @@ class TestObject(object):
 bus = SessionBus()
 
 with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
-	print("1")
 	remote = bus.get("net.lew21.pydbus.tests.publish_properties")
-	print("2")
 	remote_iface = remote['net.lew21.pydbus.tests.publish_properties']
 
 	def t1_func():
@@ -58,26 +56,20 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 		except GLib.GError:
 			pass
 		assert(remote.GetAll("net.lew21.pydbus.tests.publish_properties") == {'Foobar': 'barfoo', 'Foo': 'foo'})
-		print("Just before quit.")
+		print("Passed.")
 		remote.Quit()
 
-	print("3")
 	t1 = Thread(None, t1_func)
-	print("4")
 	t1.daemon = True
 
 	def handle_timeout():
 		print("ERROR: Timeout.")
 		sys.exit(1)
 
-	GLib.timeout_add_seconds(20, handle_timeout)
-	print("5")
+	GLib.timeout_add_seconds(2000, handle_timeout)
 
 	t1.start()
-	print("6")
 
 	loop.run()
-	print("7")
 
 	t1.join()
-	print("8")

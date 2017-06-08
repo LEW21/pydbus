@@ -2,3 +2,5 @@
 https://dl.fedoraproject.org/pub/fedora/linux/releases/23/Everything/x86_64/os/Packages/p/python3-gobject-3.18.0-1.fc23.x86_64.rpm
 https://dl.fedoraproject.org/pub/fedora/linux/releases/23/Everything/x86_64/os/Packages/p/python3-gobject-base-3.18.0-1.fc23.x86_64.rpm
 https://dl.fedoraproject.org/pub/fedora/linux/releases/23/Everything/x86_64/os/Packages/p/python3-cairo-1.10.0-12.fc23.x86_64.rpm
+http://dl.fedoraproject.org/pub/fedora/linux/releases/23/Everything/x86_64/os/Packages/g/gobject-introspection-1.46.0-1.fc23.x86_64.rpm
+http://dl.fedoraproject.org/pub/fedora/linux/releases/23/Everything/x86_64/os/Packages/g/gobject-introspection-devel-1.46.0-1.fc23.x86_64.rpm
