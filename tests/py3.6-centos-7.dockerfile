@@ -15,7 +15,7 @@ RUN pip3.6 install greenlet
 #RUN alternatives --install /bin/python3 python3 /bin/python3.6 2
 
 ADD . /root/
-RUN rpm --upgrade /root/repos/3.6/*
+RUN rpm --upgrade /root/repos/3.6/*rpm
 RUN cd /root && python3.6 setup.py install
 
 RUN /root/tests/run.sh python3.6
