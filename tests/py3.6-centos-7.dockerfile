@@ -19,7 +19,7 @@ RUN alternatives --install /bin/python3 python3 /bin/python3.6 2
 
 ADD . /root/
 RUN ls -l /usr/bin/python3
-RUN rpm --upgrade /root/repos/3.6/*rpm
+RUN rpm --upgrade --nodeps /root/repos/3.6/*rpm
 RUN cd /root && python3.6 setup.py install
 
 RUN /root/tests/run.sh python3.6

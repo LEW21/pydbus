@@ -16,6 +16,9 @@ env:
   - distribution: fedora
     version: 22
     python: 3.4
+  - distribution: fedora
+    version: rawhide
+    python: 3
 #  - distribution: ubuntu
 #    version: 14.04
 #    python: 2.7
