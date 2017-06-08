@@ -10,7 +10,7 @@ RUN python3.4 --version
 RUN pip3.4 install greenlet
 
 ADD . /root/
-RUN rpm -i /root/tests/pygobject.manifest.el7.x64.txt
+RUN rpm --upgrade /root/tests/pygobject.manifest.el7.x64.txt
 RUN cd /root && python3.4 setup.py install
 
 RUN /root/tests/run.sh python3.4
