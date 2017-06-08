@@ -1090,7 +1090,9 @@ def variant_guidance_possibilities(modified_introspection_string):
         yield modified_introspection_string
         return
     m_str = modified_introspection_string.split(':')  # xxxv: 
-    if len(m_str) < 2: return modified_introspection_string
+    if len(m_str) < 2: 
+        yield modified_introspection_string
+        return
     repeat_check = m_str[1].split('.')
     if (len(repeat_check) < 2):
         variable_portion = repeat_check[0]
