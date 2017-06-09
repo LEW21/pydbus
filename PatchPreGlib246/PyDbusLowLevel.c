@@ -126,6 +126,11 @@ gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
 	PyObject *args,*kwargs;
 	gboolean ret=TRUE;
 	struct dbus_connection_register_struct *reg_info;
+	PyThreadState *PyTState;
+
+	PyTState = PyGILState_GetThisThreadState();
+	PyEval_RestoreThread(PyTState);
+
 	kwargs= PyDict_New();
 	reg_info = (struct dbus_connection_register_struct *) user_data;
 	args = Py_BuildValue("ssv",interface_name,property_name,value);
@@ -140,6 +145,8 @@ gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
 	}
 	Py_DECREF(args);
 	Py_DECREF(kwargs);
+	PyEval_SaveThread();
+
 	return ret;
 }
 
@@ -150,6 +157,11 @@ GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
 	GVariant *ret;
 	struct dbus_connection_register_struct *reg_info;
 	reg_info = (struct dbus_connection_register_struct *) user_data;
+	PyThreadState *PyTState;
+
+	PyTState = PyGILState_GetThisThreadState();
+	PyEval_RestoreThread(PyTState);
+
 	args = Py_BuildValue("ss",interface_name,property_name);
 	kwargs= PyDict_New();
 	ret = (GVariant *) PyObject_Call(reg_info->get_prop_closure,args,kwargs);
@@ -159,6 +171,9 @@ GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
 	}
 	Py_DECREF(args);
 	Py_DECREF(kwargs);
+
+	PyEval_SaveThread();
+
 	return ret;
 }
 
