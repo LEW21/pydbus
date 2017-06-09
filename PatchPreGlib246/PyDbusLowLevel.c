@@ -45,9 +45,17 @@ static struct PyModuleDef PatchPreGlib246module = {
 #else
 	"C++ and C helper functions for PyDBus 32 bit", -1,	methodlist};
 #endif
+
+static GVariant *gvnoop;
+static GObject *gnone;
+static GQuark PyDbusQuark;
+
 PyMODINIT_FUNC PyInit_PatchPreGlib246(void) {
 		//PyEval_InitThreads();
 		pygobject_init(-1, -1, -1);
+		gvnoop = g_variant_new("i",0);
+		gnone = g_object_new(G_TYPE_NONE,0);
+		PyDbusQuark = g_quark_from_static_string("PatchPreGlib246");
 
 		return PyModule_Create ( &PatchPreGlib246module);
 
@@ -64,6 +72,7 @@ struct dbus_connection_register_struct {
 	PyObject * method_closure, *get_prop_closure, *set_prop_closure;
 	GDBusInterfaceVTable vtable;
 	GError *error;
+	GVariant *get_result;
 };
 
 static void reg_info_free(void *p) {
@@ -108,6 +117,49 @@ void cro_method_call(GDBusConnection *connection, const gchar *sender,
 	Py_DECREF(arglist);
 
 	PyEval_SaveThread();
+}
+
+gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
+		const gchar *object_path, const gchar *interface_name,
+		const gchar *property_name, GVariant *value, GError **error,
+		gpointer user_data) {
+	PyObject *args,*kwargs;
+	gboolean ret=TRUE;
+	struct dbus_connection_register_struct *reg_info;
+	kwargs= PyDict_New();
+	reg_info = (struct dbus_connection_register_struct *) user_data;
+	args = Py_BuildValue("ssv",interface_name,property_name,value);
+	PyObject_Call(reg_info->set_prop_closure,args,kwargs);
+	if (PyDict_Size(kwargs)>0) {
+		PyObject *p_errv;
+		const char *errv;
+		p_errv=PyDict_GetItemString(kwargs,"exception");
+		errv=PyByteArray_AsString(p_errv);
+		g_set_error_literal(error,PyDbusQuark,1,errv);
+		ret = 0;
+	}
+	Py_DECREF(args);
+	Py_DECREF(kwargs);
+	return ret;
+}
+
+GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
+		const gchar *object_path, const gchar *interface_name,
+		const gchar *property_name, GError **error, gpointer user_data) {
+	PyObject *args,*kwargs;
+	GVariant *ret;
+	struct dbus_connection_register_struct *reg_info;
+	reg_info = (struct dbus_connection_register_struct *) user_data;
+	args = Py_BuildValue("ss",interface_name,property_name);
+	kwargs= PyDict_New();
+	ret = (GVariant *) PyObject_Call(reg_info->get_prop_closure,args,kwargs);
+	if (PyDict_Size(kwargs)>0) {
+		g_set_error_literal(error,PyDbusQuark,1,PyByteArray_AsString(PyDict_GetItemString(kwargs,"exception")));
+		ret=NULL;
+	}
+	Py_DECREF(args);
+	Py_DECREF(kwargs);
+	return ret;
 }
 
 #ifdef Bad_Ideas_Whose_Time_Will_Never_Come
@@ -231,8 +283,8 @@ PyObject * dbus_connection_register_object(PyObject *self, PyObject *args) {
 	reg_info->path = (char *) PyMem_Malloc(strlen(s) + 1);
 	strcpy(reg_info->path, s);
 	reg_info->vtable.method_call = cro_method_call;
-	reg_info->vtable.get_property = NULL; //cro_get_property;
-	reg_info->vtable.set_property = NULL; //cro_set_property;
+	reg_info->vtable.get_property = cro_get_property;
+	reg_info->vtable.set_property = cro_set_property;
 	Py_INCREF(reg_info->connection);
 	Py_INCREF(reg_info->interface);
 	Py_INCREF(reg_info->method_closure);

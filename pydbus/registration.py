@@ -105,9 +105,9 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			invocation.return_dbus_error(e_type, str(e))
 
 	def Get(self, interface_name, property_name):
-		typ = self.readable_properties[interface_name + "." + property_name]
-		result = getattr(self.object, property_name)
-		return GLib.Variant(typ, result)
+			typ = self.readable_properties[interface_name + "." + property_name]
+			result = getattr(self.object, property_name)
+			return GLib.Variant(typ, result)
 
 	def GetAll(self, interface_name):
 		ret = {}
@@ -118,11 +118,25 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 		return ret
 
 	def Set(self, interface_name, property_name, value):
-		self.writable_properties[interface_name + "." + property_name]
-		setattr(self.object, property_name, value)
+			self.writable_properties[interface_name + "." + property_name]
+			setattr(self.object, property_name, value)
 
+	def protected_Set(self, interface_name, property_name, value,**kwargs):
+		try:
+			self.Set(interface_name, property_name, value)
+		except Exception as e:
+			logger = logging.getLogger(__name__)
+			kwargs['exception']= "Exception " + str(e) +" while getting " + interface_name + "." + property_name + " to " + str(value)
+			logger.exception("%s",kwargs['exception'])
 	
-
+	def protected_Get(self, interface_name,property_name,**kwargs):
+		try:
+			return self.Get(interface_name,property_name)
+		except Exception as e:
+			logger = logging.getLogger(__name__)
+			kwargs['exception']= "Exception " + str(e) +" while getting " + interface_name + "." + property_name
+			logger.exception("%s",kwargs['exception'])
+		return None
 	
 	
 class ObjectRegistration(ExitableWithAliases("unregister")):
@@ -144,7 +158,7 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 					from pydbus.extensions.PatchPreGlib246 import dbus_connection_register_object  # @UnresolvedImport @Reimport @UnusedImport
 					#print(str(itsafact(3)))
 					#print(hex(id(bus.con.g_type_instance)))
-					ids = [dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, None, None) for interface in interfaces]
+					ids = [dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) for interface in interfaces]
 				except:
 					raise  
 				# Exception("GLib 2.46 is required to publish objects; without libpydbuslowlevel it is impossible in older versions.")
