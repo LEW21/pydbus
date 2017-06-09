@@ -53,8 +53,9 @@ static GQuark PyDbusQuark;
 PyMODINIT_FUNC PyInit_PatchPreGlib246(void) {
 		//PyEval_InitThreads();
 		pygobject_init(-1, -1, -1);
+
 		gvnoop = g_variant_new("i",0);
-		gnone = g_object_new(G_TYPE_NONE,0);
+		gnone = g_object_new(G_TYPE_OBJECT,NULL);
 		PyDbusQuark = g_quark_from_static_string("PatchPreGlib246");
 
 		return PyModule_Create ( &PatchPreGlib246module);
@@ -97,7 +98,7 @@ void cro_method_call(GDBusConnection *connection, const gchar *sender,
 	PyObject *arglist,*py_parms,*py_invoke,*py_connection;
 	struct dbus_connection_register_struct *reg_info;
 	PyThreadState *PyTState;
-	
+	//puts("Method call");
 	reg_info = (struct dbus_connection_register_struct *) user_data;
 
 	PyTState = PyGILState_GetThisThreadState();
@@ -123,17 +124,17 @@ gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
 		const gchar *object_path, const gchar *interface_name,
 		const gchar *property_name, GVariant *value, GError **error,
 		gpointer user_data) {
-	PyObject *args,*kwargs;
+	PyObject *args,*kwargs,*p_value;
 	gboolean ret=TRUE;
 	struct dbus_connection_register_struct *reg_info;
 	PyThreadState *PyTState;
-
 	PyTState = PyGILState_GetThisThreadState();
 	PyEval_RestoreThread(PyTState);
 
 	kwargs= PyDict_New();
 	reg_info = (struct dbus_connection_register_struct *) user_data;
-	args = Py_BuildValue("ssv",interface_name,property_name,value);
+	p_value = pyg_boxed_new(G_TYPE_VARIANT, g_variant_ref(value), FALSE, FALSE);
+	args = Py_BuildValue("ssO",interface_name,property_name,p_value);
 	PyObject_Call(reg_info->set_prop_closure,args,kwargs);
 	if (PyDict_Size(kwargs)>0) {
 		PyObject *p_errv;
@@ -146,28 +147,34 @@ gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
 	Py_DECREF(args);
 	Py_DECREF(kwargs);
 	PyEval_SaveThread();
-
 	return ret;
 }
 
 GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
 		const gchar *object_path, const gchar *interface_name,
 		const gchar *property_name, GError **error, gpointer user_data) {
-	PyObject *args,*kwargs;
+	PyObject *args,*kwargs,*error_info;
+	PyObject *result;
 	GVariant *ret;
+	//const char *s;
 	struct dbus_connection_register_struct *reg_info;
-	reg_info = (struct dbus_connection_register_struct *) user_data;
 	PyThreadState *PyTState;
+
+	reg_info = (struct dbus_connection_register_struct *) user_data;
 
 	PyTState = PyGILState_GetThisThreadState();
 	PyEval_RestoreThread(PyTState);
 
 	args = Py_BuildValue("ss",interface_name,property_name);
 	kwargs= PyDict_New();
-	ret = (GVariant *) PyObject_Call(reg_info->get_prop_closure,args,kwargs);
-	if (PyDict_Size(kwargs)>0) {
-		g_set_error_literal(error,PyDbusQuark,1,PyByteArray_AsString(PyDict_GetItemString(kwargs,"exception")));
+	result = PyObject_Call(reg_info->get_prop_closure,args,kwargs);
+	error_info = PyDict_GetItemString(kwargs,"exception");
+	if (error_info!=NULL) {
+		g_set_error_literal(error,PyDbusQuark,1,PyByteArray_AsString(error_info));
 		ret=NULL;
+	} else {
+		ret = pyg_pointer_get(result,GVariant);
+		//puts(g_variant_get_type_string(ret));
 	}
 	Py_DECREF(args);
 	Py_DECREF(kwargs);
@@ -177,108 +184,7 @@ GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
 	return ret;
 }
 
-#ifdef Bad_Ideas_Whose_Time_Will_Never_Come
-GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
-		const gchar *object_path, const gchar *interface_name,
-		const gchar *property_name, GError **error, gpointer user_data) {
-	//PyObject *arglist;
-	//PyGObject *result;
-	//struct dbus_connection_register_struct *reg_info;
-	//reg_info = (struct dbus_connection_register_struct *) user_data;
 
-	//arglist = Py_BuildValue("Ossss",
-	//pygobject_new(G_OBJECT(connection)), sender, object_path, interface_name,
-	//		property_name);
-	//result = (PyGObject *) PyObject_CallObject(reg_info->get_prop_closure,
-	//		arglist);
-	//Py_DECREF(arglist);
-	//if (pyg_gerror_exception_check(error) != 0)
-	//	return NULL;
-	//if (result == NULL) {
-	//	return NULL;
-	//}
-	//return (GVariant *) result->obj;
-
-	PyObject *arglist,*py_connection;
-	struct dbus_connection_register_struct *reg_info;
-	PyThreadState *PyTState;
-	GVariant *ret; PyObject *pyret;
-
-	reg_info = (struct dbus_connection_register_struct *) user_data;
-
-	PyTState = PyGILState_GetThisThreadState();
-	PyEval_RestoreThread(PyTState);
-
-	py_connection = pygobject_new(G_OBJECT(connection));
-	//py_parms = pyg_boxed_new(G_TYPE_VARIANT, g_variant_ref(parameters), FALSE, FALSE);
-	//py_invoke = pygobject_new(G_OBJECT(invocation));
-
-	arglist = Py_BuildValue("Ossss",
-			py_connection,
-			sender, object_path, interface_name, property_name);
-
-	pyret = PyObject_CallObject(reg_info->get_prop_closure, arglist);
-	PyObject_Print(pyret,stdout,0);
-	printf(" -- result\n");
-
-	if ((pyg_gerror_exception_check(error) != 0) || (pyret == NULL)) {
-		ret= NULL;
-	} else {
-		ret = pyg_boxed_get(pyret,GVariant);
-	}
-	Py_DECREF(arglist);
-
-	PyEval_SaveThread();
-	return ret;
-}
-
-
-
-gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
-		const gchar *object_path, const gchar *interface_name,
-		const gchar *property_name, GVariant *value, GError **error,
-		gpointer user_data) {
-	//PyObject *arglist;
-	//struct dbus_connection_register_struct *reg_info;
-	//
-	//reg_info = (struct dbus_connection_register_struct *) user_data;
-	//
-	//arglist = Py_BuildValue("OssssO",
-	//pygobject_new(G_OBJECT(connection)), sender, object_path, interface_name,
-	//		property_name, value);
-	//PyObject_CallObject(reg_info->set_prop_closure, arglist);
-	//Py_DECREF(arglist);
-	//
-
-	PyObject *arglist,*py_parms,*py_connection;
-	struct dbus_connection_register_struct *reg_info;
-	PyThreadState *PyTState;
-	gboolean ret;
-
-	reg_info = (struct dbus_connection_register_struct *) user_data;
-
-	PyTState = PyGILState_GetThisThreadState();
-	PyEval_RestoreThread(PyTState);
-
-	py_connection = pygobject_new(G_OBJECT(connection));
-	py_parms = pyg_boxed_new(G_TYPE_VARIANT, g_variant_ref(value), FALSE, FALSE);
-	//py_invoke = pygobject_new(G_OBJECT(invocation));
-
-	arglist = Py_BuildValue("OssssO",
-			py_connection,
-			sender, object_path, interface_name, property_name,
-			py_parms);
-
-	PyObject_CallObject(reg_info->set_prop_closure, arglist);
-	ret = pyg_gerror_exception_check(error);
-	Py_DECREF(arglist);
-
-	PyEval_SaveThread();
-	return ret;
-
-}
-
-#endif
 
 PyObject * dbus_connection_register_object(PyObject *self, PyObject *args) {
 	int i;
@@ -295,6 +201,7 @@ PyObject * dbus_connection_register_object(PyObject *self, PyObject *args) {
 	PyArg_ParseTuple(args, "OsOOOO", &reg_info->connection, &s,
 			&reg_info->interface, &reg_info->method_closure,
 			&reg_info->get_prop_closure, &reg_info->set_prop_closure);
+	if (s==NULL) s="";
 	reg_info->path = (char *) PyMem_Malloc(strlen(s) + 1);
 	strcpy(reg_info->path, s);
 	reg_info->vtable.method_call = cro_method_call;

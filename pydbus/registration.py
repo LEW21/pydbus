@@ -10,6 +10,7 @@ from gi.repository import GLib, Gio
 from . import generic
 from .exitable import ExitableWithAliases
 from .method_call_context import MethodCallContext
+#import sys
 
 #from gi.repository
 # import sys, traceback
@@ -123,7 +124,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 
 	def protected_Set(self, interface_name, property_name, value,**kwargs):
 		try:
-			self.Set(interface_name, property_name, value)
+			self.Set(interface_name, property_name, value.unpack())
 		except Exception as e:
 			logger = logging.getLogger(__name__)
 			kwargs['exception']= "Exception " + str(e) +" while getting " + interface_name + "." + property_name + " to " + str(value)
@@ -150,20 +151,24 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 			bus.con.emit_signal(None, path, interface_name, signal_name, parameters)
 
 		self._at_exit(wrapper.SignalEmitted.connect(func).__exit__)
-		try:
-			ids = [bus.con.register_object(path, interface, wrapper.call_method, None, None) for interface in interfaces]
-		except TypeError as e:
-			if str(e).startswith("argument vtable: Expected Gio.DBusInterfaceVTable"):
-				try:
-					from pydbus.extensions.PatchPreGlib246 import dbus_connection_register_object  # @UnresolvedImport @Reimport @UnusedImport
-					#print(str(itsafact(3)))
-					#print(hex(id(bus.con.g_type_instance)))
-					ids = [dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) for interface in interfaces]
-				except:
-					raise  
-				# Exception("GLib 2.46 is required to publish objects; without libpydbuslowlevel it is impossible in older versions.")
-			else:
-				raise
+		'''if sys.version_info >(3,4):
+			try:
+				ids = [bus.con.register_object(path, interface, wrapper.call_method, None, None) for interface in interfaces]
+			except TypeError as e:
+				if str(e).startswith("argument vtable: Expected Gio.DBusInterfaceVTable"):
+					try:
+						from pydbus.extensions.PatchPreGlib246 import dbus_connection_register_object  # @UnresolvedImport @Reimport @UnusedImport
+						#print(str(itsafact(3)))
+						#print(hex(id(bus.con.g_type_instance)))
+						ids = [dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) for interface in interfaces]
+					except:
+						raise  
+					# Exception("GLib 2.46 is required to publish objects; without libpydbuslowlevel it is impossible in older versions.")
+				else:
+					raise
+		else:'''
+		from pydbus.extensions.PatchPreGlib246 import dbus_connection_register_object  # @UnresolvedImport @Reimport @UnusedImport
+		ids = [dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) for interface in interfaces]
 
 		self._at_exit(lambda: [bus.con.unregister_object(objid) for objid in ids])
 

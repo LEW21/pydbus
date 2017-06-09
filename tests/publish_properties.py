@@ -9,6 +9,7 @@ from pydbus import SessionBus, Variant
 done = 0
 loop = GLib.MainLoop()
 
+
 class TestObject(object):
 	'''
 <node>

@@ -9,7 +9,7 @@
 #ifndef PYDBUSLOWLEVEL_H_
 #define PYDBUSLOWLEVEL_H_
 
-#define Py_LIMITED_API
+//#define Py_LIMITED_API
 
 
 #include <Python.h>
