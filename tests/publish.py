@@ -54,7 +54,7 @@ with bus.publish("net.lew21.pydbus.Test", TestObject("Main"), ("Lol", TestObject
 		print("ERROR: Timeout.")
 		sys.exit(1)
 
-	GLib.timeout_add_seconds(2, handle_timeout)
+	GLib.timeout_add_seconds(200, handle_timeout)
 
 	t1.start()
 	t2.start()

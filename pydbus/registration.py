@@ -11,6 +11,9 @@ from . import generic
 from .exitable import ExitableWithAliases
 from .method_call_context import MethodCallContext
 #import sys
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport
 
 #from gi.repository
 # import sys, traceback
@@ -21,11 +24,11 @@ except:
 	from ._inspect3 import signature, Parameter  # @Reimport
 
 class ObjectWrapper(ExitableWithAliases("unwrap")):
-	__slots__ = ["object", "outargs", "readable_properties", "writable_properties"]
+	#__slots__ = ["object", "outargs", "readable_properties", "writable_properties"]
 
 	def __init__(self, obj, interfaces):
 		self.object = obj
-
+		self.native_glib=False
 		self.outargs = {}
 		for iface in interfaces:
 			for method in iface.methods:
@@ -57,6 +60,19 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			except AttributeError:
 				pass
 
+	def dbus_return_value(self,inv,rv):
+		if self.native_glib:
+			inv.return_value(rv)
+		else:
+			compat_dbus_invocation_return_value(inv,rv)
+			
+	def dbus_err(self,inv,etype,emsg):
+		if self.native_glib:
+			inv.return_dbus_error(etype,emsg)
+		else:
+			compat_dbus_invocation_return_dbus_error(inv,etype,emsg)
+
+			
 	SignalEmitted = generic.signal()
 
 	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
@@ -89,11 +105,12 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			result = method(*(unpacked_parameters), **kwargs)
 
 			if len(outargs) == 0:
-				invocation.return_value(None)
+				self.dbus_return_value(invocation,None)
 			elif len(outargs) == 1:
-				invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", (result,)))
+				t = GLib.Variant("(" + "".join(outargs) + ")", (result,))
+				self.dbus_return_value(invocation,t)
 			else:
-				invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", result))
+				self.dbus_return_value(invocation,GLib.Variant("(" + "".join(outargs) + ")", result))
 
 		except Exception as e:
 			logger = logging.getLogger(__name__)
@@ -103,7 +120,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			e_type = type(e).__name__
 			if not "." in e_type:
 				e_type = "unknown." + e_type
-			invocation.return_dbus_error(e_type, str(e))
+			self.dbus_err(invocation,e_type, str(e))
 
 	def Get(self, interface_name, property_name):
 			typ = self.readable_properties[interface_name + "." + property_name]
@@ -167,8 +184,8 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 				else:
 					raise
 		else:'''
-		from pydbus.extensions.PatchPreGlib246 import dbus_connection_register_object  # @UnresolvedImport @Reimport @UnusedImport
-		ids = [dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) for interface in interfaces]
+		#from pydbus.extensions.PatchPreGlib246 import dbus_connection_register_object  # @UnresolvedImport @Reimport @UnusedImport
+		ids = [compat_dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) for interface in interfaces]
 
 		self._at_exit(lambda: [bus.con.unregister_object(objid) for objid in ids])
 
