@@ -7,8 +7,9 @@ rm -r build || $TRUE
 #export CFLAGS
 PYTHONPATH=~/pdev
 export PYTHONPATH
-CFLAGS='-Wall -O0 -g' python3.4 setup.py build
+#CFLAGS='-Wall -O0 -g' python3.4 setup.py build
+python3.4 setup.py build
 python3.4 setup.py develop --install-dir ~/pdev
 
-python3.6 setup.py build --debug
+python3.6 setup.py build
 python3.6 setup.py develop --install-dir ~/pdev

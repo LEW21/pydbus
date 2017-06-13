@@ -7,13 +7,11 @@ import logging
 from gi.repository import GLib, Gio
 #from gi.overrides.GLib import Variant as o_Variant
 
+
 from . import generic
 from .exitable import ExitableWithAliases
 from .method_call_context import MethodCallContext
 #import sys
-from pydbus.extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
-from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
-from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport
 
 #from gi.repository
 # import sys, traceback
@@ -23,12 +21,14 @@ try:
 except:
 	from ._inspect3 import signature, Parameter  # @Reimport
 
+native_glib=True
+
 class ObjectWrapper(ExitableWithAliases("unwrap")):
 	#__slots__ = ["object", "outargs", "readable_properties", "writable_properties"]
 
 	def __init__(self, obj, interfaces):
 		self.object = obj
-		self.native_glib=False
+
 		self.outargs = {}
 		for iface in interfaces:
 			for method in iface.methods:
@@ -61,21 +61,24 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 				pass
 
 	def dbus_return_value(self,inv,rv):
-		if self.native_glib:
+		global native_glib
+		if native_glib:
 			inv.return_value(rv)
 		else:
-			compat_dbus_invocation_return_value(inv,rv)
+			compat_dbus_invocation_return_value(inv,rv)  # @UndefinedVariable
 			
 	def dbus_err(self,inv,etype,emsg):
-		if self.native_glib:
+		global native_glib
+		if native_glib:
 			inv.return_dbus_error(etype,emsg)
 		else:
-			compat_dbus_invocation_return_dbus_error(inv,etype,emsg)
+			compat_dbus_invocation_return_dbus_error(inv,etype,emsg)  # @UndefinedVariable
 
 			
 	SignalEmitted = generic.signal()
 
-	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
+#	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
+	def call_method(self, _1, _2, _3, interface_name, method_name, parameters, invocation):
 		try:
 			try:
 				outargs = self.outargs[interface_name + "." + method_name]
@@ -161,31 +164,26 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 	__slots__ = ()
 
 	def __init__(self, bus, path, interfaces, wrapper, own_wrapper=False):
+		global native_glib
 		if own_wrapper:
 			self._at_exit(wrapper.__exit__)
 
 		def func(interface_name, signal_name, parameters):
 			bus.con.emit_signal(None, path, interface_name, signal_name, parameters)
-
 		self._at_exit(wrapper.SignalEmitted.connect(func).__exit__)
-		'''if sys.version_info >(3,4):
+		if native_glib:
 			try:
 				ids = [bus.con.register_object(path, interface, wrapper.call_method, None, None) for interface in interfaces]
-			except TypeError as e:
-				if str(e).startswith("argument vtable: Expected Gio.DBusInterfaceVTable"):
-					try:
-						from pydbus.extensions.PatchPreGlib246 import dbus_connection_register_object  # @UnresolvedImport @Reimport @UnusedImport
-						#print(str(itsafact(3)))
-						#print(hex(id(bus.con.g_type_instance)))
-						ids = [dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) for interface in interfaces]
-					except:
-						raise  
-					# Exception("GLib 2.46 is required to publish objects; without libpydbuslowlevel it is impossible in older versions.")
-				else:
-					raise
-		else:'''
-		#from pydbus.extensions.PatchPreGlib246 import dbus_connection_register_object  # @UnresolvedImport @Reimport @UnusedImport
-		ids = [compat_dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) for interface in interfaces]
+			except:
+				native_glib=False
+				from pydbus.extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
+				from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
+				from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport		
+		if not native_glib:
+			ids = [compat_dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) 
+				for interface in interfaces]
+			
+
 
 		self._at_exit(lambda: [bus.con.unregister_object(objid) for objid in ids])
 
