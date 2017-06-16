@@ -32,7 +32,7 @@ class OnSignal(object):
 		self.signal = signal
 		self.__name__ = "on" + signal.__name__
 		self.__qualname__ = signal._iface_name + "." + self.__name__
-		self.__doc__ = "Assign a callback to subscribe to the signal. Assing None to unsubscribe. Callback: (" + ", ".join(signal._args) + ")"
+		self.__doc__ = "Assign a callback to subscribe to the signal. Assign None to unsubscribe. Callback: (" + ", ".join(signal._args) + ")"
 
 	def __get__(self, instance, owner):
 		if instance is None:
