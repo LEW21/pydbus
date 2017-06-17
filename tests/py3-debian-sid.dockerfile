@@ -1,6 +1,8 @@
 FROM debian:sid
-RUN apt-get install  -y apt-spy
-RUN apt-spy -d sid
+RUN echo deb http://http.us.debian.org/debian unstable main contrib non-free > /etc/apt/sources.list
+RUN echo deb-src http://http.us.debian.org/debian unstable main contrib non-free >> /etc/apt/sources.list
+RUN echo deb http://mirrors.kernel.org/debian unstable main contrib non-free >> /etc/apt/sources.list
+RUN echo deb-src http://mirrors.kernel.org/debian unstable main contrib non-free >> /etc/apt/sources.list
 RUN apt-get update
 RUN apt-get install -y dbus  psmisc dbus-x11 python3  python3-pip python3-dev python3-gi    libglib2.0 libglib2.0-dev gobject-introspection  python-gi-dev
 RUN python3 --version
