@@ -10,7 +10,7 @@ from .extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @
 from .extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport
 
 
-class PyDbusUnitTestService(object):
+class PyDbusUnitTestService(object): 
     """
     <node>
         <interface name='pydbus.unittest'>
