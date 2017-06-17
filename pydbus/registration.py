@@ -22,9 +22,13 @@ except:
 	from ._inspect3 import signature, Parameter  # @Reimport
 
 native_glib=True
+#global compat_dbus_connection_register_object, compat_dbus_invocation_return_value, compat_dbus_invocation_return_dbus_error  # @UnusedVariable
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport
 
 class ObjectWrapper(ExitableWithAliases("unwrap")):
-	#__slots__ = ["object", "outargs", "readable_properties", "writable_properties"]
+	__slots__ = ["object", "outargs", "readable_properties", "writable_properties"]
 
 	def __init__(self, obj, interfaces):
 		self.object = obj
@@ -176,9 +180,7 @@ class ObjectRegistration(ExitableWithAliases("unregister")):
 				ids = [bus.con.register_object(path, interface, wrapper.call_method, None, None) for interface in interfaces]
 			except:
 				native_glib=False
-				from pydbus.extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
-				from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
-				from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport		
+		
 		if not native_glib:
 			ids = [compat_dbus_connection_register_object(bus.con, path, interface, wrapper.call_method, wrapper.protected_Get, wrapper.protected_Set) 
 				for interface in interfaces]

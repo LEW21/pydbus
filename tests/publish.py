@@ -30,7 +30,7 @@ class TestObject(object):
 		done += 1
 		if done == 2:
 			loop.quit()
-		print(res)
+		print("server side: " + res)
 		return res
 
 bus = SessionBus()

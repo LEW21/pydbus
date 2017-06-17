@@ -6,12 +6,13 @@ Created on Mar 25, 2017
 '''
 
 #import pydbus
-from gi.repository.GLib import (Variant, MainLoop)  # ,VariantBuilder,VariantType)
+from gi.repository.GLib import (Variant)  # ,VariantBuilder,VariantType)
 
 #from pydbus.translator import (PydbusCPythonTranslator)
-from time import sleep
-import multiprocessing as mp
+
 import unittest
+
+
 
 class BlankObject(object):
     pass
@@ -528,36 +529,29 @@ class Test(unittest.TestCase):
 
     def test_user_facing_interface(self):
         from pydbus import SessionBus
-        mp.set_start_method('spawn')
-        server_process = mp.Process(target=pydbus_server)
-        try:
-            server_process.start()
-            sleep(5)
-            sb = SessionBus()
-            test_server = sb.get('pydbus.unittest')
-            r = test_server.NoArgsStringReply()
-            self.assertEqual(r,0,"Translation Inactive") 
-            r = test_server.AddTwo(2)
-            self.assertEqual(r, 4,"Translation Inactive")
-            test_server.Quit()
-        except:
-            server_process.terminate()
-            raise
+        import multiprocessing as mp
+        import time
 
-        server_process = mp.Process(target=pydbus_server)
-        try:
-            server_process.start()
-            sleep(5)
-            sb = SessionBus()
-            test_server = sb.get('pydbus.unittest',translation_spec=True)
-            r = test_server.NoArgsStringReply()
-            self.assertEqual(r,"first string","Translation Active") 
-            r = test_server.AddTwo(2)
-            self.assertEqual(r, 4,"Translation Active")
-            test_server.Quit()
-        except:
-            server_process.terminate()
-            raise
+        #mp.set_start_method('spawn')
+        ready = mp.Value('i',0)
+        server_process = mp.Process(target=pydbus_server,args=(ready,),daemon=True)
+        server_process.start()
+        sb = SessionBus()
+        while ready.value==0: time.sleep(1)
+        test_server = sb.get('pydbus.unittest',timeout=10)
+        r = test_server.NoArgsStringReply()
+        self.assertEqual(r,0,"Translation Inactive") 
+        r = test_server.AddTwo(2)
+        self.assertEqual(r, 4,"Translation Inactive")
+
+        test_server = sb.get('pydbus.unittest',translation_spec=True,timeout=10)
+        r = test_server.NoArgsStringReply()
+        self.assertEqual(r,"first string","Translation Active") 
+        r = test_server.AddTwo(2)
+        self.assertEqual(r, 4,"Translation Active")
+        test_server.Quit()
+        server_process.join()
+
 
 
 class PyDbusUnitTestService(object):
@@ -590,12 +584,18 @@ class PyDbusUnitTestService(object):
         """removes this object from the DBUS connection and exits"""
         self.loop.quit()
 
-def pydbus_server():
+def pydbus_server(ready):
     from pydbus import SessionBus
+    from gi.repository.GLib import MainLoop
     loop = MainLoop()
     bus = SessionBus()
-    with bus.publish("pydbus.unittest", PyDbusUnitTestService(loop)):
-        loop.run()
+    try:
+        bus.get('pydbus.unittest')
+    except:
+        with bus.publish("pydbus.unittest", PyDbusUnitTestService(loop)):
+            ready.value=True
+            loop.run()
+        
 
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test)

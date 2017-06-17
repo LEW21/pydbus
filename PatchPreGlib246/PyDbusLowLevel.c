@@ -15,20 +15,75 @@
  */
 
 #include "PyDbusLowLevel.h" 
-#define HCPy_REFCNT(ob)           ((ob==NULL) ? -100 : ( ((PyObject*)(ob))->ob_refcnt) )
 
+//There is psuedo ugliness here access private glib structures.
+//It is acceptable only because this code will only be called
+//when using old versions of the libraries, and not versions
+//post glib 2.46 or so.
 
-//static	PyTypeObject *pytype_GDBusMethodInvocation; //Because locking won't let the lookup query happen in a callback.
-//static GQuark pygobject_instance_data_key;
+struct HGVariant
 
-//static inline PyGObjectData *
-//pyg_object_peek_inst_data(GObject *obj)
+{
+  int *type_info;
+  gsize size;
+
+  union
+  {
+    struct
+    {
+      GBytes *bytes;
+      gconstpointer data;
+    } serialised;
+
+    struct
+    {
+      GVariant **children;
+      gsize n_children;
+    } tree;
+  } contents;
+
+  gint state;
+  gint ref_count;
+};
+
+//struct  HGObject
 //{
-//    return ((PyGObjectData *)
-//            g_object_get_qdata(obj, pygobject_instance_data_key));
-//}
+// GTypeInstance  g_type_instance;
+//
+  /*< private >*/
+//  volatile guint ref_count;
+//  GData         *qdata;
+//};
 
 
+
+
+
+
+#define HCGVariant_REFCNT(ob)	  ((ob==NULL) ? (uint)-100 : *(((uint *)(        ((struct HGVariant *) ob)        +1))-1))
+#define HCGObject_REFCNT(ob)	  ((ob==NULL) ? (uint)-100 : *((uint *)(((GTypeInstance *)ob)+1)))
+
+
+long HCPy_REFCNT(PyObject *ob){
+	long rc=0,vr=0;
+	if (ob==NULL) return -100;
+	rc= ob->ob_refcnt;
+	if (pyg_type_from_object(ob)==G_TYPE_VARIANT) {
+		vr = HCGVariant_REFCNT(pyg_pointer_get(ob,GVariant));
+		if (vr!=rc) return -(rc+ 1000*(100+vr));
+		return rc+1000*(100+vr);
+	}
+	return rc;
+
+}
+
+int HCGError_info(GError **e) {
+	GError *e1;
+	if (e==NULL) return -100;
+	e1 = *e;
+	if (e1==NULL) return -101;
+	return e1->code;
+}
 
 static PyMethodDef methodlist[] = {
 		{ "itsafact", itsafact,
@@ -108,13 +163,27 @@ static void restore_previous_lock_state(struct lock_detail *ld){
 	PyGILState_Release(ld->GIL_state);
 }
 
+//void align_refs_py_gvariant(PyObject *p,GVariant *v){
+//    p->ob_refcnt = HCGVariant_REFCNT(v);
+//}
+
+
 static PyObject* g_variant_to_pyobject (GVariant *variant)
 {
-    GValue value = { 0, };
+    GValue value;
+	PyObject *ret=NULL;
+    memset(&value,0,sizeof(value));
     g_value_init (&value, G_TYPE_VARIANT);
-    g_value_set_variant (&value, variant);
-    return pyg_value_as_pyobject (&value, FALSE);
+    //PySys_WriteStderr("in g2py gvar %d pyret %ld\n",HCGVariant_REFCNT(variant),HCPy_REFCNT(ret));
+    g_value_set_variant (&value, variant);  //glib reference value+1
+    ret=pyg_value_as_pyobject (&value, FALSE); //glib reference to value+2 pyref ret=1
+    //g_variant_unref(variant); //glib reference value+1
+    //g_variant_unref(variant); //glib reference value
+    //align_refs_py_gvariant(ret,variant);
+    //PySys_WriteStderr("out g2py gvar %d pyret %ld\n",HCGVariant_REFCNT(variant),HCPy_REFCNT(ret));
+    return ret;
 }
+
 
 
 
@@ -128,74 +197,75 @@ void cro_method_call(GDBusConnection *connection /*gobject*/, const gchar *sende
 	struct lock_detail lock;
 	allow_python_calls(&lock);
 
-#define gobj_info(x)  	/**/
-
-/*PySys_WriteStderr("%d: c %ld p %ld i %ld a %ld %s floating %d ref %d\n", \
-//	__LINE__, HCPy_REFCNT(py_connection), HCPy_REFCNT(py_parms), \
-//	HCPy_REFCNT(py_invoke), HCPy_REFCNT(arglist),#x, \
-//	g_object_is_floating(x), \
-//	*(uint *)(((GTypeInstance *)x)+1))
-
-*/
-
-	gobj_info(connection);
-	gobj_info(invocation);
-
 	reg_info = (struct dbus_connection_register_struct *) user_data;
 
+	//PySys_WriteStderr("a py_invoke %ld, py_conn %ld py_parms %ld arglist %ld, parms %d inv %d conn %d\n",
+	//		HCPy_REFCNT(py_invoke), HCPy_REFCNT(py_connection),HCPy_REFCNT(py_parms),HCPy_REFCNT(arglist),
+	//		HCGVariant_REFCNT(parameters),
+	//		HCGObject_REFCNT(invocation),
+	//		HCGObject_REFCNT(connection)
+	//		);
+
 	py_parms = g_variant_to_pyobject(parameters);
-	//py_parms = pyg_boxed_new(G_TYPE_VARIANT, g_variant_ref(parameters), FALSE, FALSE);
-
-	//g_object_ref(connection);
-
-	//py_connection = pyg_boxed_new(G_TYPE_DBUS_CONNECTION,connection, FALSE, FALSE);
-	//py_invoke = pyg_boxed_new(G_TYPE_DBUS_METHOD_INVOCATION,invocation,FALSE,FALSE);
 
 	py_connection = pygobject_new(G_OBJECT(connection));
 	py_invoke = pygobject_new(G_OBJECT(invocation));
 
-	gobj_info(connection);
-	gobj_info(invocation);
-	//puts(method_name);
+	//PySys_WriteStderr("b py_invoke %ld, py_conn %ld py_parms %ld arglist %ld, parms %d inv %d conn %d\n",
+	//		HCPy_REFCNT(py_invoke), HCPy_REFCNT(py_connection),HCPy_REFCNT(py_parms),HCPy_REFCNT(arglist),
+	//		HCGVariant_REFCNT(parameters),
+	//		HCGObject_REFCNT(invocation),
+	//		HCGObject_REFCNT(connection)
+	//		);
+
 	arglist = Py_BuildValue("NssssNN",
 			py_connection,
 			sender, object_path, interface_name, method_name,
 			py_parms,
 			py_invoke);
+
 	if ((arglist==NULL) || (PyErr_Occurred()!=NULL)) {
 		PyErr_PrintEx(0);
 		exit(1);
 	}
 
-	//PySys_WriteStderr("%s\n",PyUnicode_AsUTF8(PyObject_Repr(arglist)));
-
-	gobj_info(connection);
-	gobj_info(invocation);
+	//PySys_WriteStderr("c py_invoke %ld, py_conn %ld py_parms %ld arglist %ld, parms %d inv %d conn %d\n",
+	//		HCPy_REFCNT(py_invoke), HCPy_REFCNT(py_connection),HCPy_REFCNT(py_parms),HCPy_REFCNT(arglist),
+	//		HCGVariant_REFCNT(parameters),
+	//		HCGObject_REFCNT(invocation),
+	//		HCGObject_REFCNT(connection)
+	//		);
 
 	PyObject_CallObject(reg_info->method_closure, arglist);
 
-	//PySys_WriteStderr("end method call\n");
-	gobj_info(connection);
-	gobj_info(invocation);
+	//PySys_WriteStderr("d py_invoke %ld, py_conn %ld py_parms %ld arglist %ld, parms %d inv %d conn %d\n",
+	//		HCPy_REFCNT(py_invoke), HCPy_REFCNT(py_connection),HCPy_REFCNT(py_parms),HCPy_REFCNT(arglist),
+	//		HCGVariant_REFCNT(parameters),
+	//		HCGObject_REFCNT(invocation),
+	//		HCGObject_REFCNT(connection)
+	//		);
 
-	//PySys_WriteStderr("%d: %ld %ld %ld %ld\n",__LINE__,Py_REFCNT(py_connection),Py_REFCNT(py_parms),Py_REFCNT(py_invoke),Py_REFCNT(arglist));
 	Py_DECREF(arglist);
-	//PySys_WriteStderr("arglist free\n");
-	Py_DECREF(py_parms);
-	Py_DECREF(py_connection);
-	Py_DECREF(py_invoke);
-	//g_object_unref(connection);
-	g_variant_unref(parameters);
+
+	//PySys_WriteStderr("e py_invoke %ld, py_conn %ld py_parms %ld arglist %ld, parms %d inv %d conn %d\n",
+	//		HCPy_REFCNT(py_invoke), HCPy_REFCNT(py_connection),HCPy_REFCNT(py_parms),HCPy_REFCNT(arglist),
+	//		HCGVariant_REFCNT(parameters),
+	//		HCGObject_REFCNT(invocation),
+	//		HCGObject_REFCNT(connection)
+	//		);
 
 	restore_previous_lock_state(&lock);
 
 }
 
+
+
+
 gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
 		const gchar *object_path, const gchar *interface_name,
 		const gchar *property_name, GVariant *value, GError **error,
 		gpointer user_data) {
-	PyObject *args,*kwargs,*p_value;
+	PyObject *args=NULL,*kwargs=NULL,*p_value=NULL;
 	gboolean ret=TRUE;
 	struct dbus_connection_register_struct *reg_info;
 	struct lock_detail lock;
@@ -203,6 +273,10 @@ gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
 
 	kwargs= PyDict_New();
 	reg_info = (struct dbus_connection_register_struct *) user_data;
+	//PySys_WriteStderr("s1 kwargs %ld, p_value %ld, value %d conn %d error %d args %ld\n",
+	//		HCPy_REFCNT(kwargs),HCPy_REFCNT(p_value),HCGVariant_REFCNT(value),
+	//		HCGObject_REFCNT(connection),HCGError_info(error),
+	//		HCPy_REFCNT(args));
 	p_value =g_variant_to_pyobject(value);
 	args = Py_BuildValue("ssO",interface_name,property_name,p_value);
 	if (args==NULL) {
@@ -218,18 +292,27 @@ gboolean cro_set_property(GDBusConnection *connection, const gchar *sender,
 		g_set_error_literal(error,PyDbusQuark,1,errv);
 		ret = 0;
 	}
-	Py_DECREF(args);
+	g_variant_ref(value);
 	Py_DECREF(kwargs);
+	Py_DECREF(p_value);
+	Py_DECREF(args);
+	//PySys_WriteStderr("s2 kwargs %ld, p_value %ld, value %d conn %d error %d args %ld\n",
+	//		HCPy_REFCNT(kwargs),HCPy_REFCNT(p_value),HCGVariant_REFCNT(value),
+	//		HCGObject_REFCNT(connection),HCGError_info(error),
+	//		HCPy_REFCNT(args));
 	restore_previous_lock_state(&lock);
 	return ret;
 }
 
+
+
+
 GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
 		const gchar *object_path, const gchar *interface_name,
 		const gchar *property_name, GError **error, gpointer user_data) {
-	PyObject *args,*kwargs,*error_info;
-	PyObject *result;
-	GVariant *ret;
+	PyObject *args=NULL,*kwargs=NULL,*error_info=NULL;
+	PyObject *result=NULL;
+	GVariant *ret=NULL;
 
 	struct dbus_connection_register_struct *reg_info;
 	struct lock_detail lock;
@@ -238,7 +321,10 @@ GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
 
 	reg_info = (struct dbus_connection_register_struct *) user_data;
 
-
+	//PySys_WriteStderr("g1 kwargs %ld, conn %d error %d args %ld err_info %ld result %ld ret %d\n",
+	//		HCPy_REFCNT(kwargs),
+	//		HCGObject_REFCNT(connection),HCGError_info(error),HCPy_REFCNT(args),
+	//		HCPy_REFCNT(error_info),HCPy_REFCNT(result),HCGVariant_REFCNT(ret));
 	args = Py_BuildValue("ss",interface_name,property_name);
 	if (args==NULL) {
 		PyErr_PrintEx(0);
@@ -252,11 +338,16 @@ GVariant * cro_get_property(GDBusConnection *connection, const gchar *sender,
 		ret=NULL;
 	} else {
 		ret = pyg_pointer_get(result,GVariant);
-		//puts(g_variant_get_type_string(ret));
 	}
 	Py_DECREF(args);
 	Py_DECREF(kwargs);
-	//Py_DECREF(result);
+	g_variant_ref(ret);
+	Py_DECREF(result);
+	//PySys_WriteStderr("g2 kwargs %ld, conn %d error %d args %ld err_info %ld result %ld ret %d\n",
+	//		HCPy_REFCNT(kwargs),
+	//		HCGObject_REFCNT(connection),HCGError_info(error),HCPy_REFCNT(args),
+	//		HCPy_REFCNT(error_info),HCPy_REFCNT(result),HCGVariant_REFCNT(ret));
+
 
 	restore_previous_lock_state(&lock);
 
@@ -305,15 +396,20 @@ PyObject * dbus_connection_register_object(PyObject *self, PyObject *args) {
 
 
 PyObject * dbus_invocation_return_value(PyObject *self, PyObject *args) {
-	PyObject *g_inv;
-	PyObject *g_parameters;
+	PyObject *g_inv,*g_parms;
+	GVariant *g_parameters;
 
-	PyArg_ParseTuple(args, "OO", &g_inv,&g_parameters);
-
+	g_inv=PyTuple_GET_ITEM(args,0);
+	g_parms = PyTuple_GetItem(args,1);
+	if (g_parms==Py_None) {
+		g_parameters = NULL;
+	} else {
+		g_parameters=pyg_pointer_get(g_parms,GVariant);
+	}
 	Py_BEGIN_ALLOW_THREADS
 
 	g_dbus_method_invocation_return_value(pyg_pointer_get(g_inv,GDBusMethodInvocation),
-										  pyg_pointer_get(g_parameters,GVariant));
+										  g_parameters);
 	Py_END_ALLOW_THREADS
 
 	Py_RETURN_NONE;
