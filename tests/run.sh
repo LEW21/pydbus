@@ -19,4 +19,5 @@ PYTHON=${1:-python}
 #fi
 echo running unit tests
 cd $SRC_DIR
-"$PYTHON"  -m pydbus._unittest
+"$PYTHON"  $SRC_DIR/pydbus/_unittest.py
+
