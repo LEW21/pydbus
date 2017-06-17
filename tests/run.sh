@@ -18,6 +18,6 @@ PYTHON=${1:-python}
 	"$PYTHON" $TESTS_DIR/publish_multiface.py
 #fi
 echo running unit tests
-cd $SRC_DIR
+cd $SRC_DIR/pydbus
 "$PYTHON"  $SRC_DIR/pydbus/_unittest.py
 
