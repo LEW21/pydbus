@@ -3,11 +3,11 @@ Created on Jun 16, 2017
 
 @author: administrator
 '''
-from pydbus import SessionBus
 from gi.repository.GLib import MainLoop
-from .extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
-from .extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
-from .extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport
+import pydbus
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
+from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport
 
 
 class PyDbusUnitTestService(object): 
@@ -42,11 +42,10 @@ class PyDbusUnitTestService(object):
 
 def pydbus_server(ready):
     loop = MainLoop()
-    bus = SessionBus()
+    bus = pydbus.SessionBus()
     try:
         bus.get('pydbus.unittest')
     except:
         with bus.publish("pydbus.unittest", PyDbusUnitTestService(loop)):
             ready.value=True
             loop.run()
-        

@@ -17,5 +17,5 @@ export PYTHONPATH
 "$PYTHON" $TESTS_DIR/publish.py
 "$PYTHON" $TESTS_DIR/publish_properties.py
 "$PYTHON" $TESTS_DIR/publish_multiface.py
-"$PYTHON" -m pydbus._unittest
+"$PYTHON" $TESTS_DIR/_unittest.py
 
