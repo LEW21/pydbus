@@ -17,5 +17,5 @@ export PYTHONDIR
 "$PYTHON" $TESTS_DIR/publish.py
 "$PYTHON" $TESTS_DIR/publish_properties.py
 "$PYTHON" $TESTS_DIR/publish_multiface.py
-"$PYTHON"  $SRC_DIR/pydbus/_unittest.py
+"$PYTHON" -m pydbus._unittest
 
