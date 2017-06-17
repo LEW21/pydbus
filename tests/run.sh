@@ -9,6 +9,9 @@ trap 'kill -TERM $DBUS_SESSION_BUS_PID' EXIT
 
 PYTHON=${1:-python}
 
+PYTHONDIR=/root/pydbus
+export PYTHONDIR
+
 "$PYTHON" $TESTS_DIR/context.py
 "$PYTHON" $TESTS_DIR/identifier.py
 "$PYTHON" $TESTS_DIR/publish.py
