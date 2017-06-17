@@ -4,7 +4,7 @@ set -e
 cd ~/permanet/pydbus
 find . -iname "__pycache__" -print0 | xargs -0 -n 1 rm -rf
 rm -r build || $TRUE
-rm /home/administrator/permanet/pydbus/pydbus/extensions/* ~/pdev/__pcache__/* || $TRUE
+rm /home/administrator/permanet/pydbus/pydbus/extensions/*so ~/pdev/__pcache__/* || $TRUE
 
 #CFLAGS='-Wall -O0 -g'
 #export CFLAGS
