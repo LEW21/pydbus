@@ -587,6 +587,9 @@ class PyDbusUnitTestService(object):
 def pydbus_server(ready):
     from pydbus import SessionBus
     from gi.repository.GLib import MainLoop
+    from pydbus.extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
+    from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
+    from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_dbus_error  # @UnresolvedImport @Reimport @UnusedImport
     loop = MainLoop()
     bus = SessionBus()
     try:
