@@ -4,6 +4,7 @@ Created on Jun 16, 2017
 @author: administrator
 '''
 from gi.repository.GLib import MainLoop
+from gi.repository import GObject
 import pydbus
 from pydbus.extensions.PatchPreGlib246 import compat_dbus_connection_register_object # @UnresolvedImport @Reimport @UnusedImport
 from pydbus.extensions.PatchPreGlib246 import compat_dbus_invocation_return_value  # @UnresolvedImport @Reimport @UnusedImport
@@ -27,6 +28,10 @@ class PyDbusUnitTestService(object):
     """
     def __init__(self,loop):
         self.loop = loop
+        self.timeout_id = GObject.timeout_add(20*1000,self.on_timeout,None)
+        
+    def on_timeout(self,user_data):
+        self.Quit()
 
     def NoArgsStringReply(self):
         """returns the string 'Hello, World!'"""
@@ -40,12 +45,13 @@ class PyDbusUnitTestService(object):
         """removes this object from the DBUS connection and exits"""
         self.loop.quit()
 
-def pydbus_server(ready):
+def pydbus_server():
     loop = MainLoop()
     bus = pydbus.SessionBus()
     try:
-        bus.get('pydbus.unittest')
+        bus.get('pydbus.unittest',timeout=1)
     except:
         with bus.publish("pydbus.unittest", PyDbusUnitTestService(loop)):
-            ready.value=True
             loop.run()
+
+pydbus_server()

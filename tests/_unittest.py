@@ -529,16 +529,24 @@ class Test(unittest.TestCase):
 
     def test_user_facing_interface(self):
         from pydbus import SessionBus
-        import multiprocessing as mp
+        import os
+        import sys
         import time
-        import tests.unittest_server
+        ppath = os.path.abspath(os.path.dirname(os.path.abspath(sys.modules[__name__].__file__))+"/..")
+        cmd =  ppath+"tests/unittest_server.py"
 
-        ready = mp.Value('i',0)
-        server_process = mp.Process(target=tests.unittest_server.pydbus_server,args=(ready,),daemon=True)
-        server_process.start()
+        os.system('export PYTHONPATH="'+ppath+'";'+sys.executable+" -m tests.unittest_server&")
         sb = SessionBus()
-        while ready.value==0: time.sleep(1)
-        test_server = sb.get('pydbus.unittest',timeout=10)
+        tick=time.time()+10
+        test_server=None
+        while time.time()<tick:
+            try:
+                test_server = sb.get('pydbus.unittest',timeout=10)
+                break
+            except:
+                time.sleep(1)
+                pass
+        self.assertIsNotNone(test_server)
         r = test_server.NoArgsStringReply()
         self.assertEqual(r,0,"Translation Inactive") 
         r = test_server.AddTwo(2)
@@ -550,8 +558,6 @@ class Test(unittest.TestCase):
         r = test_server.AddTwo(2)
         self.assertEqual(r, 4,"Translation Active")
         test_server.Quit()
-        server_process.join()
-
 
 
 
