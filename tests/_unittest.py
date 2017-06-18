@@ -533,9 +533,8 @@ class Test(unittest.TestCase):
         import sys
         import time
         ppath = os.path.abspath(os.path.dirname(os.path.abspath(sys.modules[__name__].__file__))+"/..")
-        cmd =  ppath+"tests/unittest_server.py"
 
-        os.system('export PYTHONPATH="'+ppath+'";'+sys.executable+" -m tests.unittest_server&")
+        os.system('export PYTHONPATH="'+ppath+'";cd '+ppath+";"+sys.executable+" -m tests.unittest_server&")
         sb = SessionBus()
         tick=time.time()+10
         test_server=None
