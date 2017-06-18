@@ -531,10 +531,10 @@ class Test(unittest.TestCase):
         from pydbus import SessionBus
         import multiprocessing as mp
         import time
-        from tests.unittest_server import pydbus_server
+        import tests.unittest_server
 
         ready = mp.Value('i',0)
-        server_process = mp.Process(target=pydbus_server,args=(ready,),daemon=True)
+        server_process = mp.Process(target=tests.unittest_server.pydbus_server,args=(ready,),daemon=True)
         server_process.start()
         sb = SessionBus()
         while ready.value==0: time.sleep(1)
