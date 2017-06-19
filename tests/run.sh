@@ -14,8 +14,9 @@ export PYTHONPATH
 
 "$PYTHON" $TESTS_DIR/context.py
 "$PYTHON" $TESTS_DIR/identifier.py
-"$PYTHON" $TESTS_DIR/publish.py
 "$PYTHON" $TESTS_DIR/publish_properties.py
 "$PYTHON" $TESTS_DIR/publish_multiface.py
+"$PYTHON" $TESTS_DIR/publish.py
+"$PYTHON" $TESTS_DIR/unittest_server.py&
 "$PYTHON" $TESTS_DIR/_unittest.py
 
