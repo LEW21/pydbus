@@ -535,6 +535,7 @@ class Test(unittest.TestCase):
         ppath = os.path.abspath(os.path.dirname(os.path.abspath(sys.modules[__name__].__file__))+"/..")
 
         os.system('export PYTHONPATH="'+ppath+'";cd '+ppath+";"+sys.executable+" -m tests.unittest_server&")
+        print(ppath)
         sb = SessionBus()
         tick=time.time()+10
         test_server=None
@@ -560,7 +561,7 @@ class Test(unittest.TestCase):
 
 
 
+
 if __name__ == "__main__":
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(Test)
-    unittest.TextTestRunner().run(suite)
+    unittest.main()
 
