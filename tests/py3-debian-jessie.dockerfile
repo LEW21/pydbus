@@ -5,7 +5,7 @@ RUN apt-get install -y dbus  psmisc dbus-x11 python3  python3-pip python3-dev py
 RUN python3 --version
 RUN uname -a
 
-RUN pip-3.2 install greenlet ipaddress
+RUN pip3 install greenlet ipaddress
 
 ADD . /root/
 
