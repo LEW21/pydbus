@@ -2,7 +2,7 @@ sudo: required
 
 env:
   - distribution: debian
-    version: wheezy
+    version: jessie
     python: 3
   - distribution: debian
     version: sid
