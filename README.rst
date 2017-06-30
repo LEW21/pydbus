@@ -18,9 +18,12 @@ Changelog: https://github.com/hcoin/pydbus
 
 Requirements
 ------------
-* Python 3.4+
-* PyGI_ (not packaged on pypi, you need to install it from your distribution's repository - it's usually called python-gi, python-gobject or pygobject)
-* GLib_ and girepository_  for object publication support
+* Python 3.2+
+* Supports: Debian Jessie to sid.  Fedora 22 to rawhide.  Centos 7 (python 3.4 and 3.6). Ubuntu 14.04  thru 16.04
+* See py<your distro and version>.dockerfile for tested installation instructions.
+
+Now supports full dbus publishing and access on all versions.
+~~
 
 .. _PyGI: https://wiki.gnome.org/Projects/PyGObject
 .. _GLib: https://developer.gnome.org/glib/
