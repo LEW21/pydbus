@@ -25,7 +25,7 @@ class ProxySignal(object):
 				retained_pyarg=None)
 			if not isinstance(params, tuple): params = (params,)
 			callback(*params)
-		self.translator = obj._bus.translator
+		self.translator = obj._translator
 		return obj._bus.subscribe(sender=obj._bus_name, obj=obj._path, iface=self._iface_name, signal=self.__name__, signal_fired=signal_fired)
 
 	def __get__(self, instance, owner):
