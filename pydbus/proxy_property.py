@@ -20,7 +20,7 @@ class ProxyProperty(object):
 		if not self._readable:
 			raise AttributeError("unreadable attribute")
 		
-		if instance._bus._ProxyMixin__translator:
+		if instance._translator:
 			xlater = instance._translator
 			v = instance._object["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)
 			return xlater.translate(
