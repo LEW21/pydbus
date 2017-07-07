@@ -30,7 +30,7 @@ from traceback import format_stack
 
 class TranslationRequest(object):
     '''Everything specific to each translation request is held here.'''
-    def __init__(self, tkargs, tkwargs, bus_name, dataflow_guidance, ctop, ptoc):
+    def __init__(self, tkargs, tkwargs, bus_name, dataflow_guidance, ctop, ptoc,names_from_xml):
         if len(tkargs)==0: tkargs=[None,None,None,0,None,None,None]
         if len(tkargs) <7:
             tkargs=list(tkargs)
@@ -64,7 +64,7 @@ class TranslationRequest(object):
         self.dir_specific_trans_function = (ctop  if self.call_direction == 'fromDbusToPython' else ptoc)
 #             Function to manage python to dbus or dbus to python translation specifics
 
- 
+        self.names_from_xml = names_from_xml
         self.translation_possible = False
         
         if isinstance(self.pydevobject, str): 
@@ -112,6 +112,7 @@ class TranslationRequest(object):
             # We have python arguments. Do we need to unpack
             # them from an object or dict to relieve the user
             # from keeping track of article order?
+
             self.pre_call_args = convert_arguments_python_to_dbus(self.arglist_guidance, self.callerargs, self.kwargs)
 #           pre call args are now a list in the traditional positional format only.
 #           The introspection string may contain a variant replaced with guidance
@@ -383,6 +384,7 @@ class SingleArgumentOptimizedGuidance(object):
             # then create attributes in our optimized spec for all possible flags at
             # this level.
             setattr(self, s[1:], arg.get(s, False))
+        #if "_default" not in arg: self.default=None
         self.force_replacement_specified = "_forced_replacement" in arg 
             
         if self.replace_unknowns:
@@ -1010,12 +1012,16 @@ def variant_introspection_rewrite(introspection, translation_guidance):
     return modified_sargs  
 
 
-def convert_arguments_python_to_dbus(arglist_guidance, python_args, python_kwargs):                
+def convert_arguments_python_to_dbus(arglist_guidance, python_args, python_kwargs): 
     if arglist_guidance.python_side_named_args_as_dict:
         # we have a dictionary of arguments, turn it into a list for dbus
         dbus_args = [ arglist_guidance.arguments[i].default for i in range(0, arglist_guidance.dbus_side_argument_list_size) ]
         # default unspecified variables.
-        for arg_name, arg_value in (python_args[0].items() if len(python_kwargs) == 0 else python_kwargs.items()):
+        #if (len(arglist_guidance.arguments)==1)
+        d= python_args[0] #if len(python_kwargs.caller_args) == 0 else python_kwargs.caller_args.items())
+        if not isinstance(d,dict):
+            raise ValueError("Expected a dictionary of argument name:value pairs, not " + str(d))
+        for arg_name, arg_value in d.items():
             # If passed a number where a name is supposed to go, use it as a position.
             if isinstance(arg_name, int):
                 dbus_args[arg_name] = arg_value
@@ -1166,21 +1172,41 @@ class PydbusCPythonTranslator(object):
 #     N") would return 0.
   
    
-    def __init__(self, translation_spec, bus_name, unit_test_dictname=None):
+    def __init__(self, translation_spec, bus_name, unit_test_dictname=None, parsed_xml=None,
+                 method_return_format="dict_if_service_provides_2_or_more_argnames",
+                 method_inarg_format="dict_if_service_provides_2_or_more_argnames"):
+        self.active=False
         self.bus_name = bus_name
         self._underscored_bus_name = bus_name.replace('.', '_')
-        if isinstance(translation_spec, str):
-            try:
-                m = import_module(translation_spec)  # @UnusedVariable
-            except:
-                m = import_module(translation_spec + '.py')  # @UnusedVariable
-            try:
-                self.original_guidance = eval('m.' + self._underscored_bus_name)
-            except:
-                raise ValueError("Can't find pydbus translation dictionary " + self._underscored_bus_name + " in caller specified module " + translation_spec)
-        elif isinstance(translation_spec, dict):
-            self.original_guidance = translation_spec
-        else:
+        self.method_return_format = method_return_format
+        self.method_inarg_format = method_inarg_format
+        #First, see if there is a provided translation spec
+        self.original_guidance = None
+        meth_format_list = ["per_pydbus_spec_only","dict_if_service_provides_argnames", "dict_if_service_provides_2_or_more_argnames"]
+        if method_return_format not in meth_format_list:
+            raise ValueError("Whether method returns are value lists or dictionaries depends on:\n\
+                the method_return_format argument, the pydbus spec and whether the service\n\
+                names variable argument positions. The method_return_format argument must be one of\n\
+                " + str(meth_format_list) + ". Not " + str(method_return_format))
+        if method_inarg_format not in meth_format_list:
+            raise ValueError("Whether method arguments are value lists or dictionaries depends on:\n\
+                the method_inarg_format argument, the pydbus spec and whether the service\n\
+                names variable argument positions. The method_inarg_format argument must be one of\n\
+                " + str(meth_format_list) + ". Not " + str(method_inarg_format))
+        if translation_spec is not None:
+            if isinstance(translation_spec, str):
+                try:
+                    m = import_module(translation_spec)  # @UnusedVariable
+                except:
+                    m = import_module(translation_spec + '.py')  # @UnusedVariable
+                try:
+                    self.original_guidance = eval('m.' + self._underscored_bus_name)
+                except:
+                    raise ValueError("Can't find pydbus translation dictionary " + self._underscored_bus_name + " in caller specified module " + translation_spec)
+            elif isinstance(translation_spec, dict):
+                self.original_guidance = translation_spec
+
+        if (self.original_guidance is None) and (translation_spec is not None):
             try:
                 m = import_module('pydbus.translations.' + self._underscored_bus_name)  # @UnusedVariable
             except:
@@ -1189,13 +1215,38 @@ class PydbusCPythonTranslator(object):
                 self.original_guidance = eval('m.' + (self._underscored_bus_name if unit_test_dictname == None else unit_test_dictname))
             except:
                 raise ValueError("Built-in translation library module pydbus.translations." + self._underscored_bus_name + " missing translation dictionary " + self._underscored_bus_name)
+        
+        self.names_from_xml = self.extract_arg_names(parsed_xml)
+       
+        if len(self.names_from_xml)>0:
+            for parsed_interface,parsed_trio in self.names_from_xml.items():
+                if parsed_interface == bus_name:
+                    if self.method_return_format != "per_pydbus_spec_only":
+                        self.use_xml_argument_names(parsed_interface,parsed_trio[0],'method_dbus_to_py',"out",method_return_format)
+                    self.use_xml_argument_names(parsed_interface,parsed_trio[1],'property_dbus_to_py',"out")
+                    self.use_xml_argument_names(parsed_interface,parsed_trio[2],'signal_dbus_to_py',"out")
+                    if self.method_inarg_format != "per_pydbus_spec_only":
+                        self.use_xml_argument_names(parsed_interface,parsed_trio[3],'method_py_to_dbus',"in",method_inarg_format)
+                    self.use_xml_argument_names(parsed_interface,parsed_trio[4],'property_py_to_dbus',"in")
+                    self.use_xml_argument_names(parsed_interface,parsed_trio[5],'signal_py_to_dbus',"in")
+        
+        self.dataflow_guidance = {}
+
+        if self.original_guidance==None: return
+        #if self.original_guidance
+        
+        #if bus_name in self.original_guidance: self.active=True
+        #if not self.active: return
+        
+
 
         if not isinstance(self.original_guidance, dict):
             raise ValueError("The translation specification object must be a dictionary, not a " + str(type(self.original_guidance)))
         
-        self.dataflow_guidance = {}
         if len(self.original_guidance) == 0:
-            raise ValueError("There are no keys in the dictionary for dbus path " + self.bus_name)
+                if translation_spec is not None: 
+                    raise ValueError("There are no keys in the dictionary for dbus path " + self.bus_name)
+                return
         for key_for_this_dbus_path, per_key_desired_translation_types_and_directions in self.original_guidance.items():
             # Validate the input
             if not isinstance(key_for_this_dbus_path, str):
@@ -1234,13 +1285,101 @@ class PydbusCPythonTranslator(object):
         
             got_one = guidance_for_one_key.init_helper_validate_arglistspec(guidance_for_one_key.original_to_dbus_guidance, True) | \
                   guidance_for_one_key.init_helper_validate_arglistspec(guidance_for_one_key.original_from_dbus_guidance, False)
-            if got_one == False:
-                raise ValueError("The translation dictionary provided needs at least one active key/value for key " + key_for_this_dbus_path + 
-                             str(flow_directions))
+            if got_one:
+                self.active=True
+                #raise ValueError("The translation dictionary provided needs at least one active key/value for key " + key_for_this_dbus_path + 
+                #             str(flow_directions))
     
 
- 
+    def extract_arg_names(self,parsed_xml):
+        names_from_xml={}
+        if parsed_xml is None: return {}
+        if parsed_xml.tag=='node':
+            for interfaces_xml in parsed_xml:
+                if interfaces_xml.tag=='interface':
+                    methods_p2d = {}
+                    properties_p2d = {}
+                    signals_p2d = {}
+                    methods_d2p = {}
+                    properties_d2p = {}
+                    signals_d2p = {}
+                    got_one_overall=False
+                    iface = [methods_d2p,properties_d2p,signals_d2p,methods_p2d,properties_p2d,signals_p2d]
+                    for meth_prop_sig_xml in interfaces_xml:
+                        try:
+                            base_offset = ['method','property','signal'].index(meth_prop_sig_xml.tag)
+                        except:
+                            continue
+                        meth_prop_sig_name = meth_prop_sig_xml.attrib['name']
+                        for arg_xml in meth_prop_sig_xml: 
+                            if arg_xml.tag!='arg': continue 
+                            if arg_xml.attrib.get('direction','in')=='in':
+                                offset=base_offset+3
+                            else:
+                                offset=base_offset
+                            n = arg_xml.attrib.get('name',None)
+                            d = iface[offset]
+                            if meth_prop_sig_name in d: d[meth_prop_sig_name] += [n]
+                            else:  d[meth_prop_sig_name] = [n]
+                            if n is not None:
+                                got_one_overall =True
+                    if got_one_overall:                          
+                        names_from_xml[interfaces_xml.attrib['name']] =iface
+                    zaplist=[]
+                    for mdict in iface:
+                        for fname,arglist in mdict.items():
+                            keep=False
+                            for a in arglist:
+                                if a is not None:
+                                    keep=True
+                                    break
+                            if not keep: zaplist += [(mdict,fname)]
+                    for z in zaplist: z[0].pop(z[1])
+                        
+        return names_from_xml
+
+
+
+    def use_xml_argument_names(self,interface,xml_meth_sig_prop_dict,name_use,direction,method_format=None):
+        if interface==None: return
+        if len(interface)==None: return
+        if xml_meth_sig_prop_dict==None: return
+        if len(xml_meth_sig_prop_dict)==0: return
+        if self.original_guidance==None: self.original_guidance={}
         
+        
+        #if interface in self.original_guidance:
+        #    trans_dict = self.original_guidance[interface]
+        #else:
+        #    trans_dict = {}
+        #    self.original_guidance[interface] = trans_dict
+        #trans_dict[method/signal/propname] = {argpos,{what dto do about it}}
+        for xml_meth_sig_prop, xml_arglist in xml_meth_sig_prop_dict.items():
+            if len(xml_arglist)==0: continue
+            if ((method_format == "dict_if_service_provides_2_or_more_argnames") and \
+                (len(xml_arglist)==1) and (direction=='out')): continue
+            if ((method_format == "dict_if_service_provides_2_or_more_argnames") and \
+                (len(xml_arglist)==1) and (direction=='in')): continue
+            if xml_meth_sig_prop in self.original_guidance:
+                arguse_dict = self.original_guidance[xml_meth_sig_prop]
+            else:
+                arguse_dict = {}
+                self.original_guidance[xml_meth_sig_prop] = arguse_dict
+            if name_use in arguse_dict:
+                argpos_dict = arguse_dict[name_use]
+            else:
+                argpos_dict = {}
+                arguse_dict [name_use] = argpos_dict
+            for argpos in range(0,len(xml_arglist)):
+                if xml_arglist[argpos]==None: continue
+                self.active=True
+                if argpos not in argpos_dict:
+                    argpos_dict[argpos] = {'_dictkey' : xml_arglist[argpos] }
+                else:
+                    if '_dictkey' not in argpos_dict[argpos]:
+                        argpos_dict[argpos]['_dictkey']= xml_arglist[argpos] 
+                        
+                         
     #### End of code dealing with 'v' in introspection format to be 
     #### converted to dbus without guidance from the translation spec.   
 
@@ -1633,7 +1772,8 @@ class PydbusCPythonTranslator(object):
 #
 
         tro = TranslationRequest(translate_args, translate_kwargs, self.bus_name,
-                                 self.dataflow_guidance, self._one_ctop, self._one_ptoc)
+                                 self.dataflow_guidance, self._one_ctop, self._one_ptoc,
+                                 self.names_from_xml)
         
         if tro.translation_possible == False: return tro.callerargs
             

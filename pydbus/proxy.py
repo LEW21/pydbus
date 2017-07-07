@@ -37,18 +37,17 @@ class ProxyMixin(object):
 		"""
 		# Python 2 sux
 		for kwarg in kwargs:
-			if kwarg not in ("timeout", "translation_spec"):
+			if kwarg not in ("timeout", "translation_spec", "method_return_format"):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
 		translation_spec = kwargs.get("translation_spec", None)
+		#method_return_format:
+		#per_pydbus_spec_only, dict_if_service_provides_argnames, dict_if_service_provides_2_or_more_argnames
+		v_method_return_format = kwargs.get("method_return_format","dict_if_service_provides_2_or_more_argnames")
 
 		bus_name = auto_bus_name(bus_name)
 		object_path = auto_object_path(bus_name, object_path)
 
-		if translation_spec == None:
-			self.__translator = None
-		else:
-			self.__translator = PydbusCPythonTranslator(translation_spec, bus_name)
 
 		ret = self.con.call_sync(
 			bus_name, object_path,
@@ -64,8 +63,11 @@ class ProxyMixin(object):
 			introspection = ET.fromstring(xml)
 		except:
 			raise KeyError("object provides invalid introspection XML")
+		translator = PydbusCPythonTranslator(translation_spec, bus_name,parsed_xml=introspection,method_return_format=v_method_return_format)
+		#self.translator = translator if  translator.active else None
 
-		return CompositeInterface(introspection)(self, bus_name, object_path)
+		return CompositeInterface(introspection,translator if  translator.active else None)(self, bus_name, object_path)
+
 
 class ProxyObject(object):
 	def __init__(self, bus, bus_name, path, obj=None):
@@ -74,7 +76,7 @@ class ProxyObject(object):
 		self._path = path
 		self._object = obj if obj else self
 
-def Interface(iface):
+def Interface(iface,translator=None):
 
 	class interface(ProxyObject):
 		@staticmethod
@@ -86,6 +88,7 @@ def Interface(iface):
 
 	interface.__qualname__ = interface.__name__ = iface.attrib["name"]
 	interface.__module__ = "DBUS"
+	interface._translator = translator
 
 	for member in iface:
 		member_name = member.attrib["name"]
@@ -100,7 +103,7 @@ def Interface(iface):
 
 	return interface
 
-def CompositeInterface(introspection):
+def CompositeInterface(introspection,translator):
 	class CompositeObject(ProxyObject):
 		def __getitem__(self, iface):
 			if iface == "" or iface[0] == ".":
@@ -125,7 +128,8 @@ def CompositeInterface(introspection):
 	ifaces = sorted([x for x in introspection if x.tag == "interface"], key=lambda x: int(x.attrib["name"].startswith("org.freedesktop.DBus.")))
 	if not ifaces:
 		raise KeyError("object does not export any interfaces; you might need to pass object path as the 2nd argument for get()")
-	CompositeObject.__bases__ = tuple(Interface(iface) for iface in ifaces)
+	
+	CompositeObject.__bases__ = tuple(Interface(iface,translator=translator) for iface in ifaces)
 	CompositeObject.__name__ = "<CompositeObject>"
 	CompositeObject.__qualname__ = "<CompositeObject>(" + "+".join(x.__name__ for x in CompositeObject.__bases__) + ")"
 	CompositeObject.__module__ = "DBUS"

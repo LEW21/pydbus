@@ -68,7 +68,7 @@ class ProxyMethod(object):
 			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
 
 		# Python 2 sux
-		if instance._bus._ProxyMixin__translator == None:
+		if instance._translator == None:
 			for kwarg in kwargs:
 				if kwarg not in ("_pydbus_timeout", "timeout"):
 					raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
@@ -76,10 +76,10 @@ class ProxyMethod(object):
 		else:
 			timeout = kwargs.get("_pydbus_timeout")
 
-		if instance._bus._ProxyMixin__translator:
+		if instance._translator:
 			retained_args = args
 			if (self._iface_name != "org.freedesktop.DBus.Properties") and (len(args) > 0) :
-				args = instance._bus._ProxyMixin__translator.translate(
+				args = instance._translator.translate(
 					pydevobject=instance._object,
 					keyname=self.__name__,
 					callerargs=args,
@@ -99,7 +99,7 @@ class ProxyMethod(object):
 				timeout_to_glib(timeout),
 				None).unpack()
 			if len(self._outargs) > 0:
-				ret = instance._bus._ProxyMixin__translator.translate(
+				ret = instance._translator.translate(
 					pydevobject=instance._object,
 					keyname=self.__name__,
 					callerargs=ret if isinstance(ret, tuple) else (ret,),

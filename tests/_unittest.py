@@ -535,9 +535,9 @@ class Test(unittest.TestCase):
         ppath = os.path.abspath(os.path.dirname(os.path.abspath(sys.modules[__name__].__file__))+"/..")
 
         os.system('export PYTHONPATH="'+ppath+'";cd '+ppath+";"+sys.executable+" -m tests.unittest_server&")
-        print(ppath)
+        #print(ppath)
         sb = SessionBus()
-        tick=time.time()+10
+        tick=time.time()+30
         test_server=None
         while time.time()<tick:
             try:

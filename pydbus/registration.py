@@ -1,21 +1,14 @@
 from __future__ import print_function
 
-import logging
-#import sys
-#import sysconfig
-#print(str(sys.path))
-from gi.repository import GLib, Gio
-#from gi.overrides.GLib import Variant as o_Variant
 
 
 from . import generic
 from .exitable import ExitableWithAliases
 from .method_call_context import MethodCallContext
-#import sys
+from gi.repository import GLib, Gio
+import logging
 
-#from gi.repository
-# import sys, traceback
-# from functools import partial
+
 try:
 	from inspect import signature, Parameter  # @UnusedImport
 except:

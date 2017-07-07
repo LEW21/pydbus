@@ -21,7 +21,7 @@ class ProxyProperty(object):
 			raise AttributeError("unreadable attribute")
 		
 		if instance._bus._ProxyMixin__translator:
-			xlater = instance._bus._ProxyMixin__translator
+			xlater = instance._translator
 			v = instance._object["org.freedesktop.DBus.Properties"].Get(self._iface_name, self.__name__)
 			return xlater.translate(
 				pydevobject=instance,
@@ -38,8 +38,8 @@ class ProxyProperty(object):
 		if instance is None or not self._writeable:
 			raise AttributeError("can't set attribute")
 
-		if instance._bus._ProxyMixin__translator:
-			value = instance._bus._ProxyMixin__translator.translate(
+		if instance._translator:
+			value = instance._translator.translate(
 				pydevobject=instance,
 				keyname=self.__name__,
 				callerargs=value if isinstance(value, tuple) else (value,),

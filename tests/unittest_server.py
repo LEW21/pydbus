@@ -28,14 +28,14 @@ class PyDbusUnitTestService(object):
     """
     def __init__(self,loop):
         self.loop = loop
-        self.timeout_id = GObject.timeout_add(20*1000,self.on_timeout,None)
+        self.timeout_id = GObject.timeout_add(60*1000,self.on_timeout,None)
         
     def on_timeout(self,user_data):
         self.Quit()
 
     def NoArgsStringReply(self):
         """returns the string 'Hello, World!'"""
-        return 0  # Should show up as 'first string' via translation
+        return 0 #"first string"  # Should get translated as 0 over the bus, then show up as 'first string' via translation
 
     def AddTwo(self, i):
         """Returns two more than it gets."""
