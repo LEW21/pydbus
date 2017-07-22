@@ -1,6 +1,6 @@
 FROM centos:7
 RUN yum makecache fast
-RUN rpm -Uvh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-9.noarch.rpm
+RUN rpm -Uvh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-10.noarch.rpm
 RUN rpm -Uvh https://centos7.iuscommunity.org/ius-release.rpm
 
 RUN yum -y update
