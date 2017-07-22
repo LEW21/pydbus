@@ -33,7 +33,13 @@
 # ones.
 extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.githubpages']
+    'sphinx.ext.githubpages',
+    'sphinx.ext.autosummary' ]
+
+
+autosummary_generate=True
+autodoc_member_order = 'groupwise'
+autodoc_default_flags = ['members', 'undoc-members', 'show-inheritance']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
