@@ -34,7 +34,7 @@ above, after the function returns,
 
 .. code-block:: python
 
-    NetworkManager._state.rollback == 10
+    NetworkManager._state.rollback_timeout == 10
     
 Documentation: http://pydbus.readthedocs.io/en/latest
  

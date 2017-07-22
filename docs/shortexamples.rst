@@ -7,9 +7,11 @@ Short Examples
 Useful background documentation:
 ---------------------------------
 
-  _PyGI: https://wiki.gnome.org/Projects/PyGObject
-  _GLib: https://developer.gnome.org/glib/
-  _girepository: https://wiki.gnome.org/Projects/GObjectIntrospection
+  PyGI: https://wiki.gnome.org/Projects/PyGObject
+  
+  GLib: https://developer.gnome.org/glib/
+  
+  girepository: https://wiki.gnome.org/Projects/GObjectIntrospection
 
 
 Examples
