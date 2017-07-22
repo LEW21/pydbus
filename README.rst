@@ -1,5 +1,5 @@
-pydbus
-======
+pydbus3
+=======
 .. image:: https://travis-ci.org/hcoin/pydbus.svg?branch=master
     :target: https://travis-ci.org/hcoin/pydbus
 .. image:: https://badge.fury.io/py/pydbus.svg
@@ -30,8 +30,12 @@ named values, call it ret, then
     ret[argposition_number] == arg['argument_name'] == arg.argument_name 
 
 There are many other 'pythonic conveniences', for instance using the example
-above, after the function returns, NetworkManager._state.rollback == 10, etc.
+above, after the function returns, 
 
+.. code-block:: python
+
+    NetworkManager._state.rollback == 10
+    
 Documentation: http://pydbus.readthedocs.io/en/latest
  
 Changelog: https://github.com/hcoin/pydbus
