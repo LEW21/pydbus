@@ -11,8 +11,9 @@ Welcome to Pydbus3+'s documentation!
    :caption: Contents:
 
    Overview
+   Short examples <shortexamples>
    Basic PyDBus Usage <Basics>
-   Goals, Rationale and Use Cases (First visit? Start here.) <Rationale>
+   Goals, Rationale and Use Cases <Rationale>
    Introduction to Translation Specifications <Intro2TransSpecs>
    Translation File Access <transfileaccess>
    The Translation Spec, top level <toplevelspec>
