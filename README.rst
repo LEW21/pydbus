@@ -13,11 +13,12 @@ than you would a typical local Python method, property or signal callback.
 For example:
 
 .. code-block:: python
-  ...
-  sb = SystemBus()
-  NetworkManager = sb.get("org.freedesktop.NetworkManager",translation_spec=True)
-  r=NetworkManager.CheckpointCreate(devices=['/org/freedesktop/NetworkManager/Devices/0'],
-      rollback_timeout = 10, flags = "DELETE_NEW_CONNECTIONS")
+
+    ...
+    sb = SystemBus()
+    NetworkManager = sb.get("org.freedesktop.NetworkManager",translation_spec=True)
+    r=NetworkManager.CheckpointCreate(devices=['/org/freedesktop/NetworkManager/Devices/0'],
+        rollback_timeout = 10, flags = "DELETE_NEW_CONNECTIONS")
       
 Notice the use of argument names instead of only by position (which still works),
 string values for flags instead of cryptic integers.  No
@@ -25,7 +26,8 @@ need for DBus specific function decorations. Should a method return be a list of
 named values, call it ret, then
 
 .. code-block:: python
-  ret[argposition_number] == arg['argument_name'] == arg.argument_name 
+
+    ret[argposition_number] == arg['argument_name'] == arg.argument_name 
 
 There are many other 'pythonic conveniences', for instance using the example
 above, after the function returns, NetworkManager._state.rollback == 10, etc.
