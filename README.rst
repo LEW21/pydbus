@@ -12,7 +12,7 @@ than you would a typical local Python method, property or signal callback.
  
 For example:
 
-::
+.. code-block:: python
   ...
   sb = SystemBus()
   NetworkManager = sb.get("org.freedesktop.NetworkManager",translation_spec=True)
@@ -24,7 +24,7 @@ string values for flags instead of cryptic integers.  No
 need for DBus specific function decorations. Should a method return be a list of
 named values, call it ret, then
 
-::
+.. code-block:: python
   ret[argposition_number] == arg['argument_name'] == arg.argument_name 
 
 There are many other 'pythonic conveniences', for instance using the example
@@ -48,8 +48,11 @@ Note: Supports full dbus publishing and access on all distros, even pre Glib v2.
 Copyright Information
 ---------------------
 
-Documentation, argument name/value translator, unit testing, _state extention, publishing across distros,
+Documentation, argument name/value translator, unit testing, _state extension, publishing across distros,
+
 Copyright (C) 2017 Harry Coin, Quiet Fountain LLC <hcoin@quietfountain.com>
+
+Modules pre-June 2016
 
 Copyright (C) 2014, 2015, 2016 Linus Lewandowski <linus@lew21.net>
 
