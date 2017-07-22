@@ -1,4 +1,6 @@
-## Argument Specification Guidance Dictionaries
+============================================
+Argument Specification Guidance Dictionaries
+============================================
       
 The previous sections documented argument specification capabilities available
 when the argument specification is a string or list or tuple, just convenience readability shorthand for the full specification here.  Provided by the shorthand when the specification is:
@@ -61,7 +63,7 @@ The following dictionary specification outlines all available translation option
                        `\<dbus value match info\> : \<how python should convert it\>, ...`  
                        `#or`  
                        `\<python value match info\> : \<how dbus wants to see it\>, ...`  
-                     `}`  
+                       `}`
         
 ### 1. Argument format: default positional, named via dictionary, and class attributes.
         

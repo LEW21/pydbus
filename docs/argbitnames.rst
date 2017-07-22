@@ -1,10 +1,12 @@
-**Guidance:**  
+=========
+Guidance:
+=========  
 
 Packing many meanings into a single integer evolved from concerns of memory use, communications efficiency and electrical engineering.  This relieves the python user from having to keep track of 'what a bit position means', instead dealing only with importance: the meaning. 
 
 When mapping whole dbus integers to strings, at most one pair in an argument's guidance dictionary matches.  However, when the pair: 
 
-`{ '_is_bitfield' : True }` 
+`{ '_is_bitfield' : True }`
 
 is included, each bit in the dbus value is, potentially, an independent flag with its own name, or part of a smaller integer used as an amount, or part of a smaller integer where each value 'stands for' or 'means' a named condition,  or some combination.  So, all the pairs in the guidance dictionary are evaluated, they are meant to be taken in combination. There are many allowed ways to format the argument(s) to be translated on the way to the dbus, and several options for formatting the results for python of the dbus translations.  When building a dbus argument, the value starts at zero, then the matches are applied.
 
@@ -22,40 +24,47 @@ No matter the format requested when processing from dbus to python, all of these
 
 The DBus value sent is the result of 'oring' together the results of matching the arguments above to the guidance defined below.
 
-### Labeling bit(s) and smaller int(s) within an int argument
+**Labeling bit\(s\) and smaller int\(s\) within an int argument**
 
 
 Below are the various ways to associate the state of one or more bits with python strings or as if independent, smaller, integers.  They can be used in any combination unless stated otherwise.
 
 Convenience Note: These guidance pairs defined below obeys the 
 
-`{  _from_python_to_dbus : \<True/False\> } `
+``{  \_from_python_to_dbus : \<True/False\> }``
 
-Specification setting.  ( If False, the default, the format is as below: 
+Specification setting.  If False, the default, the format is as below: 
 
-`{ \<dbus value\> , \<python value\> }.` 
+``{ \<dbus value\> , \<python value\> },``
 
 If True, the order is reversed in the spec, 
 
-`{ \,<python value\> , \<dbus value\> },` 
+``{ \<python value\> , \<dbus value\> },``
 
-either one can be used whether going to or from dbus. This the same as the system described elsewhere that matches a whole integer to a label.   Sometimes it makes for easier reading to put the python value on the left, and the dbus equivalent on the right.
+either one can be used whether going to or from dbus. This the same as the system described elsewhere that matches a whole integer to a label.
+Sometimes it makes for easier reading to put the python value on the left, and the dbus equivalent on the right.
 
-### Specifics:
+**Specifics\:**
 
-`{ \<number\> , 'label' }  `  
-* From dbus: if (number & dbusvalue) == number, add 'label' to the list of matches.
-* From python: if label (case insensitive) is among list to match, set to_dbus_value |= number.
-* Typical use: 0x1 means "this is on", 0x2 means "that is so", 0x4 means "something else is on".
+``{ \<number\> , \'label\' }``
 
-`{ (\<number off\>, \<number on\> or None), 'label' }`  or  
-`{ (\<any_on_bits\>, \<number off\>, \<number on\> or None), 'label' }` 
+*From dbus: if (number & dbusvalue) == number, add 'label' to the list of matches.*
+*From python: if label (case insensitive) is among list to match, set to_dbus_value |= number.*
+*Typical use: 0x1 means "this is on", 0x2 means "that is so", 0x4 means "something else is on".*
+
+`{ (\<number off\>, \<number on\> or None\), 'label' }`
+
+ or
+ 
+``{ \(\<any_on_bits\>, \<number off\>, \<number on\> or None\), 'label' }``
+ 
 * From dbus: if ((any_on_bits | dbusvalue)!=0) or ((number_off & dbusvalue)==0) and ((number_on==None) or ((number_on & dbusvalue)==number_on)), then add 'label' to the list of matches.
-* From python: if label (case insensitive) is among list to match, set to_dbus_value |= number_on. If number_on ==None, use 0.
+* From python: if label \(case insensitive\) is among list to match, set to_dbus_value \|= number_on. If number_on ==None, use 0.
 * Typical use: When 'this is off' needs its own name, beyond just the absence of 'this is on' in the match list, i.e. `{ (0,1), 'this is on' }, { (1,0), 'this is off' }`
 * Also used when the presence of a zero bit voids the meaning of another, i.e.: { (0x0,0x3) , "fan high" }, { (0x1, 0x2 ) , "fan low" }, { (0x2, None ) , "fan off" } , { (0x3, 0, 0, "fan on" ) } so when 0x2 is off, 0x1 is a 'don't care', it can be 0 or 1 from dbus.  
 * Note: If when going to dbus the 'don't care' bit needs to be a 1, then the 'todbus' and 'fromdbus' versions of the argument guidance need to be different: same labels, but with { (0x2,1), 'power off' } for the todbus side.
 * Common Mistakes: A bit test line appears among the true results when the result of the test is true, which may or may not be the same as the bits named being on.  So:
+
      (0,0) is always true, it means 'don't care what's off, and don't care what's on'.  
      (1,0) means 'Report True/match only when bit position zero is off, don't care about the others'  
      (-1,0) means 'Report True/match when all bits are zero'  
@@ -73,11 +82,11 @@ either one can be used whether going to or from dbus. This the same as the syste
 `{ (0x33,0) , 'power off' } , `  
 `{ (0x33,0,0) , 'unit active' }`  
 
-`{ (\<number off\>, \<number\>) , ('labelfor0','labelfor1', .. ) } `  
+`{ \(\<number off\>, \<number\>\) , \('labelfor0','labelfor1', .. \) }`
 
 * If dbusval&\<number off\> != 0, continue. Otherwise as above.
 
-`{ \<number\> , '#label_for_mini_int' } `  
+``{ \<number\> , '\#label_for_mini_int' }``
 
 * As above, but instead of using the 'mini-int' as an index into a list of labels, use the value itself.
 * The leading # is stripped from the label name before any use.
@@ -85,7 +94,7 @@ either one can be used whether going to or from dbus. This the same as the syste
 * If from Dbus: the tuple ('label_for_mini_int',value_of_mini_int) will appear in the match list in any case, with the value ranging from 0 to the maximum allowed by the number of non-zero bits in the number.
 * Typical use: when some subset of the bits in an integer represent an amount, not names for states or conditions.  This is the easiest way to have a label appear no matter its state , i.e. 1 bit, on or off.
 
-`{ (\<number off\>, \<number\>) , '#label_for_mini_int' } `   
+``{ (\<number off\>, \<number\>) , '\#label_for_mini_int' }``  
 * From Dbus: Same as above, but only include the match tuple at all if  dbus&\<number off\>==0.
 * To Dbus: \<number off\> is ignored.
 * Note: There is an option below which, if set, ignores the \<number off\> value.
@@ -93,18 +102,18 @@ either one can be used whether going to or from dbus. This the same as the syste
 `{ '#everything_else', '#the name of your catch-all variable' }`  
 
 * Dbus to python: Treat all bit(s) not referenced in any way elsewhere as an 'and' mask for the dbus value, call the value x, assign it as the value of the tuple: ('the name of your catch-all variable', x)
-* Python to Dbus: If the tuple ('the name of your catch-all variable', x) appears, dbusvalue |= x.
+* Python to Dbus: If the tuple \(\'the name of your catch-all variable\', x\) appears, dbusvalue \|= x.
 * NOTE: From Dbus to python: ONLY IF an #everything_else pair appears THEN: if the computed mini-int 'index' is out of range, has no label in the list, do not throw an exception but include those bits here.
 
 Note: Everything above this line *does* obey the 
 
-`{  '_from_python_to_dbus' : \<True/False\> } `
+``{  '_from_python_to_dbus' : \<True/False\> }``
 
 setting, if False, 
 
-`{ \<dbus value\> , \<python value\> }, `  
+``{ \<dbus value\> , \<python value\> },`` 
 if True,  
-`{ \<python value\> , \<dbus value\> }, `  
+``{ \<python value\> , \<dbus value\> },``  
 
 just as does the system that matches a whole integer to a label.  However, the directives below are always as written.
 
@@ -125,7 +134,7 @@ Below are several options below like { 'special name', value } which if non Fals
 
 These have meaning for dbus to python traffic only, usually return values from methods, signal arguments and reading properties:
         
-`{ '_show_all_names': True } `  
+`{ '_show_all_names': True }`  
 * Dbus to python: consider the truth value of every pair defined, return a value for all of them, using False for those not matched, not just the true/ matched ones, according to the format specified below. By default, any pair that does not match does not have a label/value result included. So, if there are 15 single bit 'report this if that bit is on' tests, and only one bit is on, the result will have one entry. With this pair included, that example will have 15 return entries, 14 false and 1 true.  If True, the return value format must be either a dictionary or a list.
 
 
@@ -141,10 +150,10 @@ These have meaning for dbus to python traffic only, usually return values from m
 `{ "_arg_format" : 'single' }`  
 * Require the result to be just one label/value pair or throw an exception.  Return the value.
 
-`{ "_arg_format" : 'prettydict' } `  
+`{ "_arg_format" : 'prettydict' }`  
 * For pretty-printing.  Try 'single' above.  If that throws an exception, behave as 'dict'
                                         
-`{ "_arg_format" : 'prettylist' } `  
+`{ "_arg_format" : 'prettylist' }`  
 * For pretty-printing.  Try 'single' above.  If that throws an exception, behave as 'shortlist'
     
 
@@ -204,7 +213,7 @@ is there, then the same thing looks like:
         
 But if
 
-`{ '_isbitfield' : True } `  
+`{ '_isbitfield' : True }`  
 
 is present,  each number is treated as an 'and mask' so that
 only the bits that are a 1 in the number must also be set
@@ -252,7 +261,7 @@ on and the other this or that.
             
 What if we also need certain bits to be off, and other on?
 
-`{ (0x2,0x5) , 'what to call the 0 and 2 bit on, only when the 1 bit is off'} `  
+`{ (0x2,0x5) , 'what to call the 0 and 2 bit on, only when the 1 bit is off'}`  
 
 So far, we've discussed bitmasks that act when certain bits are on,
 without regard to whether other bits are off or on.
@@ -282,7 +291,7 @@ What if some bits taken together is a number where each has it's own name?
 
 How about a way create two names, one for off and another for on, do I
 need two lines  like  { (4,0) , "4 is off" } and { 4, "4 is on" }?
-  No. 
+No. 
 
 `{ 4 , ('what 4 off means', 'what 4 on means')}`  
         
@@ -363,7 +372,7 @@ When going from dbus to python, any bit that is not mentioned
 anywhere else in the dictionary will mask the to python variable and
 the result returned as the value for this key.  
 
-Note: a `{ ( \<these must be 0\>, \<these must be 1\>) , "Here's the name for that" } ` entry
+Note: a `{ ( \<these must be 0\>, \<these must be 1\>) , "Here's the name for that" }` entry
 removes all both the 0 and 1 bits mentioned above from the
 'everything else' bin: EXCEPT { (-1,0), "all off name" } which does
 not affect the 'everything else' variable content. 
@@ -395,16 +404,20 @@ Python to Dbus:
 All these formats are always recognized.
         
 * One string: If passed a string, only the 'on'
-bits for that string are set. If a #variety variable representing
+
+bits for that string are set. If a \#variety variable representing
 an integer appears, 0 will be the value used for it.
 
 * A list or tuple containing only strings: If passed a list or tuple, all the on bits associated with each member
+
 are 'ored' together.  If a string that represents a mini integer appears, 0 is used as the value.  
             
 * A list containing any mix of strings or (name,value) tuples: If in a string list or tuple, a list a sub-list or sub-tuple appears as a member, the [0] entry is taken to be the name of the variable, and the [1] entry the
+
 value to use.
             
 * A dictionary: If passed a dictionary from python, the names for the variables are the keys
+
 and the values are the state of that key. 0/False/None, 1/True, 2, 3, 4...
             
 What if I leave a key out that has a definition?  0/False will be used.
@@ -499,9 +512,11 @@ Then as above for a list, but every return value that would have looked like (\<
 'I want the shortest possible non-dictionary result, it's all for
 pretty printing and I don't want to show containers of one thing':
 
-`{ "_arg_format" : 'prettydict' } `  
+`{ "_arg_format" : 'prettydict' }`  
+
 For pretty-printing.  Try 'single' above.  If that throws an exception, behave as 'dict'
 
-`{ "_arg_format" : 'prettylist' } `
+`{ "_arg_format" : 'prettylist' }`
+
 For pretty-printing.  Try 'single' above.  If that throws an exception, behave as 'shortlist'
     

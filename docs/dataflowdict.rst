@@ -1,6 +1,8 @@
 `translation_spec = {  'keyname' : \<dataflow spec\> ,...}`
 
-### The DataFlow Specification
+==========================
+The DataFlow Specification
+==========================
 
 This level resolves two general conflict areas.  The first is the possible
 use of one key name for any combination of signal, property or method.

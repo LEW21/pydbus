@@ -1,3 +1,7 @@
+================================================
+Forced replacement of a variable with a constant
+================================================
+
 **Guidance Item: { '_forced_replacement' : \<whatever\> }**
         
 ## Typical Use: Ignore the argument supplied, return \<whatever\>.

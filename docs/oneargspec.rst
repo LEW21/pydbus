@@ -1,3 +1,7 @@
+===============
+Shorthand Specs
+===============
+
 This document begins the seemingly 'main work' of the translation module: What to do with
 a particular argument in a call with possibly other arguments, to a method,
 signal, or a property, knowing whether the direction of the data is to or

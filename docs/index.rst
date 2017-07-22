@@ -24,7 +24,7 @@ Welcome to Pydbus3+'s documentation!
    When a number 'stands for' a state or condition <numberasstate>
    Labeling bit(s) and smaller int(s) within an int argument <argbitnames>
    User Supplied Translation Functions <usertransfuncs>
-   Special case: Convert one object instance to \ from many DBus arguments <object2mandy2bus>
+   Special case: Convert one object instance to \ from many DBus arguments <object2many>
    Special Case: Define Python To DBus Variants <definepy2sbusvariants>
    replace an argument with a constant <forceconstant>
 

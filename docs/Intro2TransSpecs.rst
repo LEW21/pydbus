@@ -1,6 +1,9 @@
 _This document assumes you are familiar with ['Basic Python D-Bus Usage'](https://github.com/hcoin/pydbus/wiki/Basic-PyDbus-Usage), and that you've looked over some translation specifications just in an overview way before proceeding here._
 
-# The Translation Guidance Specification
+======================================
+The Translation Guidance Specification
+======================================
+
 
 Each dbus path in need of translation guidance to appear as though the service was written in python to begin with associates the dbus path name to a translation structure.  Whether that structure is passed as a parameter when access to the dbus path is first requested, or fetched from the translations pydbus subfolder, the structure specification is the same. 
 

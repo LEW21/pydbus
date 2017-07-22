@@ -1,3 +1,7 @@
+===================
+Top Level Specification
+===================
+
 The top level translation specification is a dictionary.  It can be passed directly within
 the bus.get(...,translation_spec=myspec), or in a translation file for dbus path
 my.dbus.path:

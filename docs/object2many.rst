@@ -1,4 +1,8 @@
-**Guidance Item:      { "_all_arguments" : True }**  
+==============
+Guidance Items
+==============
+
+**Guidance Item:      { "_all_arguments" : True }**
 
 ## Typical Use: express one python object as multiple D-Bus arguments.
 

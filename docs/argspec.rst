@@ -1,3 +1,6 @@
+==============
+Argspec Format
+==============
 Previous sections covered: loading translation specs per dbus path, identifying which keys in that path need translating, then isolating per key the whether the data flow is to or from the dbus and whether for a method, property or signal. For each of those last elements, this section describes how to manage the argument list for that purpose.
 
 ### Managing the argument list, the argspec format:

@@ -1,3 +1,8 @@
+===========
+Rationale
+===========
+
+
 The original PyDBus author, Linus Lewandowski, wrote this package's aim as a sentiment:  _PyDBus aims to make [D-Bus](https://www.freedesktop.org/wiki/Software/D-Bus/) ['fully pythonic'](https://www.python.org/dev/peps/pep-0020)_.  
 
 Such a package for the D-Bus system, (which passes structured messages including the message's format between  entirely independent processes to provide well described services), would include the ability to: 

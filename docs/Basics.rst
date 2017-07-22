@@ -1,4 +1,6 @@
-### Getting Started:
+================
+Getting Started:
+================
 
 Those new to this package should start with [Goal, Rationale and Use Cases](https://github.com/hcoin/pydbus/wiki/Goal,-Rationale-&-Use-Cases-(First-visit%3F-Start-here.))
 

@@ -1,3 +1,7 @@
+=======================
+Python to DBus Variants
+=======================
+
 **Guidance Item: { '_variant_expansion' : \<vinfo\> [,\<vinfo\>]\* }**  
 *Where*   
 **\<vinfo\> ::  \<guidance\>[/\<guidance\>]\*[.<repeated tail>]  and**  

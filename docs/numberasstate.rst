@@ -1,4 +1,7 @@
-**Guidance:**  
+
+=========
+Guidance
+=========  
 
 * **Implemented by pair { \<dbus int-like item\> : \<what that item means in python\> }**  
  **Unless optional pair:        { '_from_python_to_dbus' : True }**  

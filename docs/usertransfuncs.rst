@@ -1,3 +1,7 @@
+==================
+User Supplied Translation Functions
+==================
+
 So far, there's a way to pass an argument through without change, or optionally, do
 translation work on it if it is an integer that means something else, or optionally,
 work on the contents of a list or tuple dictionary values and/or dictionary keys.

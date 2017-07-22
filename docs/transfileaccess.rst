@@ -1,3 +1,7 @@
+=============
+Translation File Specfication
+=============
+
 Restating some of the 'getting started' document, but more formally, a typical pydbus startup pattern is:
 
 `  from pydbus.bus import SystemBus`  
