@@ -54,8 +54,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'Pydbus3+'
-copyright = '2017, Harry G. Coin'
+project = 'Pydbus3'
+copyright = '2017, Quiet Fountain LLC, LGPL'
 author = 'Harry G. Coin'
 
 # The version info for the project you're documenting, acts as replacement for

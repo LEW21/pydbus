@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = python3.4 -msphinx
+SPHINXBUILD   = export PYTHONPATH=/home/administrator/permanet/pydbus;python3.4 -msphinx
 SPHINXPROJ    = Pydbus3
 SOURCEDIR     = .
 BUILDDIR      = _build

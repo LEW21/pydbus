@@ -9,7 +9,15 @@ Pydbus3 Documentation
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+   
+   Getting Started <gettingstarted>
+   Source Links <sourcelinks>
+   Deprecated Docs <deprecated>
+   
 
+   
+.. Commented Out
+   Deprecated Docs <legacydocs/*>
    Overview
    Short examples <shortexamples>
    Basic PyDBus Usage <Basics>
@@ -30,10 +38,18 @@ Pydbus3 Documentation
    replace an argument with a constant <forceconstant>
 
 
+.. _Sourcecode: https://github.com/hcoin/pydbus
+
+	
+
+	
+
+
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-* :role:`Project Source <https://github.com/hcoin/pydbus>`
+* Sourcecode_
+

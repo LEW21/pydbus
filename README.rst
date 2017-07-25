@@ -8,7 +8,9 @@ pydbus3
     :target: http://pydbus.readthedocs.io/en/latest/?badge=latest
 
 Publish DBus services or access DBus clients no differently
-than you would a typical local Python method, property or signal callback.
+than a typical local Python method, property or signal callback.
+Including named method arguments with defaults, properly naming states or
+conditions as strings that are just integers via DBus, much more.   
  
 For example:
 
@@ -58,7 +60,7 @@ Documentation, argument name/value translator, unit testing, _state extension, p
 
 Copyright (C) 2017 Harry Coin, Quiet Fountain LLC <hcoin@quietfountain.com>
 
-Modules pre-June 2016
+Modules other than translation related pre-June 2016
 
 Copyright (C) 2014, 2015, 2016 Linus Lewandowski <linus@lew21.net>
 

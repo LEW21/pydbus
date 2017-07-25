@@ -4,9 +4,12 @@ Getting Started:
 
 Those new to this package should start with [Goal, Rationale and Use Cases](https://github.com/hcoin/pydbus/wiki/Goal,-Rationale-&-Use-Cases-(First-visit%3F-Start-here.))
 
-_Experienced pydbus users: this version of pydbus is backward compatible if translation services are not enabled. [Jump to differences](#Differences)_
+_Experienced pydbus users: this version of pydbus is backward compatible 
+if translation services are not enabled. [Jump to differences](#Differences)_
 
-The project of 'native python' access to a dbus service begins with reading through the pydbus translation specification in the file whose name is the D-Bus service path of interest in the PyDBus translations sub folder.  How to reference that file and begin using that file in programs is described here.
+The project of 'native python' access to a dbus service begins with reading through the pydbus translation specification in the file
+whose name is the D-Bus service path of interest in the PyDBus translations sub folder.  How to reference that file and begin using
+ that file in programs is described here.
 
 Pydbus allows for a translation structure for each dbus service
 string, e.g. 'org.freedesktop.NetworkManager.Device'.  Each translation
