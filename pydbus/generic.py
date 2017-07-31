@@ -29,7 +29,7 @@ class subscription(object):
 			self.unsubscribe()
 
 class bound_signal(object):
-	__slots__ = ("__signal__", "__self__") # bound method uses ("__func__", "__self__")
+	__slots__ = ("__signal__", "__self__")  # bound method uses ("__func__", "__self__")
 
 	def __init__(self, signal, instance):
 		self.__signal__ = signal
@@ -78,16 +78,16 @@ class signal(object):
 
 	def __init__(self):
 		self.map = {}
-		self.__qualname__ = "<anonymous signal>" # function uses <lambda> ;)
+		self.__qualname__ = "<anonymous signal>"  # function uses <lambda> ;)
 		self.__doc__ = "Signal."
 
-	def connect(self, object, callback):
+	def connect(self, obj, callback):
 		"""Subscribe to the signal."""
-		return subscription(self.map.setdefault(object, []), callback)
+		return subscription(self.map.setdefault(obj, []), callback)
 
-	def emit(self, object, *args):
+	def emit(self, obj, *args):
 		"""Emit the signal."""
-		for cb in self.map.get(object, []):
+		for cb in self.map.get(obj, []):
 			cb(*args)
 
 	def __get__(self, instance, owner):
@@ -102,4 +102,4 @@ class signal(object):
 	def __repr__(self):
 		return "<signal " + self.__qualname__ + " at 0x" + format(id(self), "x") + ">"
 
-bound_method = type(signal().emit) # TODO find a prettier way to get this type
+bound_method = type(signal().emit)  # TODO find a prettier way to get this type

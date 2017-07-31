@@ -1,13 +1,17 @@
 from gi.repository import GLib
+
 from .generic import bound_method
 from .identifier import filter_identifier
 from .timeout import timeout_to_glib
+from .translator import	container_content_introspection_format	
+
+
 
 try:
-	from inspect import Signature, Parameter
+	from inspect import Signature, Parameter  # @UnusedImport
 	put_signature_in_doc = False
 except:
-	from ._inspect3 import Signature, Parameter
+	from ._inspect3 import Signature, Parameter  # @Reimport
 	put_signature_in_doc = True
 
 class DBUSSignature(Signature):
@@ -33,9 +37,9 @@ class ProxyMethod(object):
 		self.__name__ = method.attrib["name"]
 		self.__qualname__ = self._iface_name + "." + self.__name__
 
-		self._inargs  = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib.get("direction", "in") == "in"]
+		self._inargs = [(arg.attrib.get("name", ""), arg.attrib["type"]) for arg in method if arg.tag == "arg" and arg.attrib.get("direction", "in") == "in"]
 		self._outargs = [arg.attrib["type"] for arg in method if arg.tag == "arg" and arg.attrib.get("direction", "in") == "out"]
-		self._sinargs  = "(" + "".join(x[1] for x in self._inargs) + ")"
+		self._sinargs = "(" + "".join(x[1] for x in self._inargs) + ")"
 		self._soutargs = "(" + "".join(self._outargs) + ")"
 
 		self_param = Parameter("self", Parameter.POSITIONAL_ONLY)
@@ -60,19 +64,56 @@ class ProxyMethod(object):
 		argdiff = len(args) - len(self._inargs)
 		if argdiff < 0:
 			raise TypeError(self.__qualname__ + " missing {} required positional argument(s)".format(-argdiff))
-		elif argdiff > 0:
+		if argdiff > 0:
 			raise TypeError(self.__qualname__ + " takes {} positional argument(s) but {} was/were given".format(len(self._inargs), len(args)))
 
 		# Python 2 sux
-		for kwarg in kwargs:
-			if kwarg not in ("timeout",):
-				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
-		timeout = kwargs.get("timeout", None)
+		if instance._translator == None:
+			for kwarg in kwargs:
+				if kwarg not in ("_pydbus_timeout", "timeout"):
+					raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
+			timeout = kwargs.get("timeout", kwargs.get("_pydbus_timeout", None))
+		else:
+			timeout = kwargs.get("_pydbus_timeout")
 
-		ret = instance._bus.con.call_sync(
-			instance._bus_name, instance._path,
-			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
-			0, timeout_to_glib(timeout), None).unpack()
+		if instance._translator:
+			retained_args = args
+			if (self._iface_name != "org.freedesktop.DBus.Properties") and (len(args) > 0) :
+				args = instance._translator.translate(
+					pydevobject=instance._object,
+					keyname=self.__name__,
+					callerargs=args,
+					calledby='method',
+					fromDbusToPython=False,
+					introspection=self._sinargs,
+					retained_pyarg=None)
+				
+			ret = instance._bus.con.call_sync(
+				instance._bus_name,
+				instance._path,
+				self._iface_name,
+				self.__name__,
+				GLib.Variant(self._sinargs, args),
+				GLib.VariantType.new(self._soutargs),
+				0,
+				timeout_to_glib(timeout),
+				None).unpack()
+			if len(self._outargs) > 0:
+				ret = instance._translator.translate(
+					pydevobject=instance._object,
+					keyname=self.__name__,
+					callerargs=ret if isinstance(ret, tuple) else (ret,),
+					calledby='method',
+					fromDbusToPython=True,
+					introspection=container_content_introspection_format(self._soutargs),
+					retained_pyarg=retained_args)
+				if not isinstance(ret, tuple): ret = (ret,)
+				
+		else:
+			ret = instance._bus.con.call_sync(
+				instance._bus_name, instance._path,
+				self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
+				0, timeout_to_glib(timeout), None).unpack()
 
 		if len(self._outargs) == 0:
 			return None

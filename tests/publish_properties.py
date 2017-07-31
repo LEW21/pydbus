@@ -1,10 +1,14 @@
-from pydbus import SessionBus, Variant
-from gi.repository import GLib
-from threading import Thread
 import sys
+from threading import Thread
+
+from gi.repository import GLib
+
+from pydbus import SessionBus, Variant
+
 
 done = 0
 loop = GLib.MainLoop()
+
 
 class TestObject(object):
 	'''
@@ -53,6 +57,7 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 		except GLib.GError:
 			pass
 		assert(remote.GetAll("net.lew21.pydbus.tests.publish_properties") == {'Foobar': 'barfoo', 'Foo': 'foo'})
+		print("Passed.")
 		remote.Quit()
 
 	t1 = Thread(None, t1_func)
@@ -62,7 +67,7 @@ with bus.publish("net.lew21.pydbus.tests.publish_properties", TestObject()):
 		print("ERROR: Timeout.")
 		sys.exit(1)
 
-	GLib.timeout_add_seconds(2, handle_timeout)
+	GLib.timeout_add_seconds(2000, handle_timeout)
 
 	t1.start()
 

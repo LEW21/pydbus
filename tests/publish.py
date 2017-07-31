@@ -1,7 +1,10 @@
-from pydbus import SessionBus
-from gi.repository import GLib
-from threading import Thread
 import sys
+from threading import Thread
+
+from gi.repository import GLib
+
+from pydbus import SessionBus
+
 
 done = 0
 loop = GLib.MainLoop()
@@ -18,8 +21,8 @@ class TestObject(object):
 	</interface>
 </node>
 	'''
-	def __init__(self, id):
-		self.id = id
+	def __init__(self, iid):
+		self.id = iid
 
 	def HelloWorld(self, a, b):
 		res = self.id + ": " + a + str(b)
@@ -27,7 +30,7 @@ class TestObject(object):
 		done += 1
 		if done == 2:
 			loop.quit()
-		print(res)
+		print("server side: " + res)
 		return res
 
 bus = SessionBus()
@@ -51,7 +54,7 @@ with bus.publish("net.lew21.pydbus.Test", TestObject("Main"), ("Lol", TestObject
 		print("ERROR: Timeout.")
 		sys.exit(1)
 
-	GLib.timeout_add_seconds(2, handle_timeout)
+	GLib.timeout_add_seconds(200, handle_timeout)
 
 	t1.start()
 	t2.start()

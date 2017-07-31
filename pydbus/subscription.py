@@ -1,19 +1,21 @@
 from gi.repository import Gio
+
 from .exitable import ExitableWithAliases
+
 
 class Subscription(ExitableWithAliases("unsubscribe", "disconnect")):
 	Flags = Gio.DBusSignalFlags
 	__slots__ = ()
 
-	def __init__(self, con, sender, iface, member, object, arg0, flags, callback):
-		id = con.signal_subscribe(sender, iface, member, object, arg0, flags, callback)
-		self._at_exit(lambda: con.signal_unsubscribe(id))
+	def __init__(self, con, sender, iface, member, obj, arg0, flags, callback):
+		sigid = con.signal_subscribe(sender, iface, member, obj, arg0, flags, callback,None)
+		self._at_exit(lambda: con.signal_unsubscribe(sigid))
 
 class SubscriptionMixin(object):
 	__slots__ = ()
 	SubscriptionFlags = Subscription.Flags
 
-	def subscribe(self, sender=None, iface=None, signal=None, object=None, arg0=None, flags=0, signal_fired=None):
+	def subscribe(self, sender=None, iface=None, signal=None, obj=None, arg0=None, flags=0, signal_fired=None):
 		"""Subscribes to matching signals.
 
 		Subscribes to signals on connection and invokes signal_fired callback
@@ -49,5 +51,5 @@ class SubscriptionMixin(object):
 		See https://developer.gnome.org/gio/2.44/GDBusConnection.html#g-dbus-connection-signal-subscribe
 		for more information.
 		"""
-		callback = (lambda con, sender, object, iface, signal, params: signal_fired(sender, object, iface, signal, params.unpack())) if signal_fired is not None else lambda *args: None
-		return Subscription(self.con, sender, iface, signal, object, arg0, flags, callback)
+		callback = (lambda con, sender, obj, iface, signal, params: signal_fired(sender, obj, iface, signal, params.unpack())) if signal_fired is not None else lambda *args: None
+		return Subscription(self.con, sender, iface, signal, obj, arg0, flags, callback)

@@ -1,22 +1,25 @@
-from gi.repository import Gio
-from .exitable import ExitableWithAliases
 import warnings
+
+from gi.repository import Gio
+
+from .exitable import ExitableWithAliases
+
 
 class NameOwner(ExitableWithAliases("unown")):
 	Flags = Gio.BusNameOwnerFlags
 	__slots__ = ()
 
 	def __init__(self, con, name, flags, name_aquired_handler, name_lost_handler):
-		id = Gio.bus_own_name_on_connection(con, name, flags, name_aquired_handler, name_lost_handler)
-		self._at_exit(lambda: Gio.bus_unown_name(id))
+		nameid = Gio.bus_own_name_on_connection(con, name, flags, name_aquired_handler, name_lost_handler)
+		self._at_exit(lambda: Gio.bus_unown_name(nameid))
 
 class NameWatcher(ExitableWithAliases("unwatch")):
 	Flags = Gio.BusNameWatcherFlags
 	__slots__ = ()
 
 	def __init__(self, con, name, flags, name_appeared_handler, name_vanished_handler):
-		id = Gio.bus_watch_name_on_connection(con, name, flags, name_appeared_handler, name_vanished_handler)
-		self._at_exit(lambda: Gio.bus_unwatch_name(id))
+		nameid = Gio.bus_watch_name_on_connection(con, name, flags, name_appeared_handler, name_vanished_handler)
+		self._at_exit(lambda: Gio.bus_unwatch_name(nameid))
 
 class OwnMixin(object):
 	__slots__ = ()
@@ -54,7 +57,7 @@ class OwnMixin(object):
 		warnings.warn("own_name() is deprecated, use request_name() instead.", DeprecationWarning)
 
 		name_aquired_handler = (lambda con, name: name_aquired()) if name_aquired is not None else None
-		name_lost_handler    = (lambda con, name: name_lost())    if name_lost    is not None else None
+		name_lost_handler = (lambda con, name: name_lost())    if name_lost    is not None else None
 		return NameOwner(self.con, name, flags, name_aquired_handler, name_lost_handler)
 
 class WatchMixin(object):

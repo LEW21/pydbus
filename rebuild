@@ -1,0 +1,18 @@
+#!/bin/bash
+set -x
+set -e
+cd ~/permanet/pydbus
+find . -iname "__pycache__" -print0 | xargs -0 -n 1 rm -rf
+rm -r build || $TRUE
+rm /home/administrator/permanet/pydbus/pydbus/extensions/*so ~/pdev/__pcache__/* || $TRUE
+
+#CFLAGS='-Wall -O0 -g'
+#export CFLAGS
+PYTHONPATH=~/pdev
+export PYTHONPATH
+#CFLAGS='-Wall -O0 -g' python3.4 setup.py build
+python3.4 setup.py build
+python3.4 setup.py develop --install-dir ~/pdev
+
+python3.6 setup.py build
+python3.6 setup.py develop --install-dir ~/pdev

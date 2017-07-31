@@ -1,11 +1,12 @@
-from gi.repository import Gio
+# from gi.repository import Gio
+from .auto_names import *  # @UnusedWildImport
 from .exitable import ExitableWithAliases
-from .auto_names import *
+
 
 class Publication(ExitableWithAliases("unpublish")):
 	__slots__ = ()
 
-	def __init__(self, bus, bus_name, *objects, **kwargs): # allow_replacement=True, replace=False
+	def __init__(self, bus, bus_name, *objects, **kwargs):  # allow_replacement=True, replace=False
 		# Python 2 sux
 		for kwarg in kwargs:
 			if kwarg not in ("allow_replacement", "replace",):
@@ -16,20 +17,20 @@ class Publication(ExitableWithAliases("unpublish")):
 		bus_name = auto_bus_name(bus_name)
 
 		for object_info in objects:
-			path, object, node_info = (None, None, None)
+			path, obj, node_info = (None, None, None)
 
 			if type(object_info) == tuple:
 				if len(object_info) == 3:
-					path, object, node_info = object_info
+					path, obj, node_info = object_info
 				if len(object_info) == 2:
-					path, object = object_info
+					path, obj = object_info
 				if len(object_info) == 1:
-					object = object_info[0]
+					obj = object_info[0]
 			else:
-				object = object_info
+				obj = object_info
 
 			path = auto_object_path(bus_name, path)
-			self._at_exit(bus.register_object(path, object, node_info).__exit__)
+			self._at_exit(bus.register_object(path, obj, node_info).__exit__)
 
 		# Request name only after registering all the objects.
 		self._at_exit(bus.request_name(bus_name, allow_replacement=allow_replacement, replace=replace).__exit__)

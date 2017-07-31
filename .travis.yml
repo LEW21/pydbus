@@ -1,18 +1,36 @@
 sudo: required
 
 env:
+  - distribution: debian
+    version: jessie
+    python: 3
+  - distribution: debian
+    version: sid
+    python: 3
+  - distribution: fedora
+    version: rawhide
+    python: 3
+  - distribution: centos
+    version: 7
+    python: 3.4
+  - distribution: centos
+    version: 7
+    python: 3.6
   - distribution: ubuntu
     version: 16.04
     python: 3.5
   - distribution: ubuntu
-    version: 16.04
-    python: 2.7
-  - distribution: ubuntu
     version: 14.04
     python: 3.4
-  - distribution: ubuntu
-    version: 14.04
-    python: 2.7
+  - distribution: fedora
+    version: 22
+    python: 3.4
+#  - distribution: ubuntu
+#    version: 14.04
+#    python: 2.7
+#  - distribution: ubuntu
+#    version: 16.04
+#    python: 2.7
 
 services:
   - docker

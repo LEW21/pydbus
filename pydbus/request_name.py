@@ -1,5 +1,6 @@
 from .exitable import ExitableWithAliases
 
+
 class NameOwner(ExitableWithAliases("unown")):
 	__slots__ = ()
 
@@ -8,7 +9,7 @@ class NameOwner(ExitableWithAliases("unown")):
 		res = bus.dbus.RequestName(name, flags)
 		if res == 1:
 			self._at_exit(lambda: bus.dbus.ReleaseName(name))
-			return # OK
+			return  # OK
 		if res == 3:
 			raise RuntimeError("name already exists on the bus")
 		if res == 4:

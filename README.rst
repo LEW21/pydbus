@@ -1,102 +1,69 @@
-pydbus
-======
-.. image:: https://travis-ci.org/LEW21/pydbus.svg?branch=master
-    :target: https://travis-ci.org/LEW21/pydbus
+pydbus3
+=======
+.. image:: https://travis-ci.org/hcoin/pydbus.svg?branch=master
+    :target: https://travis-ci.org/hcoin/pydbus
 .. image:: https://badge.fury.io/py/pydbus.svg
     :target: https://badge.fury.io/py/pydbus
+.. image:: https://readthedocs.org/projects/pydbus/badge/?version=latest
+    :target: http://pydbus.readthedocs.io/en/latest/?badge=latest
 
-Pythonic DBus library.
+Publish DBus services or access DBus clients no differently
+than a typical local Python method, property or signal callback.
+Including named method arguments with defaults, properly naming states or
+conditions as strings that are just integers via DBus, much more.   
+ 
+For example:
 
-Changelog: https://github.com/LEW21/pydbus/releases
+.. code-block:: python
+
+    ...
+    sb = SystemBus()
+    NetworkManager = sb.get("org.freedesktop.NetworkManager",translation_spec=True)
+    r=NetworkManager.CheckpointCreate(devices=['/org/freedesktop/NetworkManager/Devices/0'],
+        rollback_timeout = 10, flags = "DELETE_NEW_CONNECTIONS")
+      
+Notice the use of argument names instead of only by position (which still works),
+string values for flags instead of cryptic integers.  No
+need for DBus specific function decorations. Should a method return be a list of
+named values, call it ret, then
+
+.. code-block:: python
+
+    ret[argposition_number] == arg['argument_name'] == arg.argument_name 
+
+There are many other 'pythonic conveniences', for instance using the example
+above, after the function returns, 
+
+.. code-block:: python
+
+    NetworkManager._state.rollback_timeout == 10
+    
+Documentation: http://pydbus.readthedocs.io/en/latest
+ 
+Changelog: https://github.com/hcoin/pydbus
+
 
 Requirements
 ------------
-* Python 2.7+ - but works best on 3.4+ (help system is nicer there)
-* PyGI_ (not packaged on pypi, you need to install it from your distribution's repository - it's usually called python-gi, python-gobject or pygobject)
-* GLib_ 2.46+ and girepository_ 1.46+ (Ubuntu 16.04+) - for object publication support
+* Python 3.2+
+* Supports: Debian Jessie to sid.  Fedora 22 to rawhide.  Centos 7 (python 3.4 and 3.6). Ubuntu 14.04  thru 16.04
+* See tests/py<your distro and version>.dockerfile for tested installation examples.
 
-.. _PyGI: https://wiki.gnome.org/Projects/PyGObject
-.. _GLib: https://developer.gnome.org/glib/
-.. _girepository: https://wiki.gnome.org/Projects/GObjectIntrospection
+Note: Supports full dbus publishing and access on all distros, even pre Glib v2.46.
 
-Examples
---------
 
-Send a desktop notification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. code-block:: python
-
-	from pydbus import SessionBus
-
-	bus = SessionBus()
-	notifications = bus.get('.Notifications')
-
-	notifications.Notify('test', 0, 'dialog-information', "Hello World!", "pydbus works :)", [], {}, 5000)
-
-List systemd units
-~~~~~~~~~~~~~~~~~~
-.. code-block:: python
-
-	from pydbus import SystemBus
-
-	bus = SystemBus()
-	systemd = bus.get(".systemd1")
-
-	for unit in systemd.ListUnits():
-	    print(unit)
-
-Start or stop systemd unit
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. code-block:: python
-
-	from pydbus import SystemBus
-
-	bus = SystemBus()
-	systemd = bus.get(".systemd1")
-
-	job1 = systemd.StopUnit("ssh.service", "fail")
-	job2 = systemd.StartUnit("ssh.service", "fail")
-
-Watch for new systemd jobs
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. code-block:: python
-
-	from pydbus import SystemBus
-	from gi.repository import GLib
-
-	bus = SystemBus()
-	systemd = bus.get(".systemd1")
-
-	systemd.JobNew.connect(print)
-	GLib.MainLoop().run()
-
-	# or
-
-	systemd.onJobNew = print
-	GLib.MainLoop().run()
-
-View object's API
-~~~~~~~~~~~~~~~~~
-.. code-block:: python
-
-	from pydbus import SessionBus
-
-	bus = SessionBus()
-	notifications = bus.get('.Notifications')
-
-	help(notifications)
-
-More examples & documentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The Tutorial_ contains more examples and docs.
-
-.. _Tutorial: https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst
 
 Copyright Information
 ---------------------
 
+Documentation, argument name/value translator, unit testing, _state extension, publishing across distros,
+
+Copyright (C) 2017 Harry Coin, Quiet Fountain LLC <hcoin@quietfountain.com>
+
+Modules other than translation related pre-June 2016
+
 Copyright (C) 2014, 2015, 2016 Linus Lewandowski <linus@lew21.net>
+
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public

@@ -1,0 +1,38 @@
+Overall PyDbus Status and Plans  
+
+
+2017/06/08:
+
+Alpha status. Passes unit testing on centos el 7, python 3.4.
+Ubuntu python 3.5, conda/anaconda python 3.6
+
+Supports all glib versions, lifts 2.46 restrictions.
+
+Supports centos and other version/distro combintations that don't ship
+with python3 and/or don't ship with dbus introspection support in python.
+Watch Travis CI build status for those that interest you. Read the
+*.dockerfile for your distro then run.sh to determine if your distro/release
+combination needs extra repos and/or rpms/debs.
+ 
+
+Plans:
+
+Stay current with distro/release updates to ensure all tests continue to pass.
+Remove as many dependencies on added / foriegn rpms/debs as possible as the 
+distros grow in capability.
+
+Manage dependency hell to verify operation on other distros, use Travis CI to verify unit testing.
+Suggestions of which to support next welcome.
+
+Documentation on hcoin/pydbus wiki is complete, TOC is sort of clunky owing to github wiki framework.
+Move to 'read the docs' or similar.
+
+Offer paid services to dbus publishers that would like my consulting firm to write translation
+specifications for dbus service publishers of their choice.
+
+Add competent authors as committers to broaden support, tweak features
+(per access timeouts to override timeout at definition time?)
+
+Determine Lew21's (author pre-translation features) ongoing intrest, 
+agree whether to team up and merge back into his repo or proceed
+in parallel or independently.

@@ -1,6 +1,9 @@
-from pydbus import SystemBus
-from gi.repository import GLib
 import logging
+
+from gi.repository import GLib
+
+from pydbus import SystemBus
+
 
 loop = GLib.MainLoop()
 

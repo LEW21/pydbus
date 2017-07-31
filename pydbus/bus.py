@@ -1,10 +1,13 @@
 from gi.repository import Gio
-from .proxy import ProxyMixin
-from .request_name import RequestNameMixin
+
+
 from .bus_names import OwnMixin, WatchMixin
-from .subscription import SubscriptionMixin
-from .registration import RegistrationMixin
+from .proxy import ProxyMixin
 from .publication import PublicationMixin
+from .registration import RegistrationMixin
+from .request_name import RequestNameMixin
+from .subscription import SubscriptionMixin
+
 
 def pydbus_property(self):
 	try:
@@ -15,8 +18,8 @@ def pydbus_property(self):
 
 Gio.DBusConnection.pydbus = property(pydbus_property)
 
-def bus_get(type):
-	return Gio.bus_get_sync(type, None).pydbus
+def bus_get(bustype):
+	return Gio.bus_get_sync(bustype, None).pydbus
 
 def connect(address):
 	c = Gio.DBusConnection.new_for_address_sync(address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION, None, None)
@@ -58,3 +61,9 @@ def SystemBus():
 
 def SessionBus():
 	return bus_get(Bus.Type.SESSION)
+
+
+
+
+
+
