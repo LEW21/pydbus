@@ -29,6 +29,8 @@ need to make use of a DBus service is:
      NetworkManager = sb.get("org.freedesktop.NetworkManager",translation_spec=True)
   
    If you leave out 'translation_spec...' then there is no access of arguments by name, just position.
+   
+   `If how to use 'object path' and 'interface' is unclear, visit here <dbusaddressing.html>`_
 
 #. The name(s) of the methods, properties or signals of interest.  For example::
 
