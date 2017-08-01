@@ -341,6 +341,53 @@ See ``help(bus.request_name)`` and ``help(bus.register_object)`` for details.
 
 .. --------------------------------------------------------------------
 
+Error handling
+==============
+
+You can map D-Bus errors to your exception classes for better error handling.
+To handle D-Bus errors, use the ``@map_error`` decorator::
+
+    from pydbus.error import map_error
+
+    @map_error("org.freedesktop.DBus.Error.InvalidArgs")
+    class InvalidArgsException(Exception):
+        pass
+
+    try:
+        ...
+    catch InvalidArgsException as e:
+        print(e)
+
+To register new D-Bus errors, use the ``@register_error`` decorator::
+
+    from pydbus.error import register_error
+
+    @map_error("net.lew21.pydbus.TutorialExample.MyError", MY_DOMAIN, MY_EXCEPTION_CODE)
+    class MyException(Exception):
+        pass
+
+Then you can raise ``MyException`` from the D-Bus method of the remote object::
+
+    def Method():
+        raise MyException("Message")
+
+And catch the same exception on the client side::
+
+    try:
+        proxy.Method()
+    catch MyException as e:
+        print(e)
+
+To handle all unknown D-Bus errors, use the ``@map_by_default`` decorator to specify the default exception::
+
+    from pydbus.error import map_by_default
+
+    @map_by_default
+    class DefaultException(Exception):
+        pass
+
+.. --------------------------------------------------------------------
+
 Data types
 ==========
 

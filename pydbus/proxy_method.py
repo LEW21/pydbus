@@ -2,6 +2,7 @@ from gi.repository import GLib
 from .generic import bound_method
 from .identifier import filter_identifier
 from .timeout import timeout_to_glib
+from .error import error_registration
 
 try:
 	from inspect import Signature, Parameter
@@ -87,9 +88,20 @@ class ProxyMethod(object):
 			call_args += (self._finish_async_call, (callback, callback_args))
 			instance._bus.con.call(*call_args)
 			return None
+
 		else:
-			ret = instance._bus.con.call_sync(*call_args)
-			return self._unpack_return(ret)
+			result = None
+			error = None
+
+			try:
+				result = instance._bus.con.call_sync(*call_args)
+			except Exception as e:
+				error = error_registration.transform_exception(e)
+
+			if error:
+				raise error
+
+			return self._unpack_return(result)
 
 	def _unpack_return(self, values):
 		ret = values.unpack()
@@ -108,7 +120,7 @@ class ProxyMethod(object):
 			ret = source.call_finish(result)
 			return_args = self._unpack_return(ret)
 		except Exception as err:
-			error = err
+			error = error_registration.transform_exception(err)
 
 		callback, callback_args = user_data
 		callback(*callback_args, returned=return_args, error=error)
