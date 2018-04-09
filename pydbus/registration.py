@@ -142,9 +142,9 @@ class RegistrationMixin:
 	def register_object(self, path, object, node_info):
 		if node_info is None:
 			try:
-				node_info = type(object).dbus
+				node_info = object.dbus
 			except AttributeError:
-				node_info = type(object).__doc__
+				node_info = object.__doc__
 
 		if type(node_info) != list and type(node_info) != tuple:
 			node_info = [node_info]
