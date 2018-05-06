@@ -15,7 +15,7 @@ Requirements
 * PyGI_ (not packaged on pypi, you need to install it from your distribution's repository - it's usually called python-gi, python-gobject or pygobject)
 * GLib_ 2.46+ and girepository_ 1.46+ (Ubuntu 16.04+) - for object publication support
 
-.. _PyGI: https://pygobject.readthedocs.io/en/latest/
+.. _PyGI: https://pygobject.readthedocs.io/
 .. _GLib: https://developer.gnome.org/glib/
 .. _girepository: https://wiki.gnome.org/Projects/GObjectIntrospection
 
