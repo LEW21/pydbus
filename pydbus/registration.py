@@ -144,7 +144,7 @@ class RegistrationMixin:
 			try:
 				node_info = type(object).dbus
 			except AttributeError:
-				node_info = type(object).__doc__
+				node_info = object.__doc__
 
 		if type(node_info) != list and type(node_info) != tuple:
 			node_info = [node_info]
