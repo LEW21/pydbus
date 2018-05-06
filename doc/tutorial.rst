@@ -84,7 +84,8 @@ All objects have methods, properties and signals.
 Setting up an event loop
 ========================
 
-To handle signals emitted by exported objects, or to export your own objects, you need to setup an event loop.
+To handle signals emitted by exported objects, to asynchronously call methods
+or to export your own objects, you need to setup an event loop.
 
 The only main loop supported by ``pydbus`` is GLib.MainLoop.
 
@@ -155,6 +156,14 @@ To see the API of a specific proxy object, use help()::
 To call a method::
 
     dev.Disconnect()
+
+To asynchronously call a method::
+
+    def print_result(returned=None, error=None):
+        print(returned, error)
+
+    dev.GetAppliedConnection(0, callback=print_result)
+    loop.run()
 
 To read a property::
 

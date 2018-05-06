@@ -65,21 +65,53 @@ class ProxyMethod(object):
 
 		# Python 2 sux
 		for kwarg in kwargs:
-			if kwarg not in ("timeout",):
+			if kwarg not in ("timeout", "callback", "callback_args"):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
+		callback = kwargs.get("callback", None)
+		callback_args = kwargs.get("callback_args", tuple())
 
-		ret = instance._bus.con.call_sync(
-			instance._bus_name, instance._path,
-			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
-			0, timeout_to_glib(timeout), None).unpack()
+		call_args = (
+			instance._bus_name,
+			instance._path,
+			self._iface_name,
+			self.__name__,
+			GLib.Variant(self._sinargs, args),
+			GLib.VariantType.new(self._soutargs),
+			0,
+			timeout_to_glib(timeout),
+			None
+		)
 
+		if callback:
+			call_args += (self._finish_async_call, (callback, callback_args))
+			instance._bus.con.call(*call_args)
+			return None
+		else:
+			ret = instance._bus.con.call_sync(*call_args)
+			return self._unpack_return(ret)
+
+	def _unpack_return(self, values):
+		ret = values.unpack()
 		if len(self._outargs) == 0:
 			return None
 		elif len(self._outargs) == 1:
 			return ret[0]
 		else:
 			return ret
+
+	def _finish_async_call(self, source, result, user_data):
+		error = None
+		return_args = None
+
+		try:
+			ret = source.call_finish(result)
+			return_args = self._unpack_return(ret)
+		except Exception as err:
+			error = err
+
+		callback, callback_args = user_data
+		callback(*callback_args, returned=return_args, error=error)
 
 	def __get__(self, instance, owner):
 		if instance is None:
