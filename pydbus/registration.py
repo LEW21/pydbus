@@ -5,6 +5,7 @@ from . import generic
 from .exitable import ExitableWithAliases
 from functools import partial
 from .method_call_context import MethodCallContext
+from .error import error_registration
 import logging
 
 try:
@@ -91,11 +92,16 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			logger = logging.getLogger(__name__)
 			logger.exception("Exception while handling %s.%s()", interface_name, method_name)
 
-			#TODO Think of a better way to translate Python exception types to DBus error types.
-			e_type = type(e).__name__
-			if not "." in e_type:
-				e_type = "unknown." + e_type
-			invocation.return_dbus_error(e_type, str(e))
+			if error_registration.is_registered_exception(e):
+				name = error_registration.get_dbus_name(e)
+				invocation.return_dbus_error(name, str(e))
+			else:
+				logger.info("name is not registered")
+				e_type = type(e).__name__
+				if not "." in e_type:
+					e_type = "unknown." + e_type
+
+				invocation.return_dbus_error(e_type, str(e))
 
 	def Get(self, interface_name, property_name):
 		type = self.readable_properties[interface_name + "." + property_name]
