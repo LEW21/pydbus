@@ -15,4 +15,5 @@ then
 	"$PYTHON" $TESTS_DIR/publish.py
 	"$PYTHON" $TESTS_DIR/publish_properties.py
 	"$PYTHON" $TESTS_DIR/publish_multiface.py
+	"$PYTHON" $TESTS_DIR/dbus_exception.py
 fi

@@ -6,6 +6,7 @@ from .exitable import ExitableWithAliases
 from functools import partial
 from .method_call_context import MethodCallContext
 import logging
+from .exceptions import DBusException
 
 try:
 	from inspect import signature, Parameter
@@ -87,15 +88,21 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			else:
 				invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", result))
 
+		# catch DBusExceptions and turn them into dbus_errors
+		except DBusException as e:
+			if not e.silent:
+				logger = logging.getLogger(__name__)
+				logger.exception("DBusException while handling %s.%s()", interface_name, method_name)
+
+			invocation.return_dbus_error(e.dbus_name, str(e))
+
+		# catch all other Exceptions report and reraise them
 		except Exception as e:
 			logger = logging.getLogger(__name__)
 			logger.exception("Exception while handling %s.%s()", interface_name, method_name)
 
-			#TODO Think of a better way to translate Python exception types to DBus error types.
-			e_type = type(e).__name__
-			if not "." in e_type:
-				e_type = "unknown." + e_type
-			invocation.return_dbus_error(e_type, str(e))
+			invocation.return_dbus_error(DBusException.dbus_name, "Uncought exception while handling.")
+			raise e
 
 	def Get(self, interface_name, property_name):
 		type = self.readable_properties[interface_name + "." + property_name]
