@@ -2,6 +2,7 @@ from gi.repository import GLib
 from .generic import bound_method
 from .identifier import filter_identifier
 from .timeout import timeout_to_glib
+from . import unixfd
 
 try:
 	from inspect import Signature, Parameter
@@ -69,10 +70,23 @@ class ProxyMethod(object):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
 
-		ret = instance._bus.con.call_sync(
-			instance._bus_name, instance._path,
-			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
-			0, timeout_to_glib(timeout), None).unpack()
+		if unixfd.is_supported(instance._bus.con):
+			fd_list = unixfd.make_fd_list(
+				args,
+				[arg[1] for arg in self._inargs])
+			ret, fd_list = instance._bus.con.call_with_unix_fd_list_sync(
+				instance._bus_name, instance._path,
+				self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
+				0, timeout_to_glib(timeout), fd_list, None)
+			ret = unixfd.extract(
+				ret.unpack(),
+				self._outargs,
+				fd_list)
+		else:
+			ret = instance._bus.con.call_sync(
+				instance._bus_name, instance._path,
+				self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
+				0, timeout_to_glib(timeout), None)
 
 		if len(self._outargs) == 0:
 			return None

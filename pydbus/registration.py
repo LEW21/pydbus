@@ -5,6 +5,7 @@ from . import generic
 from .exitable import ExitableWithAliases
 from functools import partial
 from .method_call_context import MethodCallContext
+from . import unixfd
 import logging
 
 try:
@@ -18,10 +19,12 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 	def __init__(self, object, interfaces):
 		self.object = object
 
+		self.inargs = {}
 		self.outargs = {}
 		for iface in interfaces:
 			for method in iface.methods:
 				self.outargs[iface.name + "." + method.name] = [arg.signature for arg in method.out_args]
+				self.inargs[iface.name + "." + method.name] = [arg.signature for arg in method.in_args]
 
 		self.readable_properties = {}
 		self.writable_properties = {}
@@ -54,6 +57,7 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 	def call_method(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
 		try:
 			try:
+				inargs = self.inargs[interface_name + "." + method_name]
 				outargs = self.outargs[interface_name + "." + method_name]
 				method = getattr(self.object, method_name)
 			except KeyError:
@@ -61,12 +65,15 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 					if method_name == "Get":
 						method = self.Get
 						outargs = ["v"]
+						inargs = ["ss"]
 					elif method_name == "GetAll":
 						method = self.GetAll
 						outargs = ["a{sv}"]
+						inargs = ["s"]
 					elif method_name == "Set":
 						method = self.Set
 						outargs = []
+						inargs = ["ssv"]
 					else:
 						raise
 				else:
@@ -78,14 +85,23 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			if "dbus_context" in sig.parameters and sig.parameters["dbus_context"].kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY):
 				kwargs["dbus_context"] = MethodCallContext(invocation)
 
+			if unixfd.is_supported(connection):
+				parameters = unixfd.extract(
+					parameters,
+					inargs,
+					invocation.get_message().get_unix_fd_list())
+
 			result = method(*parameters, **kwargs)
 
 			if len(outargs) == 0:
 				invocation.return_value(None)
-			elif len(outargs) == 1:
-				invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", (result,)))
 			else:
-				invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", result))
+				if len(outargs) == 1:
+					result = (result, )
+				if unixfd.is_supported(connection):
+					invocation.return_value_with_unix_fd_list(GLib.Variant("(" + "".join(outargs) + ")", result), unixfd.make_fd_list(result, outargs, steal=True))
+				else:
+					invocation.return_value(GLib.Variant("(" + "".join(outargs) + ")", result))
 
 		except Exception as e:
 			logger = logging.getLogger(__name__)
@@ -151,6 +167,5 @@ class RegistrationMixin:
 
 		node_info = [Gio.DBusNodeInfo.new_for_xml(ni) for ni in node_info]
 		interfaces = sum((ni.interfaces for ni in node_info), [])
-
 		wrapper = ObjectWrapper(object, interfaces)
 		return ObjectRegistration(self, path, interfaces, wrapper, own_wrapper=True)
