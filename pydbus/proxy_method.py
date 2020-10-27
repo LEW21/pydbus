@@ -1,4 +1,4 @@
-from gi.repository import GLib
+from gi.repository import GLib, Gio
 from .generic import bound_method
 from .identifier import filter_identifier
 from .timeout import timeout_to_glib
@@ -65,14 +65,19 @@ class ProxyMethod(object):
 
 		# Python 2 sux
 		for kwarg in kwargs:
-			if kwarg not in ("timeout",):
+			if kwarg not in ("timeout","interactive"):
 				raise TypeError(self.__qualname__ + " got an unexpected keyword argument '{}'".format(kwarg))
 		timeout = kwargs.get("timeout", None)
+		interactive = kwargs.get("interactive", False)
+		if interactive:
+			flag = Gio.DBusCallFlags.ALLOW_INTERACTIVE_AUTHORIZATION
+		else:
+			flag = 0
 
 		ret = instance._bus.con.call_sync(
 			instance._bus_name, instance._path,
 			self._iface_name, self.__name__, GLib.Variant(self._sinargs, args), GLib.VariantType.new(self._soutargs),
-			0, timeout_to_glib(timeout), None).unpack()
+			flag, timeout_to_glib(timeout), None).unpack()
 
 		if len(self._outargs) == 0:
 			return None
