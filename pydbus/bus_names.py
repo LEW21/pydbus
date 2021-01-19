@@ -6,8 +6,8 @@ class NameOwner(ExitableWithAliases("unown")):
 	Flags = Gio.BusNameOwnerFlags
 	__slots__ = ()
 
-	def __init__(self, con, name, flags, name_aquired_handler, name_lost_handler):
-		id = Gio.bus_own_name_on_connection(con, name, flags, name_aquired_handler, name_lost_handler)
+	def __init__(self, con, name, flags, name_acquired_handler, name_lost_handler):
+		id = Gio.bus_own_name_on_connection(con, name, flags, name_acquired_handler, name_lost_handler)
 		self._at_exit(lambda: Gio.bus_unown_name(id))
 
 class NameWatcher(ExitableWithAliases("unwatch")):
@@ -22,13 +22,13 @@ class OwnMixin(object):
 	__slots__ = ()
 	NameOwnerFlags = NameOwner.Flags
 
-	def own_name(self, name, flags=0, name_aquired=None, name_lost=None):
-		"""[DEPRECATED] Asynchronously aquires a bus name.
+	def own_name(self, name, flags=0, name_acquired=None, name_lost=None):
+		"""[DEPRECATED] Asynchronously acquires a bus name.
 
 		Starts acquiring name on the bus specified by bus_type and calls
 		name_acquired and name_lost when the name is acquired respectively lost.
 
-		To receive name_aquired and name_lost callbacks, you need an event loop.
+		To receive name_acquired and name_lost callbacks, you need an event loop.
 		https://github.com/LEW21/pydbus/blob/master/doc/tutorial.rst#setting-up-an-event-loop
 
 		Parameters
@@ -36,7 +36,7 @@ class OwnMixin(object):
 		name : string
 			Bus name to aquire
 		flags : NameOwnerFlags, optional
-		name_aquired : callable, optional
+		name_acquired : callable, optional
 			Invoked when name is acquired
 		name_lost : callable, optional
 			Invoked when name is lost
@@ -53,9 +53,9 @@ class OwnMixin(object):
 		"""
 		warnings.warn("own_name() is deprecated, use request_name() instead.", DeprecationWarning)
 
-		name_aquired_handler = (lambda con, name: name_aquired()) if name_aquired is not None else None
+		name_acquired_handler = (lambda con, name: name_acquired()) if name_acquired is not None else None
 		name_lost_handler    = (lambda con, name: name_lost())    if name_lost    is not None else None
-		return NameOwner(self.con, name, flags, name_aquired_handler, name_lost_handler)
+		return NameOwner(self.con, name, flags, name_acquired_handler, name_lost_handler)
 
 class WatchMixin(object):
 	__slots__ = ()
@@ -65,7 +65,7 @@ class WatchMixin(object):
 		"""Asynchronously watches a bus name.
 
 		Starts watching name on the bus specified by bus_type and calls
-		name_appeared and name_vanished when the name is known to have a owner
+		name_appeared and name_vanished when the name is known to have an owner
 		respectively known to lose its owner.
 
 		To receive name_appeared and name_vanished callbacks, you need an event loop.

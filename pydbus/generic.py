@@ -72,7 +72,7 @@ class signal(object):
 
 		a.SomethingHappened()
 
-	You may pass any parameters to the emiting function
+	You may pass any parameters to the emitting function
 	- they will be forwarded to all subscribed callbacks.
 	"""
 
