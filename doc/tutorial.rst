@@ -154,15 +154,17 @@ To see the API of a specific proxy object, use help()::
 
 To call a method::
 
-    dev.Disconnect()
+    dev.foo()
+    
+By passing "timeout" as a keyword argument, the method will abort with a gi.repository.GLib.Error error if the proxy object doesn't answer within the specified time in seconds.
 
 To read a property::
 
-    print(dev.Autoconnect)
+    print(dev.bar)
 
 To set a property::
 
-    dev.Autoconnect = True
+    dev.bar = True
 
 .. _signal.connect:
 
