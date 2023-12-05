@@ -78,6 +78,10 @@ class ObjectWrapper(ExitableWithAliases("unwrap")):
 			if "dbus_context" in sig.parameters and sig.parameters["dbus_context"].kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY):
 				kwargs["dbus_context"] = MethodCallContext(invocation)
 
+			if connection.get_capabilities() & Gio.DBusCapabilityFlags.UNIX_FD_PASSING:
+				if "dbus_unix_fd_list" in sig.parameters and sig.parameters["dbus_unix_fd_list"].kind == Parameter.KEYWORD_ONLY:
+					kwargs["dbus_unix_fd_list"] = invocation.get_message().get_unix_fd_list()
+
 			result = method(*parameters, **kwargs)
 
 			if len(outargs) == 0:
